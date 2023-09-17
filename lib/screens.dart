@@ -4,6 +4,7 @@ import 'package:print_fast/dirScreens/register.dart';
 import 'dirScreens/menu.dart';
 import 'dirScreens/history.dart';
 import 'dirScreens/shopping.dart';
+import 'dirScreens/settings.dart';
 
 class myScreens extends StatefulWidget {
   myScreens({super.key});
@@ -12,7 +13,7 @@ class myScreens extends StatefulWidget {
 }
 
 class _myScreensState extends State<myScreens> {
-  int _indexscreen = 2;
+  int _indexscreen = 5;
   void changeindex(int newIndex) {
     setState(() {
       _indexscreen = newIndex;
@@ -30,6 +31,7 @@ class _myScreensState extends State<myScreens> {
       myHistory(
         chIndex: () => changeindex(2),
       ),
+      mySettings(chIndex: () => changeindex(2))
     ];
 
     return screens[_indexscreen];

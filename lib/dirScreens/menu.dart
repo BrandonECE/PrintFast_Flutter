@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../screens.dart';
+import 'history.dart';
 
 class myMenu extends StatefulWidget {
   myMenu({super.key, required this.chIndexShopping, required this.chIndexHistory});
@@ -31,11 +32,13 @@ class _myMenuState extends State<myMenu> {
               containerMenuOptions(chIndexShopping: widget.chIndexShopping, chIndexHistory: widget.chIndexHistory),
               titlesContainerMenu("Novedades"),
               const myNews(),
-              titlesContainerMenu("Ordenes activas"),
+              titlesContainerMenu("Orden activa"),
+              sectionContainerMyActiveOrders()
             ],
           ),
         ),
       ),
+      bottomNavigationBar: myBottonNavigationBar(),
     );
   }
 }
@@ -48,19 +51,33 @@ class myAppBar extends StatelessWidget {
     return Center(
       child: Container(
         // padding: const EdgeInsets.only(top: 33),
-        // margin: EdgeInsets.only(top: 32),
+        // margin: const EdgeInsets.only(top: 33), //HABILITAR SOLO PARA EL CELULAR
         // color: Colors.red,
         width: MediaQuery.of(context).size.width * 0.9,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              "PrintFast",
-              style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20),
+            Row(
+              children: [
+                 const Text(
+                  "PrintFast",
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: SizedBox(
+                              width: 17,
+                              height: 17,
+                              child: Image.asset('assets/images/printfast_logo.png',),
+                            ),
+                ),
+
+              ],
             ),
+
             IconButton(
               onPressed: () {
                 print("NOTI");
@@ -240,11 +257,66 @@ class myNews extends StatelessWidget {
         color: Theme.of(context).colorScheme.primary,
         borderRadius: BorderRadius.circular(20),
       ),
-      height: 200,
+      height: 150,
       child: const Center(
         child: Text(
           "Noticias",
           style: TextStyle(color: Colors.white),
+        ),
+      ),
+    );
+  }
+}
+
+
+class sectionContainerMyActiveOrders extends StatelessWidget {
+  sectionContainerMyActiveOrders({super.key});
+
+
+  @override
+  Widget build(BuildContext context) {
+
+    List<Widget> orderActiveSectionContainer = [
+
+      Expanded(child: 
+        Center(
+          child: Container(
+            child: const Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.hide_source, color: Colors.grey, size: 50,),
+                Text("Ninguna orden", style: TextStyle(color: Colors.grey, fontSize: 18),),
+              ],
+            ),
+          ),
+        )
+      ),
+      
+      Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10)
+            ),
+            width: MediaQuery.of(context).size.width,
+            
+          ),
+        ),
+
+
+      ];
+
+
+    return Expanded(
+      child: Container(
+        padding: EdgeInsets.all(20),
+        decoration: BoxDecoration(
+            color: Colors.grey.shade300,
+            borderRadius: BorderRadius.circular(20)),
+            margin: const EdgeInsets.only(bottom: 30),
+        width: MediaQuery.of(context).size.width * 0.83,
+        child: Container(
+          child: orderActiveSectionContainer[0],
         ),
       ),
     );
