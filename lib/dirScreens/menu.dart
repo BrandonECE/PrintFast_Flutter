@@ -2,49 +2,42 @@ import 'package:flutter/material.dart';
 import '../screens.dart';
 import 'history.dart';
 
-class myMenu extends StatefulWidget {
-  myMenu({super.key, required this.chIndexShopping, required this.chIndexHistory});
+
+
+
+class myMenu extends StatelessWidget {
+  myMenu(
+      {super.key, required this.chIndexShopping, required this.chIndexHistory});
   VoidCallback chIndexShopping;
   VoidCallback chIndexHistory;
   @override
-  State<myMenu> createState() => _myMenuState();
-}
-
-class _myMenuState extends State<myMenu> {
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.primary,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        flexibleSpace: const myAppBar(),
-      ),
-      body: Center(
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.95,
-          decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20), topRight: Radius.circular(20))),
-          child: Column(
-            children: [
-              const briefGreeting(),
-              containerMenuOptions(chIndexShopping: widget.chIndexShopping, chIndexHistory: widget.chIndexHistory),
-              titlesContainerMenu("Novedades"),
-              const myNews(),
-              titlesContainerMenu("Orden activa"),
-              sectionContainerMyActiveOrders()
-            ],
-          ),
+    return Center(
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.95,
+        decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20), topRight: Radius.circular(20))),
+        child: Column(
+          children: [
+            const briefGreeting(),
+            containerMenuOptions(
+                chIndexShopping: chIndexShopping,
+                chIndexHistory: chIndexHistory),
+            titlesContainerMenu("Novedades"),
+            const myNews(),
+            titlesContainerMenu("Orden activa"),
+            sectionContainerMyActiveOrders()
+          ],
         ),
       ),
-      bottomNavigationBar: myBottonNavigationBar(),
     );
   }
 }
 
-class myAppBar extends StatelessWidget {
-  const myAppBar({super.key});
+class myAppBarMenu extends StatelessWidget {
+  const myAppBarMenu({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +52,7 @@ class myAppBar extends StatelessWidget {
           children: [
             Row(
               children: [
-                 const Text(
+                const Text(
                   "PrintFast",
                   style: TextStyle(
                       color: Colors.white,
@@ -69,15 +62,15 @@ class myAppBar extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: SizedBox(
-                              width: 17,
-                              height: 17,
-                              child: Image.asset('assets/images/printfast_logo.png',),
-                            ),
+                    width: 18,
+                    height: 18,
+                    child: Image.asset(
+                      'assets/images/printfast_logo.png',
+                    ),
+                  ),
                 ),
-
               ],
             ),
-
             IconButton(
               onPressed: () {
                 print("NOTI");
@@ -115,7 +108,8 @@ class titlesContainerMenu extends StatelessWidget {
 }
 
 class containerMenuOptions extends StatelessWidget {
-  containerMenuOptions({super.key, required this.chIndexShopping, required this.chIndexHistory});
+  containerMenuOptions(
+      {super.key, required this.chIndexShopping, required this.chIndexHistory});
   VoidCallback chIndexShopping;
   VoidCallback chIndexHistory;
   @override
@@ -268,44 +262,39 @@ class myNews extends StatelessWidget {
   }
 }
 
-
 class sectionContainerMyActiveOrders extends StatelessWidget {
   sectionContainerMyActiveOrders({super.key});
 
-
   @override
   Widget build(BuildContext context) {
-
     List<Widget> orderActiveSectionContainer = [
-
-      Expanded(child: 
-        Center(
-          child: Container(
-            child: const Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.hide_source, color: Colors.grey, size: 50,),
-                Text("Ninguna orden", style: TextStyle(color: Colors.grey, fontSize: 18),),
-              ],
-            ),
-          ),
-        )
-      ),
-      
       Expanded(
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10)
-            ),
-            width: MediaQuery.of(context).size.width,
-            
+          child: Center(
+        child: Container(
+          child: const Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.hide_source,
+                color: Colors.grey,
+                size: 50,
+              ),
+              Text(
+                "Ninguna orden",
+                style: TextStyle(color: Colors.grey, fontSize: 18),
+              ),
+            ],
           ),
         ),
-
-
-      ];
-
+      )),
+      Expanded(
+        child: Container(
+          decoration: BoxDecoration(
+              color: Colors.white, borderRadius: BorderRadius.circular(10)),
+          width: MediaQuery.of(context).size.width,
+        ),
+      ),
+    ];
 
     return Expanded(
       child: Container(
@@ -313,7 +302,7 @@ class sectionContainerMyActiveOrders extends StatelessWidget {
         decoration: BoxDecoration(
             color: Colors.grey.shade300,
             borderRadius: BorderRadius.circular(20)),
-            margin: const EdgeInsets.only(bottom: 30),
+        margin: const EdgeInsets.only(bottom: 30),
         width: MediaQuery.of(context).size.width * 0.83,
         child: Container(
           child: orderActiveSectionContainer[0],

@@ -1,37 +1,26 @@
-
 import 'package:flutter/material.dart';
 import 'history.dart';
 
 class myShopping extends StatelessWidget {
-  myShopping({super.key, required this.chIndex});
-  VoidCallback chIndex;
+  myShopping({super.key});
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.primary,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        flexibleSpace: myAppBar(chIndex),
-      ),
-      body: Center(
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.95,
-          decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20), topRight: Radius.circular(20))),
-          child: const containerMyShopping(),
-        ),
+    return Center(
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.95,
+        decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20), topRight: Radius.circular(20))),
+        child: const containerMyShopping(),
       ),
     );
   }
 }
 
-
-class myAppBar extends StatelessWidget {
+class myAppBarShopping extends StatelessWidget {
   ///PRUEBA
-
-  myAppBar(this.chindex);
+  myAppBarShopping({super.key, required this.chindex});
   VoidCallback chindex;
   @override
   Widget build(BuildContext context) {
@@ -44,7 +33,7 @@ class myAppBar extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-           const Row(
+            const Row(
               children: [
                 Text(
                   "Comprar",
@@ -55,7 +44,11 @@ class myAppBar extends StatelessWidget {
                 ),
                 Padding(
                   padding: EdgeInsets.all(8.0),
-                  child: Icon(Icons.shopping_cart_rounded, color: Colors.white, size: 22,),
+                  child: Icon(
+                    Icons.shopping_cart_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
                 )
               ],
             ),
@@ -74,7 +67,6 @@ class myAppBar extends StatelessWidget {
 }
 
 class containerMyShopping extends StatelessWidget {
-
   const containerMyShopping({super.key});
 
   @override
@@ -88,28 +80,19 @@ class containerMyShopping extends StatelessWidget {
   }
 }
 
-
 class sectionContainerMyShopping extends StatelessWidget {
   sectionContainerMyShopping({super.key});
 
-
   @override
   Widget build(BuildContext context) {
-
     List<Widget> ordersSectionContainerMyHistory = [
-
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10)
-          ),
-          width: MediaQuery.of(context).size.width,
-          height: 85,
-        
-        ),
-
-      ];
-
+      Container(
+        decoration: BoxDecoration(
+            color: Colors.white, borderRadius: BorderRadius.circular(10)),
+        width: MediaQuery.of(context).size.width,
+        height: 85,
+      ),
+    ];
 
     return Expanded(
       child: Container(
