@@ -17,7 +17,6 @@ class myHistory extends StatelessWidget {
   }
 }
 
-
 class myAppBarHistory extends StatelessWidget {
   ///PRUEBA
 
@@ -74,15 +73,15 @@ class containerMyHistory extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        titlesContainerMenu("Ordenes"),
+        titlesContainer("Ordenes"),
         sectionContainerMyHistory(),
       ],
     );
   }
 }
 
-class titlesContainerMenu extends StatelessWidget {
-  titlesContainerMenu(this.title);
+class titlesContainer extends StatelessWidget {
+  titlesContainer(this.title);
   String title;
   @override
   Widget build(BuildContext context) {
@@ -109,39 +108,58 @@ class titlesContainerMenu extends StatelessWidget {
   }
 }
 
+class sectionContainerMyHistoryOrder extends StatelessWidget {
+  sectionContainerMyHistoryOrder({super.key, required this.fecha});
+  String fecha;
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          fecha,
+          style: TextStyle(color: Colors.grey.shade500),
+        ),
+        const SizedBox(
+          height: 10,
+        ),
+        Container(
+          decoration: BoxDecoration(
+              color: Colors.white, borderRadius: BorderRadius.circular(10)),
+          width: MediaQuery.of(context).size.width,
+          height: 85,
+        ),
+        const SizedBox(
+          height: 20,
+        ),
+      ],
+    );
+  }
+}
+
 class sectionContainerMyHistory extends StatelessWidget {
   sectionContainerMyHistory({super.key});
 
   @override
   Widget build(BuildContext context) {
     List<Widget> ordersSectionContainerMyHistory = [
-      Container(
-        decoration: BoxDecoration(
-            color: Colors.white, borderRadius: BorderRadius.circular(10)),
-        width: MediaQuery.of(context).size.width,
-        height: 85,
-      ),
-      const SizedBox(
-        height: 20,
-      ),
-      Container(
-        decoration: BoxDecoration(
-            color: Colors.white, borderRadius: BorderRadius.circular(10)),
-        width: MediaQuery.of(context).size.width,
-        height: 85,
-      ),
+      sectionContainerMyHistoryOrder(fecha: "26 de Abril"),
+      sectionContainerMyHistoryOrder(fecha: "14 de Febrero"),
+      sectionContainerMyHistoryOrder(fecha: "05 de Diciembre del 2022"),
+      sectionContainerMyHistoryOrder(fecha: "23 de Novimebre del 2022"),
+      sectionContainerMyHistoryOrder(fecha: "10 de Octubre del 2022"),
     ];
 
     return Expanded(
       child: Container(
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         margin: const EdgeInsets.only(bottom: 25),
         decoration: BoxDecoration(
           color: Colors.grey.shade300,
           borderRadius: BorderRadius.circular(20),
         ),
         width: MediaQuery.of(context).size.width * 0.83,
-        child: Column(
+        child: ListView(
+          shrinkWrap: true,
           children: ordersSectionContainerMyHistory,
         ),
       ),

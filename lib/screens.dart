@@ -40,6 +40,7 @@ class _myScreensState extends State<myScreens> {
 
   @override
   Widget build(BuildContext context) {
+
     List<Widget> screensAppbar = [
       const myLogin(),
       const myRegister(),
@@ -67,7 +68,7 @@ class _myScreensState extends State<myScreens> {
       backgroundColor: Theme.of(context).colorScheme.primary,
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.primary,
-        flexibleSpace: screensAppbar[_indexscreen],
+        flexibleSpace: SafeArea(child: screensAppbar[_indexscreen]),
       ),
       body: screensBody[_indexscreen],
       bottomNavigationBar: BottomNavigationBar(

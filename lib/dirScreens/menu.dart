@@ -1,9 +1,7 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import '../screens.dart';
-import 'history.dart';
-
-
-
 
 class myMenu extends StatelessWidget {
   myMenu(
@@ -25,9 +23,12 @@ class myMenu extends StatelessWidget {
             containerMenuOptions(
                 chIndexShopping: chIndexShopping,
                 chIndexHistory: chIndexHistory),
-            titlesContainerMenu("Novedades"),
+            titlesContainer(title: "Novedades", icono: Icons.star_rounded, sizee: 18, padd: 5),
+            // titlesContainerMenu("Novedades"),
             const myNews(),
-            titlesContainerMenu("Orden activa"),
+            titlesContainer(
+                title: "Orden activa", icono: Icons.arrow_drop_down, sizee: 25, padd: 0,),
+            // titlesContainerMenu("Orden Activa"),
             sectionContainerMyActiveOrders()
           ],
         ),
@@ -307,6 +308,46 @@ class sectionContainerMyActiveOrders extends StatelessWidget {
         child: Container(
           child: orderActiveSectionContainer[0],
         ),
+      ),
+    );
+  }
+}
+
+class titlesContainer extends StatelessWidget {
+  titlesContainer(
+      {super.key,
+      required this.title,
+      required this.icono,
+      required this.sizee,
+      required this.padd});
+  String title;
+  IconData icono;
+  double? sizee;
+  double padd;
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: 20, bottom: 20),
+      width: MediaQuery.of(context).size.width * 0.83,
+      // color: Colors.amber,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.inverseSurface),
+          ),
+          Padding(
+            padding: EdgeInsets.only(left: padd),
+            child: Icon(
+              icono,
+              size: sizee,
+            ),
+          )
+        ],
       ),
     );
   }

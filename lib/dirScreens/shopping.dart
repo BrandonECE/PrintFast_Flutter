@@ -73,15 +73,18 @@ class containerMyShopping extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
-        titlesContainerMenu("Items"),
-        sectionContainerMyShopping()
+        titlesContainer("Impresion"),
+        sectionContainerMyShoppingCopy(),
+        titlesContainer("Materiales"),
+        sectionContainerMyShoppingItems(),
+        sectionContainerMyShoppingInfo(),
       ],
     );
   }
 }
 
-class sectionContainerMyShopping extends StatelessWidget {
-  sectionContainerMyShopping({super.key});
+class sectionContainerMyShoppingCopy extends StatelessWidget {
+  sectionContainerMyShoppingCopy({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -94,17 +97,121 @@ class sectionContainerMyShopping extends StatelessWidget {
       ),
     ];
 
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+          color: Colors.grey.shade300,
+          borderRadius: BorderRadius.all(Radius.circular(20))),
+      width: MediaQuery.of(context).size.width * 0.83,
+      child: Column(
+        children: ordersSectionContainerMyHistory,
+      ),
+    );
+  }
+}
+
+class sectionContainerMyShoppingWidgetItem extends StatelessWidget {
+  const sectionContainerMyShoppingWidgetItem({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+          Container(
+        decoration: BoxDecoration(
+            color: Colors.white, borderRadius: BorderRadius.circular(10)),
+        width: MediaQuery.of(context).size.width,
+        height: 85,
+      ),
+      
+      const SizedBox(
+        height: 20,
+      ),
+      ],
+    );
+  }
+}
+
+class sectionContainerMyShoppingItems extends StatelessWidget {
+  sectionContainerMyShoppingItems({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+
+    const List<Widget> ordersSectionContainerMyShoppingItems = [
+
+      sectionContainerMyShoppingWidgetItem(),
+      sectionContainerMyShoppingWidgetItem(),
+      sectionContainerMyShoppingWidgetItem(),
+      sectionContainerMyShoppingWidgetItem(),
+      sectionContainerMyShoppingWidgetItem(),
+      
+    ];
+
     return Expanded(
       child: Container(
-        padding: EdgeInsets.all(20),
+        margin: const EdgeInsets.only(bottom: 20),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
             color: Colors.grey.shade300,
-            borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20), topRight: Radius.circular(20))),
+            borderRadius: const BorderRadius.all(Radius.circular(20))),
         width: MediaQuery.of(context).size.width * 0.83,
-        child: Column(
-          children: ordersSectionContainerMyHistory,
+        child: ListView(
+          
+          shrinkWrap: true,
+          children: ordersSectionContainerMyShoppingItems,
         ),
+      ),
+    );
+  }
+}
+
+class sectionContainerMyShoppingInfoPrice extends StatelessWidget {
+  const sectionContainerMyShoppingInfoPrice({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: Text("Total: \$0", style: TextStyle(color: Theme.of(context).colorScheme.inverseSurface, fontSize: 20,fontWeight: FontWeight.bold,),),
+    );
+  }
+}
+
+class sectionContainerMyShoppingInfoButton extends StatelessWidget {
+  const sectionContainerMyShoppingInfoButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: (){}, 
+      child: const Text("Comprar", style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,),),
+       style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.greenAccent.shade400,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          ),
+        ),
+      );
+  }
+}
+
+class sectionContainerMyShoppingInfo extends StatelessWidget {
+  const sectionContainerMyShoppingInfo({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      width: MediaQuery.of(context).size.width * 0.83,
+      // color: Colors.amber,
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          sectionContainerMyShoppingInfoPrice(),
+          sectionContainerMyShoppingInfoButton()
+        ],
       ),
     );
   }
