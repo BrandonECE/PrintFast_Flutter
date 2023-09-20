@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'history.dart';
 
 class myShopping extends StatelessWidget {
-  myShopping({super.key});
+  myShopping({super.key, required this.chIndexButtonLocation});
+  VoidCallback chIndexButtonLocation;
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -12,7 +13,7 @@ class myShopping extends StatelessWidget {
             color: Colors.white,
             borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(20), topRight: Radius.circular(20))),
-        child: const containerMyShopping(),
+        child: containerMyShopping(chIndexButtonLocation: chIndexButtonLocation),
       ),
     );
   }
@@ -67,8 +68,8 @@ class myAppBarShopping extends StatelessWidget {
 }
 
 class containerMyShopping extends StatelessWidget {
-  const containerMyShopping({super.key});
-
+  containerMyShopping({super.key, required this.chIndexButtonLocation});
+  VoidCallback chIndexButtonLocation; 
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -77,7 +78,7 @@ class containerMyShopping extends StatelessWidget {
         sectionContainerMyShoppingCopy(),
         titlesContainer("Materiales"),
         sectionContainerMyShoppingItems(),
-        sectionContainerMyShoppingInfo(),
+        sectionContainerMyShoppingInfo(chIndexButtonLocation: chIndexButtonLocation),
       ],
     );
   }
@@ -117,16 +118,15 @@ class sectionContainerMyShoppingWidgetItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-          Container(
-        decoration: BoxDecoration(
-            color: Colors.white, borderRadius: BorderRadius.circular(10)),
-        width: MediaQuery.of(context).size.width,
-        height: 85,
-      ),
-      
-      const SizedBox(
-        height: 20,
-      ),
+        Container(
+          decoration: BoxDecoration(
+              color: Colors.white, borderRadius: BorderRadius.circular(10)),
+          width: MediaQuery.of(context).size.width,
+          height: 85,
+        ),
+        const SizedBox(
+          height: 20,
+        ),
       ],
     );
   }
@@ -137,15 +137,12 @@ class sectionContainerMyShoppingItems extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     const List<Widget> ordersSectionContainerMyShoppingItems = [
-
       sectionContainerMyShoppingWidgetItem(),
       sectionContainerMyShoppingWidgetItem(),
       sectionContainerMyShoppingWidgetItem(),
       sectionContainerMyShoppingWidgetItem(),
       sectionContainerMyShoppingWidgetItem(),
-      
     ];
 
     return Expanded(
@@ -157,7 +154,6 @@ class sectionContainerMyShoppingItems extends StatelessWidget {
             borderRadius: const BorderRadius.all(Radius.circular(20))),
         width: MediaQuery.of(context).size.width * 0.83,
         child: ListView(
-          
           shrinkWrap: true,
           children: ordersSectionContainerMyShoppingItems,
         ),
@@ -172,45 +168,59 @@ class sectionContainerMyShoppingInfoPrice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      child: Text("Total: \$0", style: TextStyle(color: Theme.of(context).colorScheme.inverseSurface, fontSize: 20,fontWeight: FontWeight.bold,),),
+      child: Text(
+        "Total: \$0",
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.inverseSurface,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 }
 
 class sectionContainerMyShoppingInfoButton extends StatelessWidget {
-  const sectionContainerMyShoppingInfoButton({super.key});
-
+  sectionContainerMyShoppingInfoButton({super.key, required this.chIndexButtonLocation});
+  VoidCallback chIndexButtonLocation; 
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
-      onPressed: (){}, 
-      child: const Text("Comprar", style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,),),
-       style: ElevatedButton.styleFrom(
+      onPressed: chIndexButtonLocation,
+      // ignore: sort_child_properties_last
+      child: const Text(
+        "Comprar",
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      style: ElevatedButton.styleFrom(
         backgroundColor: Colors.greenAccent.shade400,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
-          ),
         ),
-      );
+      ),
+    );
   }
 }
 
 class sectionContainerMyShoppingInfo extends StatelessWidget {
-  const sectionContainerMyShoppingInfo({super.key});
-
+  sectionContainerMyShoppingInfo({super.key, required this.chIndexButtonLocation});
+  VoidCallback chIndexButtonLocation; 
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       width: MediaQuery.of(context).size.width * 0.83,
       // color: Colors.amber,
-      child: const Row(
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           sectionContainerMyShoppingInfoPrice(),
-          sectionContainerMyShoppingInfoButton()
+          sectionContainerMyShoppingInfoButton(chIndexButtonLocation: chIndexButtonLocation)
         ],
       ),
     );
