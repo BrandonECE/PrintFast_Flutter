@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
 import 'screens.dart';
 
-void main() {
+
+///Importaciones de FireBase (Base de datos)
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MyApp());
 }
 
@@ -16,7 +25,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.purpleAccent, primary: Colors.purple.shade400),
         useMaterial3: true,
       ),
-      home: myScreens(),
+      home: const myScreens(),
     );
   }
 }

@@ -226,7 +226,7 @@ class briefGreeting extends StatelessWidget {
                     Container(
                         margin: const EdgeInsets.only(top: 2.5),
                         child: const Text(
-                          "Es un gusto tenerte con nostros",
+                          "Es un gusto tenerte con nosotros",
                           style: TextStyle(fontSize: 14),
                         ))
                   ],

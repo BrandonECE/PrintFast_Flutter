@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../firestore_service.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:ui' as ui;
 import 'dart:math';
@@ -18,7 +19,25 @@ class myLocation extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.only(
               topLeft: Radius.circular(20), topRight: Radius.circular(20))),
-      child: myLocationGoogleMapsPrueba(userLat: userLat, userLong: userLong),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+              child: myLocationGoogleMapsPrueba(
+                  userLat: userLat, userLong: userLong)),
+          Container(
+            padding: EdgeInsets.all(30),
+            child: Text(
+            "Distancia: 0 m",
+            style: TextStyle(
+                color: Theme.of(context)
+                    .colorScheme
+                    .inverseSurface,
+                fontWeight: FontWeight.bold,
+                fontSize: 18),
+          ))
+        ],
+      ),
     ));
   }
 }
@@ -26,8 +45,10 @@ class myLocation extends StatelessWidget {
 class myAppBarLocation extends StatelessWidget {
   myAppBarLocation({super.key, required this.chindex});
   VoidCallback chindex;
+  
   @override
   Widget build(BuildContext context) {
+    
     return Center(
       child: Container(
         width: MediaQuery.of(context).size.width * 0.9,
@@ -165,6 +186,26 @@ class _myLocationGoogleMapsPruebaState
   void generateImageMarker(int sizee) async {
     ///MARKERS PRINTFAST
 
+    Map<String, Map<String, String>> dyamictoMapStringMap(
+        Map<dynamic, dynamic> mapDynamic) {
+      Map<String, Map<String, String>> mapStriggMap = {};
+      mapDynamic.forEach((place, map) {
+        mapStriggMap[place.toString()] = Map<String, String>.from(map);
+      });
+      return mapStriggMap;
+    }
+
+    Map<dynamic, dynamic> dbMapDynamic = {};
+    Map<String, Map<String, String>> dbMapLocations = {};
+    Map<String, Map<String, String>> dbMapInventory = {};
+    dbMapDynamic = await getDB("ubicaciones");
+    dbMapLocations = dyamictoMapStringMap(dbMapDynamic);
+    dbMapDynamic = await getDB("inventarios");
+    dbMapInventory = dyamictoMapStringMap(dbMapDynamic);
+
+    print(dbMapInventory);
+    print(dbMapDynamic);
+
     final ByteData byteData =
         await rootBundle.load("assets/images/printfast_marker.png");
     Uint8List imageMarker = byteData.buffer.asUint8List();
@@ -225,61 +266,42 @@ class _myLocationGoogleMapsPruebaState
       return distance * 1000;
     }
 
-    Map<dynamic, dynamic> getInfoNearbyLocation(
+    Map<dynamic, dynamic> getDistancesSort(Map<dynamic, dynamic> mapDistances) {
+      List<MapEntry<dynamic, dynamic>> listaOrdenada =
+          mapDistances.entries.toList();
+      listaOrdenada.sort((a, b) => a.value.compareTo(b.value));
+      Map<dynamic, dynamic> mapaOrdenado = Map.fromEntries(listaOrdenada);
+      return mapaOrdenado;
+    }
+
+    Map<String, Map<String, String>> getNearbyLocationsInfo(
         Map<dynamic, dynamic> mapDistances,
-        Map<String, Map<String, String>> coordenadas) {
-      Map nearbyLocationMap = {};
-      ;
-      double nearbyLocation = 0;
-      String? nameNearbyLocation;
+        Map<String, Map<String, String>> dbMapLocations) {
+      Map<String, Map<String, String>> nearbyLocationsInfo = {};
 
       mapDistances.forEach((place, distance) {
-        if (nearbyLocation == 0 || nearbyLocation > distance) {
-          nearbyLocation = distance;
-          nameNearbyLocation = place;
-        }
+        dbMapLocations.forEach((placeinfo, map) {
+          if (place == placeinfo) {
+            Map<String, String> distanceInfo = {"distance": "$distance"};
+            map.addAll(distanceInfo);
+            nearbyLocationsInfo[place] = map;
+          }
+        });
       });
-
-      nearbyLocationMap["Location"] = nameNearbyLocation;
-      nearbyLocationMap["Distance"] = nearbyLocation.toString();
-      coordenadas.forEach((place, map) {
-        if (place == nameNearbyLocation) {
-          map.forEach((coordenadaType, value) {
-            nearbyLocationMap[coordenadaType] = value;
-          });
-        }
-      });
-
-      return nearbyLocationMap;
+      return nearbyLocationsInfo;
     }
 
     setState(() {
-      final coordenadas = {
-        'Arriba': {
-          'Lat': '2345.664891',
-          'Lon': '-10340.183905',
-        },
-        'Medio': {
-          'Lat': '2345.664802',
-          'Lon': '-10340.183883',
-        },
-        'Lado': {
-          'Lat': '2655.664763',
-          'Lon': '-10340.183966',
-        },
-        'Lejos': {
-          'Lat': '2245.664615',
-          'Lon': '-12400.183795',
-        },
-      };
-      final mapDistances = {};
-      Map nearbyLocation = {};
+
+      Map mapDistances = {};
+      Map<String, Map<String, String>> nearbyLocationsInfoSort = {};
+
       double userubicationLat = widget.userLat;
       double userubicationLon = widget.userLong;
-      int cont = 1;
+      int cont = 1; //ID
       predefinedMarkers
           .add(myMarkerCustomUser("0", widget.userLat, widget.userLong, "Tú"));
-      coordenadas.forEach((title, map) {
+      dbMapLocations.forEach((title, map) {
         //
         String lugar = title;
         double? lat;
@@ -297,14 +319,14 @@ class _myLocationGoogleMapsPruebaState
             .add(myMarkerCustom(cont.toString(), lat!, lon!, title));
         ++cont;
       }); //
-      print(
-          "COOOOOOOOOOOOOOOOOORDENADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAS!!!!!!!!!");
+
       print(mapDistances);
-      print(
-          "COOOOOOOOOOOOOOOOOORDENADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAS!!!!!!!!!");
-      nearbyLocation = getInfoNearbyLocation(mapDistances, coordenadas);
-      print(nearbyLocation);
-      print("ALMACENADOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO!!!!!!!!!");
+      mapDistances = getDistancesSort(mapDistances);
+      nearbyLocationsInfoSort =
+          getNearbyLocationsInfo(mapDistances, dbMapLocations);
+
+
+
     });
   }
 

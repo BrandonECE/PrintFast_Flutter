@@ -37,6 +37,11 @@ dependencies:
   cupertino_icons: ^1.0.2
   google_maps_flutter: ^2.5.0
   geolocator: ^10.0.1
+  firebase_core: ^2.16.0
+  cloud_firestore: ^4.9.2
+  file_picker: ^5.5.0
+  pdf: ^3.10.4
+  pdf_render: ^1.4.0
 
 dev_dependencies:
   flutter_test:

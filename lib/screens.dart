@@ -16,9 +16,9 @@ class myScreens extends StatefulWidget {
 }
 
 class _myScreensState extends State<myScreens> {
-  int _indexscreen = 2;
+  int _indexscreen = 3;
   int _indexscreeNavigationBar = 0;
-  int _indexAntes = 2;
+  int _indexAntes = 3;
   late double userLat = 0;
   late double userLong = 0;
 
