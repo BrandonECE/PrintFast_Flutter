@@ -1,14 +1,15 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:pdf_render/pdf_render_widgets.dart';
+// import 'package:pdf_render/pdf_render_widgets.dart';
 import 'package:print_fast/dirScreens/shoppingitemproduct.dart';
 import 'history.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:pdf_render/pdf_render.dart';
-import 'package:pdf/pdf.dart' as pdfLib;
+// import 'package:pdf/pdf.dart' as pdfLib;
 
+// ignore: must_be_immutable
 class myShopping extends StatelessWidget {
   myShopping({super.key, required this.chIndexButtonLocation});
   VoidCallback chIndexButtonLocation;
@@ -29,6 +30,7 @@ class myShopping extends StatelessWidget {
   }
 }
 
+// ignore: must_be_immutable
 class myAppBarShopping extends StatelessWidget {
   ///PRUEBA
   myAppBarShopping({super.key, required this.chindex});
@@ -77,6 +79,7 @@ class myAppBarShopping extends StatelessWidget {
   }
 }
 
+// ignore: must_be_immutable
 class containerMyShopping extends StatefulWidget {
   containerMyShopping({super.key, required this.chIndexButtonLocation});
   VoidCallback chIndexButtonLocation;
@@ -86,7 +89,6 @@ class containerMyShopping extends StatefulWidget {
 }
 
 class _containerMyShoppingState extends State<containerMyShopping> {
-
   List<myItemProduct> MyShoppingItems = [
     myItemProduct("Cartulina", 18, 0),
     myItemProduct("Folders", 12, 0),
@@ -102,17 +104,14 @@ class _containerMyShoppingState extends State<containerMyShopping> {
 
   @override
   Widget build(BuildContext context) {
-
-    if (result != null) productosSeleccionados.addAll({"Impresion": "1"});
-    else productosSeleccionados.addAll({"Impresion": "0"});
+    if (result != null) {
+      productosSeleccionados.addAll({"Impresion": "1"});
+    } else
+      {productosSeleccionados.addAll({"Impresion": "0"});}
 
     for (var items in MyShoppingItems) {
       productosSeleccionados[items.name] = items.howMany.toString();
     }
-
-    // print("PRUEBAAAAAAA");
-    // print(productosSeleccionados);
-    // print("PRUEBAAAAAAA");
 
     double sumaTotal = 0;
     for (var product in MyShoppingItems) {
@@ -314,6 +313,7 @@ class _containerMyShoppingState extends State<containerMyShopping> {
   }
 }
 
+// ignore: must_be_immutable
 class sectionContainerMyShoppingCopy extends StatelessWidget {
   sectionContainerMyShoppingCopy({super.key, required this.callGetFile});
   VoidCallback callGetFile;
@@ -410,6 +410,7 @@ class sectionContainerMyShoppingCopy extends StatelessWidget {
   }
 }
 
+// ignore: must_be_immutable
 class sectionContainerMyShoppingCopyCheck extends StatelessWidget {
   sectionContainerMyShoppingCopyCheck(
       {super.key,
@@ -532,6 +533,7 @@ class sectionContainerMyShoppingCopyCheck extends StatelessWidget {
   }
 }
 
+// ignore: must_be_immutable
 class sectionContainerMyShoppingInfoPrice extends StatelessWidget {
   sectionContainerMyShoppingInfoPrice({super.key, required this.sumaTotal});
   double sumaTotal;
@@ -550,6 +552,7 @@ class sectionContainerMyShoppingInfoPrice extends StatelessWidget {
   }
 }
 
+// ignore: must_be_immutable
 class sectionContainerMyShoppingInfoButton extends StatelessWidget {
   sectionContainerMyShoppingInfoButton(
       {super.key, required this.chIndexButtonLocation});
@@ -560,7 +563,7 @@ class sectionContainerMyShoppingInfoButton extends StatelessWidget {
       onPressed: chIndexButtonLocation,
       // ignore: sort_child_properties_last
       child: const Text(
-        "Comprar",
+        "Localizar",
         style: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.bold,
@@ -578,6 +581,7 @@ class sectionContainerMyShoppingInfoButton extends StatelessWidget {
   }
 }
 
+// ignore: camel_case_types
 class sectionContainerMyShoppingInfoButtonDisabled extends StatelessWidget {
   const sectionContainerMyShoppingInfoButtonDisabled({super.key});
 
@@ -587,7 +591,7 @@ class sectionContainerMyShoppingInfoButtonDisabled extends StatelessWidget {
       onPressed: () {},
       // ignore: sort_child_properties_last
       child: const Text(
-        "Comprar",
+        "Localizar",
         style: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.bold,
@@ -605,6 +609,7 @@ class sectionContainerMyShoppingInfoButtonDisabled extends StatelessWidget {
   }
 }
 
+// ignore: must_be_immutable
 class sectionContainerMyShoppingInfo extends StatelessWidget {
   sectionContainerMyShoppingInfo(
       {super.key,
@@ -641,6 +646,7 @@ class sectionContainerMyShoppingInfo extends StatelessWidget {
   }
 }
 
+// ignore: camel_case_types
 class sectionContainerMyShoppingItemsBuilder extends StatelessWidget {
   sectionContainerMyShoppingItemsBuilder({super.key});
 
@@ -653,6 +659,7 @@ class sectionContainerMyShoppingItemsBuilder extends StatelessWidget {
       myItemProduct("Plumas", 15, 0),
     ];
 
+    // ignore: unused_local_variable
     double suma = 0;
     for (var product in MyShoppingItems) {
       suma = product.howMany * product.price;
@@ -680,6 +687,7 @@ class sectionContainerMyShoppingItemsBuilder extends StatelessWidget {
   }
 }
 
+// ignore: must_be_immutable
 class sectionContainerMyShoppingWidgetItem extends StatelessWidget {
   sectionContainerMyShoppingWidgetItem(
       {super.key,

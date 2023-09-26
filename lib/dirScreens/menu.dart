@@ -1,7 +1,7 @@
-
 import 'package:flutter/material.dart';
-import '../screens.dart';
+// import '../screens.dart';
 
+// ignore: must_be_immutable
 class myMenu extends StatelessWidget {
   myMenu(
       {super.key, required this.chIndexShopping, required this.chIndexHistory});
@@ -22,11 +22,19 @@ class myMenu extends StatelessWidget {
             containerMenuOptions(
                 chIndexShopping: chIndexShopping,
                 chIndexHistory: chIndexHistory),
-            titlesContainer(title: "Novedades", icono: Icons.star_rounded, sizee: 18, padd: 5),
+            titlesContainer(
+                title: "Novedades",
+                icono: Icons.star_rounded,
+                sizee: 18,
+                padd: 5),
             // titlesContainerMenu("Novedades"),
             const myNews(),
             titlesContainer(
-                title: "Orden activa", icono: Icons.arrow_drop_down, sizee: 25, padd: 0,),
+              title: "Orden activa",
+              icono: Icons.arrow_drop_down,
+              sizee: 25,
+              padd: 0,
+            ),
             // titlesContainerMenu("Orden Activa"),
             sectionContainerMyActiveOrders()
           ],
@@ -87,6 +95,7 @@ class myAppBarMenu extends StatelessWidget {
   }
 }
 
+// ignore: must_be_immutable
 class titlesContainerMenu extends StatelessWidget {
   titlesContainerMenu(this.title);
   String title;
@@ -107,6 +116,7 @@ class titlesContainerMenu extends StatelessWidget {
   }
 }
 
+// ignore: must_be_immutable
 class containerMenuOptions extends StatelessWidget {
   containerMenuOptions(
       {super.key, required this.chIndexShopping, required this.chIndexHistory});
@@ -135,6 +145,7 @@ class containerMenuOptions extends StatelessWidget {
   }
 }
 
+// ignore: must_be_immutable
 class menuOptions extends StatelessWidget {
   menuOptions(
       {required this.icon,
@@ -147,32 +158,40 @@ class menuOptions extends StatelessWidget {
   String nameOption;
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: ChIndex,
-      child: Container(
-        margin: EdgeInsets.only(top: 15),
-        decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary,
-            borderRadius: BorderRadius.circular(20)),
-        width: MediaQuery.of(context).size.width * 0.4,
-        height: 100,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Center(
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 35,
-              ),
+    return Container(
+      margin: const EdgeInsets.only(top: 15),
+      child: Material(
+        child: Ink(
+          decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary,
+              borderRadius: BorderRadius.circular(20)),
+          width: MediaQuery.of(context).size.width * 0.4,
+          height: 100,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: () async {
+              await Future.delayed(const Duration(milliseconds: 250));
+              ChIndex.call();
+            },
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Center(
+                  child: Icon(
+                    icon,
+                    color: Colors.white,
+                    size: 35,
+                  ),
+                ),
+                Container(
+                    margin: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      nameOption,
+                      style: const TextStyle(color: Colors.white, fontSize: 16),
+                    ))
+              ],
             ),
-            Container(
-                margin: const EdgeInsets.only(top: 6),
-                child: Text(
-                  nameOption,
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
-                ))
-          ],
+          ),
         ),
       ),
     );
@@ -312,6 +331,7 @@ class sectionContainerMyActiveOrders extends StatelessWidget {
   }
 }
 
+// ignore: must_be_immutable
 class titlesContainer extends StatelessWidget {
   titlesContainer(
       {super.key,

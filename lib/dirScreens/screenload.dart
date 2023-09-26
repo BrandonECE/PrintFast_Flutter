@@ -27,6 +27,7 @@ class myLoadSimbol extends StatelessWidget {
   }
 }
 
+// ignore: must_be_immutable
 class myAppBarScreenLoad extends StatelessWidget {
   myAppBarScreenLoad({super.key, required this.chindex, required this.icon});
   VoidCallback chindex;
@@ -49,7 +50,7 @@ class myAppBarScreenLoad extends StatelessWidget {
                       fontSize: 20),
                 ),
                 Padding(
-                  padding: EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(8.0),
                   child: Icon(
                     icon,
                     color: Colors.white,
@@ -69,6 +70,6 @@ class myAppBarScreenLoad extends StatelessWidget {
         ),
       ),
     );
-    ;
+    
   }
 }

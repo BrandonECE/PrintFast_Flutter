@@ -34,6 +34,7 @@ dependencies:
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
+  flutter_native_splash: ^2.3.2
   cupertino_icons: ^1.0.2
   google_maps_flutter: ^2.5.0
   geolocator: ^10.0.1
@@ -54,6 +55,10 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^2.0.0
 
+flutter_native_splash:
+  fullscreen: true
+  color: "#ab47bc"
+  image: "assets/images/printfast_splashscreen.png"
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 

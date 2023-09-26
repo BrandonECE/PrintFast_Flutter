@@ -16,14 +16,17 @@ class myScreens extends StatefulWidget {
 }
 
 class _myScreensState extends State<myScreens> {
-  int _indexscreen = 3;
+  int _indexscreen = 2;
+  int _indexAntes = 2;
   int _indexscreeNavigationBar = 0;
-  int _indexAntes = 3;
   late double userLat = 0;
   late double userLong = 0;
 
   void changeindex(int newIndex) {
+  
     setState(() {
+     
+
       if (_indexAntes != 5) {
         ///El index 5 es el de los settings, mientras el index no sea ese (5) el NavigationBarBottom tendra que estar con el icono home como el presionado
         _indexscreeNavigationBar = 0;

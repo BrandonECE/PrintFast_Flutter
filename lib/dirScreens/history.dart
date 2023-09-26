@@ -17,6 +17,7 @@ class myHistory extends StatelessWidget {
   }
 }
 
+// ignore: must_be_immutable
 class myAppBarHistory extends StatelessWidget {
   ///PRUEBA
 
@@ -80,6 +81,7 @@ class containerMyHistory extends StatelessWidget {
   }
 }
 
+// ignore: must_be_immutable
 class titlesContainer extends StatelessWidget {
   titlesContainer(this.title);
   String title;
@@ -108,6 +110,7 @@ class titlesContainer extends StatelessWidget {
   }
 }
 
+// ignore: must_be_immutable
 class sectionContainerMyHistoryOrder extends StatelessWidget {
   sectionContainerMyHistoryOrder({super.key, required this.fecha});
   String fecha;
