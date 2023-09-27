@@ -102,84 +102,93 @@ class mySettings extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Text(
-                              "Detalles",
-                              style: TextStyle(
-                                  color: Theme.of(context).colorScheme.inverseSurface,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 20),
-                            ),
-                            const Padding(
-                              padding: EdgeInsets.only(left: 2),
-                              child: Icon(Icons.arrow_drop_down),
-                            )
-                          ],
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 10, top: 5),
+                          child: Row(
+                            children: [
+                              Text(
+                                "Detalles",
+                                style: TextStyle(
+                                    color: Theme.of(context).colorScheme.inverseSurface,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 20),
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.only(left: 2),
+                                child: Icon(Icons.arrow_drop_down),
+                              )
+                            ],
+                          ),
                         ),
                        
-                        myDetailsUser(title: "Usuario", value: "Brandon Cantu",),
+
+                        myDetailsUser(title: "Nombre", value: "Brandon Cantu",),
                         myDetailsUser(title: "Matricula", value: "1974238",),
                         myDetailsUser(title: "E-mail", value: "*****@gmail.com",),
-                        myDetailsUser(title: "Telefono", value: "********3805",)
-                      
+                        myDetailsUser(title: "Telefono", value: "********3805",),
+                        const SizedBox(
+                          height: 10,
+                        )
                       ],
                     ),
                   ),
                 ],
               ),
             )
-            ,Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 20),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.all(Radius.circular(20)),
-                      boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey.withOpacity(0.5),
-                                  spreadRadius: 1,
-                                  blurRadius: 1,
-                                  offset: const Offset(0, 0),
-                                ),
-                              ],),
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        elevation: 0,
-                        fixedSize: Size(MediaQuery.of(context).size.width * 0.83, 60),
-                        backgroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20.0)
-                        )
+            ,Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 20),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: const BorderRadius.all(Radius.circular(20)),
+                        boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.5),
+                                    spreadRadius: 1,
+                                    blurRadius: 1,
+                                    offset: const Offset(0, 0),
+                                  ),
+                                ],),
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          elevation: 0,
+                          fixedSize: Size(MediaQuery.of(context).size.width * 0.7, 60),
+                          backgroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20.0)
+                          )
+                        ),
+                      onPressed: (){}, 
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                                "Cerrar sesión",
+                                style: TextStyle(
+                                    color: Colors.redAccent,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18),
+                              ),
+                          Padding(
+                            padding: EdgeInsets.only(left: 8),
+                            child: Icon(Icons.logout, color: Colors.redAccent,
+                            size: 22,),
+                          )
+                        ],
                       ),
-                    onPressed: (){}, 
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                              "Cerrar sesión",
-                              style: TextStyle(
-                                  color: Colors.redAccent,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18),
-                            ),
-                        Padding(
-                          padding: EdgeInsets.only(left: 8),
-                          child: Icon(Icons.logout, color: Colors.redAccent,
-                          size: 22,),
-                        )
-                      ],
-                    ),
+                      ),
                     ),
                   ),
-                ),
-                Text(
-                            "Universidad Autónoma de Nuevo León",
-                            style: TextStyle(
-                                color: Colors.grey.shade400,
-                                fontSize: 14),)
-              ],
+                  Text(
+                              "Universidad Autónoma de Nuevo León",
+                              style: TextStyle(
+                                  color: Colors.grey.shade400,
+                                  fontSize: 12),)
+                ],
+              ),
             )
           ],
         ),
@@ -208,14 +217,14 @@ class myDetailsUser extends StatelessWidget {
                 style: TextStyle(
                     color: Theme.of(context).colorScheme.inverseSurface,
                     fontWeight: FontWeight.bold,
-                    fontSize: 18),
+                    fontSize: 16),
               ),
               Text(
                 value,
                 style: TextStyle(
                     color: Colors.grey.shade600,
                     fontWeight: FontWeight.bold,
-                    fontSize: 16),
+                    fontSize: 14),
               ),
             ],
           ),
@@ -231,7 +240,7 @@ class myDetailsUser extends StatelessWidget {
                     )),
                 child: const Text(
                   "Editar",
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: Colors.white, fontSize: 12),
                 )),
           )
         ],

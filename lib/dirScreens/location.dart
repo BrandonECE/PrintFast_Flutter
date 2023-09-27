@@ -196,10 +196,9 @@ class _myLocationState extends State<myLocation> {
         _updateCameraPosition();
       }
 
-      if(indexPlaceLocationlimitEnd == 0){
+      if (indexPlaceLocationlimitEnd == 0) {
         indexPlaceLocationlimitEnd = 1;
       }
-
     });
   }
 
@@ -259,19 +258,15 @@ class _myLocationState extends State<myLocation> {
             .toStringAsFixed(1)));
 
     if (placeLocation[indexPlaceLocation].distance < 1000) {
-      distanciacon =
-          "Distancia: $distance m";
+      distanciacon = "Distancia: $distance m";
     } else {
-      distanciacon =
-          "Distancia: ${(distance / 1000).toStringAsFixed(1)} Km";
+      distanciacon = "Distancia: ${(distance / 1000).toStringAsFixed(1)} Km";
     }
 
     if (time < 60) {
-      tiempocon =
-          "Tiempo: $time Minutos";
+      tiempocon = "Tiempo: $time Minutos";
     } else {
-      tiempocon =
-          "Tiempo: ${(time / 60).toStringAsFixed(1)} Horas";
+      tiempocon = "Tiempo: ${(time / 60).toStringAsFixed(1)} Horas";
     }
 
     if (indexPlaceLocation == 0) {
@@ -486,7 +481,6 @@ class myLocationsButton extends StatelessWidget {
         ),
       ),
     );
-    
   }
 }
 
@@ -546,5 +540,3 @@ class myLocationMsjRecomended extends StatelessWidget {
     );
   }
 }
-
-

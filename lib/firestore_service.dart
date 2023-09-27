@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 FirebaseFirestore db = FirebaseFirestore.instance;
 // String nameColection = "ubicaciones";
 
+
 Future<Map> getDB(String nameColection) async {
   Map? dbMap;
   CollectionReference collectionReferenceLocation =
