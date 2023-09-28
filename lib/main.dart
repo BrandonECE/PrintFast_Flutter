@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'PrintFast',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.purpleAccent, primary: const Color.fromRGBO(171, 71, 188, 1)),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.purpleAccent, primary: Colors.purple.shade400),
         useMaterial3: true,
       ),
       home: const myScreens(),
