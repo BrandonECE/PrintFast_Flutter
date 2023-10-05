@@ -4,6 +4,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 // import 'package:pdf_render/pdf_render_widgets.dart';
 import 'package:print_fast/dirScreens/shoppingitemproduct.dart';
+// ignore: unused_import
+import 'package:print_fast/firestore_service.dart';
 import 'history.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:pdf_render/pdf_render.dart';
@@ -12,7 +14,7 @@ import 'package:pdf_render/pdf_render.dart';
 // ignore: must_be_immutable
 class myShopping extends StatelessWidget {
   myShopping({super.key, required this.chIndexButtonLocation});
-  VoidCallback chIndexButtonLocation;
+  Function(Map) chIndexButtonLocation;
 
   @override
   Widget build(BuildContext context) {
@@ -82,7 +84,7 @@ class myAppBarShopping extends StatelessWidget {
 // ignore: must_be_immutable
 class containerMyShopping extends StatefulWidget {
   containerMyShopping({super.key, required this.chIndexButtonLocation});
-  VoidCallback chIndexButtonLocation;
+  Function(Map) chIndexButtonLocation;
 
   @override
   State<containerMyShopping> createState() => _containerMyShoppingState();
@@ -90,7 +92,7 @@ class containerMyShopping extends StatefulWidget {
 
 class _containerMyShoppingState extends State<containerMyShopping> {
   List<myItemProduct> MyShoppingItems = [
-    myItemProduct("Cartulina", 18, 0),
+    myItemProduct("Cartulinas", 18, 0),
     myItemProduct("Folders", 12, 0),
     myItemProduct("Hojas", 1, 0),
     myItemProduct("Plumas", 15, 0),
@@ -105,9 +107,10 @@ class _containerMyShoppingState extends State<containerMyShopping> {
   @override
   Widget build(BuildContext context) {
     if (result != null) {
-      productosSeleccionados.addAll({"Impresion": "1"});
-    } else
-      {productosSeleccionados.addAll({"Impresion": "0"});}
+      productosSeleccionados.addAll({"Impresiones": "1"});
+    } else {
+      productosSeleccionados.addAll({"Impresiones": "0"});
+    }
 
     for (var items in MyShoppingItems) {
       productosSeleccionados[items.name] = items.howMany.toString();
@@ -307,7 +310,8 @@ class _containerMyShoppingState extends State<containerMyShopping> {
         ),
         sectionContainerMyShoppingInfo(
             chIndexButtonLocation: widget.chIndexButtonLocation,
-            sumaTotal: sumaTotal),
+            sumaTotal: sumaTotal,
+            productosSeleccionados: productosSeleccionados),
       ],
     );
   }
@@ -555,12 +559,18 @@ class sectionContainerMyShoppingInfoPrice extends StatelessWidget {
 // ignore: must_be_immutable
 class sectionContainerMyShoppingInfoButton extends StatelessWidget {
   sectionContainerMyShoppingInfoButton(
-      {super.key, required this.chIndexButtonLocation});
-  VoidCallback chIndexButtonLocation;
+      {super.key,
+      required this.chIndexButtonLocation,
+      required this.productosSeleccionados});
+  Function(Map) chIndexButtonLocation;
+  Map productosSeleccionados;
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
-      onPressed: chIndexButtonLocation,
+      onPressed: () {
+        // await updateDB(productosSeleccionados);
+        chIndexButtonLocation(productosSeleccionados);
+      },
       // ignore: sort_child_properties_last
       child: const Text(
         "Localizar",
@@ -614,8 +624,10 @@ class sectionContainerMyShoppingInfo extends StatelessWidget {
   sectionContainerMyShoppingInfo(
       {super.key,
       required this.chIndexButtonLocation,
-      required this.sumaTotal});
-  VoidCallback chIndexButtonLocation;
+      required this.sumaTotal,
+      required this.productosSeleccionados});
+  Function(Map) chIndexButtonLocation;
+  Map productosSeleccionados;
   int ButtonWidgetIndex = 0;
   double sumaTotal;
 
@@ -628,7 +640,8 @@ class sectionContainerMyShoppingInfo extends StatelessWidget {
     List<Widget> buttons = [
       const sectionContainerMyShoppingInfoButtonDisabled(),
       sectionContainerMyShoppingInfoButton(
-          chIndexButtonLocation: chIndexButtonLocation)
+          chIndexButtonLocation: chIndexButtonLocation,
+          productosSeleccionados: productosSeleccionados)
     ];
 
     return Container(
@@ -647,45 +660,6 @@ class sectionContainerMyShoppingInfo extends StatelessWidget {
 }
 
 // ignore: camel_case_types
-class sectionContainerMyShoppingItemsBuilder extends StatelessWidget {
-  sectionContainerMyShoppingItemsBuilder({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    List<myItemProduct> MyShoppingItems = [
-      myItemProduct("Cartulina", 18, 0),
-      myItemProduct("Folders", 12, 0),
-      myItemProduct("Hojas", 2, 0),
-      myItemProduct("Plumas", 15, 0),
-    ];
-
-    // ignore: unused_local_variable
-    double suma = 0;
-    for (var product in MyShoppingItems) {
-      suma = product.howMany * product.price;
-    }
-
-    return Expanded(
-      child: Container(
-          margin: const EdgeInsets.only(bottom: 20),
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: const BorderRadius.all(Radius.circular(20))),
-          width: MediaQuery.of(context).size.width * 0.83,
-          child: ListView.builder(
-            itemCount: MyShoppingItems.length,
-            itemBuilder: (context, index) {
-              return sectionContainerMyShoppingWidgetItem(
-                name: MyShoppingItems[index].name,
-                price: MyShoppingItems[index].price,
-                howMany: MyShoppingItems[index].howMany,
-              );
-            },
-          )),
-    );
-  }
-}
 
 // ignore: must_be_immutable
 class sectionContainerMyShoppingWidgetItem extends StatelessWidget {

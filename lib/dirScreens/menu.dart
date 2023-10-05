@@ -4,9 +4,13 @@ import 'package:flutter/material.dart';
 // ignore: must_be_immutable
 class myMenu extends StatelessWidget {
   myMenu(
-      {super.key, required this.chIndexShopping, required this.chIndexHistory});
+      {super.key,
+      required this.chIndexShopping,
+      required this.chIndexHistory,
+      required this.name});
   VoidCallback chIndexShopping;
   VoidCallback chIndexHistory;
+  String name;
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -18,7 +22,7 @@ class myMenu extends StatelessWidget {
                 topLeft: Radius.circular(20), topRight: Radius.circular(20))),
         child: Column(
           children: [
-            const briefGreeting(),
+            briefGreeting(name: name),
             containerMenuOptions(
                 chIndexShopping: chIndexShopping,
                 chIndexHistory: chIndexHistory),
@@ -198,9 +202,10 @@ class menuOptions extends StatelessWidget {
   }
 }
 
+// ignore: must_be_immutable
 class briefGreeting extends StatelessWidget {
-  const briefGreeting({super.key});
-
+  briefGreeting({super.key, required this.name});
+  String name;
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -223,19 +228,19 @@ class briefGreeting extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      child: const Row(
+                      child: Row(
                         children: [
-                          Text(
+                          const Text(
                             "¡Hola, ",
                             style: TextStyle(
                                 fontSize: 20, fontWeight: FontWeight.w500),
                           ),
                           Text(
-                            "Brandon",
-                            style: TextStyle(
+                            name,
+                            style: const TextStyle(
                                 fontSize: 20, fontWeight: FontWeight.bold),
                           ),
-                          Text(
+                          const Text(
                             "!",
                             style: TextStyle(fontSize: 20),
                           ),
@@ -245,7 +250,7 @@ class briefGreeting extends StatelessWidget {
                     Container(
                         margin: const EdgeInsets.only(top: 2.5),
                         child: const Text(
-                          "Es un gusto tenerte con nosotros",
+                          "Es un gusto poderte atender",
                           style: TextStyle(fontSize: 14),
                         ))
                   ],
@@ -287,8 +292,7 @@ class sectionContainerMyActiveOrders extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     List<Widget> orderActiveSectionContainer = [
-      Expanded(
-          child: Center(
+      Center(
         child: Container(
           child: const Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -305,13 +309,11 @@ class sectionContainerMyActiveOrders extends StatelessWidget {
             ],
           ),
         ),
-      )),
-      Expanded(
-        child: Container(
-          decoration: BoxDecoration(
-              color: Colors.white, borderRadius: BorderRadius.circular(10)),
-          width: MediaQuery.of(context).size.width,
-        ),
+      ),
+      Container(
+        decoration: BoxDecoration(
+            color: Colors.white, borderRadius: BorderRadius.circular(10)),
+        width: MediaQuery.of(context).size.width,
       ),
     ];
 
@@ -348,7 +350,6 @@ class titlesContainer extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(top: 20, bottom: 20),
       width: MediaQuery.of(context).size.width * 0.83,
-      // color: Colors.amber,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'screens.dart';
 
-
 ///Importaciones de FireBase (Base de datos)
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -22,7 +21,8 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'PrintFast',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.purpleAccent, primary: Colors.purple.shade400),
+        colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.purpleAccent, primary: Colors.purple.shade400),
         useMaterial3: true,
       ),
       home: const myScreens(),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:print_fast/dirScreens/screenload.dart';
 import 'package:print_fast/dirScreens/login.dart';
 import 'package:print_fast/dirScreens/register.dart';
+import 'package:print_fast/firestore_service.dart';
 import 'dirScreens/location.dart';
 import 'dirScreens/menu.dart';
 import 'dirScreens/history.dart';
@@ -16,17 +17,21 @@ class myScreens extends StatefulWidget {
 }
 
 class _myScreensState extends State<myScreens> {
-  int _indexscreen = 2;
-  int _indexAntes = 2;
+  int _indexscreen = 0;
+  int _indexAntes = 0;
   int _indexscreeNavigationBar = 0;
+  int _indexTypeNavigationBar = 0;
   late double userLat = 0;
   late double userLong = 0;
+  Map productosSeleccionados = {};
+
+  String name = "";
+  String matricula = "";
+  String email = "";
+  String telefono = "";
 
   void changeindex(int newIndex) {
-  
     setState(() {
-     
-
       if (_indexAntes != 5) {
         ///El index 5 es el de los settings, mientras el index no sea ese (5) el NavigationBarBottom tendra que estar con el icono home como el presionado
         _indexscreeNavigationBar = 0;
@@ -59,8 +64,7 @@ class _myScreensState extends State<myScreens> {
     return await Geolocator.getCurrentPosition();
   }
 
-  void PrintLatLong() async {
-    changeindex(7);
+  void changeindexloadtoLocation() async {
     Position position;
     position = await determinatePosition();
     userLat = await position.latitude;
@@ -70,7 +74,7 @@ class _myScreensState extends State<myScreens> {
     changeindex(6);
   }
 
-  void changeindexGeocalizacion() async {
+  void locationpermission() async {
     LocationPermission permissionCheck;
     permissionCheck = await Geolocator.checkPermission();
     if (permissionCheck == LocationPermission.denied) {
@@ -79,20 +83,75 @@ class _myScreensState extends State<myScreens> {
       if (permission == LocationPermission.always ||
           permission == LocationPermission.unableToDetermine ||
           permission == LocationPermission.whileInUse) {
-        PrintLatLong();
+        changeindex(7);
+        print(productosSeleccionados);
+        await updateDB(productosSeleccionados);
+        changeindexloadtoLocation();
       }
     } else if (permissionCheck == LocationPermission.always ||
         permissionCheck == LocationPermission.unableToDetermine ||
         permissionCheck == LocationPermission.whileInUse) {
-      PrintLatLong();
+      changeindex(7);
+      print(productosSeleccionados);
+      await updateDB(productosSeleccionados);
+      changeindexloadtoLocation();
     }
+  }
+
+  void changeindexloadtoShopping() async {
+    changeindex(8);
+    await Future.delayed(const Duration(seconds: 2));
+    changeindex(3);
+  }
+
+  void changeIndexLogin() {
+    _indexscreeNavigationBar = 0;
+    _indexscreen = 2;
+    _indexAntes = 2;
+    setState(() {});
+  }
+
+  void changeIndexLogout() {
+    _indexscreen = 0;
+    _indexAntes = 0;
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
+    // ignore: prefer_function_declarations_over_variables
+    Function(Map) getProductosSeleccionados = (products) {
+      productosSeleccionados = products;
+      locationpermission();
+    };
+
+    // ignore: prefer_function_declarations_over_variables
+    Function(Map) getUserData = (infoUser) {
+      infoUser.forEach((info, value) {
+        if (info == "Nombre") {
+          name = value;
+        }
+        if (info == "Telefono") {
+          telefono = value;
+        }
+        if (info == "Matricula") {
+          matricula = value;
+        }
+        if (info == "E-mail") {
+          email = value;
+        }
+      });
+    };
+
+    if (_indexscreen > 1 && _indexAntes > 1) {
+      _indexTypeNavigationBar = 1;
+    } else {
+      _indexTypeNavigationBar = 0;
+    }
+
     List<Widget> screensAppbar = [
-      const myLogin(),
-      const myRegister(),
+      const myAppBarLogin(),
+      myAppBarRegister(chIndexRegisterToLogin: () => changeindex(0)),
       const myAppBarMenu(),
       myAppBarShopping(chindex: () => changeindex(2)),
       myAppBarHistory(
@@ -105,34 +164,40 @@ class _myScreensState extends State<myScreens> {
       myAppBarScreenLoad(
         chindex: () => changeindex(2),
         icon: Icons.location_on_rounded,
-      )
+      ),
     ];
 
     List<Widget> screensBody = [
-      const myLogin(),
-      const myRegister(),
+      myLogin(
+          chIndexMenu: () => changeIndexLogin(),
+          chIndexRegister: () => changeindex(1),
+          functionInfoUser: getUserData),
+      myRegister(chIndexLogin: () => changeindex(0)),
       myMenu(
         chIndexShopping: () => changeindex(3),
         chIndexHistory: () => changeindex(4),
+        name: name,
       ),
-      myShopping(chIndexButtonLocation: () => changeindexGeocalizacion()),
+      myShopping(chIndexButtonLocation: getProductosSeleccionados),
       myHistory(),
-      mySettings(),
+      mySettings(chIndexMenu: () => changeIndexLogout(), name: name, telefono: telefono, email: email, matricula: matricula),
       myLocation(
-        userLat: userLat,
-        userLong: userLong,
-      ),
-      const myScreenLoad()
+          userLat: userLat,
+          userLong: userLong,
+          productosSeleccionados: productosSeleccionados),
+      const myScreenLoad(),
     ];
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.primary,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        flexibleSpace: SafeArea(child: screensAppbar[_indexscreen]),
+    List<Widget> typesbottombar = [
+      Container(
+        height: 60,
+        alignment: Alignment.center,
+        child: const Text(
+          "Universidad Autónoma de Nuevo León",
+          style: TextStyle(color: Colors.white, fontSize: 12),
+        ),
       ),
-      body: screensBody[_indexscreen],
-      bottomNavigationBar: BottomNavigationBar(
+      BottomNavigationBar(
           currentIndex: _indexscreeNavigationBar,
           onTap: (int index) {
             changeindexNavigationBar(index);
@@ -145,6 +210,15 @@ class _myScreensState extends State<myScreens> {
             BottomNavigationBarItem(
                 icon: Icon(Icons.settings), label: "Opciones"),
           ]),
-    );
+    ];
+
+    return Scaffold(
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        appBar: AppBar(
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          flexibleSpace: SafeArea(child: screensAppbar[_indexscreen]),
+        ),
+        body: screensBody[_indexscreen],
+        bottomNavigationBar: typesbottombar[_indexTypeNavigationBar]);
   }
 }

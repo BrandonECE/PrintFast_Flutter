@@ -1,3 +1,5 @@
+// ignore_for_file: unused_local_variable
+
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,9 +11,14 @@ import 'dart:math';
 
 // ignore: must_be_immutable
 class myLocation extends StatefulWidget {
-  myLocation({super.key, required this.userLat, required this.userLong});
+  myLocation(
+      {super.key,
+      required this.userLat,
+      required this.userLong,
+      required this.productosSeleccionados});
   double userLat;
   double userLong;
+  Map productosSeleccionados;
 
   @override
   State<myLocation> createState() => _myLocationState();
@@ -20,6 +27,7 @@ class myLocation extends StatefulWidget {
 class _myLocationState extends State<myLocation> {
   List<Marker> predefinedMarkers = [];
   Map mapDistances = {};
+  Map mapTimeOrdersWaitingAditionTimeDistance = {};
   double placeLat = 0;
   double placeLong = 0;
   Map<String, Map<String, String>> nearbyLocationsInfoSort = {};
@@ -30,6 +38,7 @@ class _myLocationState extends State<myLocation> {
   int indexPlaceLocationlimitStart = 0;
   int indexPlaceLocationlimitEnd = 0;
   late Widget msjRecomended;
+  int indexIsThereAnyPlace = 0;
 
   void generateImageMarker(int sizee) async {
     ///MARKERS PRINTFAST
@@ -45,8 +54,10 @@ class _myLocationState extends State<myLocation> {
 
     Map<dynamic, dynamic> dbMapDynamic = {};
     Map<String, Map<String, String>> dbMapLocations = {};
-    // ignore: unused_local_variable
+    
     Map<String, Map<String, String>> dbMapInventory = {};
+    Map dbMapUsers = {};
+    Map MapUser = {};
 
     dbMapDynamic = await getDB("ubicaciones");
     dbMapLocations = dyamictoMapStringMap(dbMapDynamic);
@@ -123,19 +134,51 @@ class _myLocationState extends State<myLocation> {
 
     Map<String, Map<String, String>> getNearbyLocationsInfo(
         Map<dynamic, dynamic> mapDistances,
-        Map<String, Map<String, String>> dbMapLocations) {
+        Map<String, Map<String, String>> dbMapLocations,
+        Map mapTimeOrdersWaitingAditionTimeDistance) {
       Map<String, Map<String, String>> nearbyLocationsInfo = {};
 
-      mapDistances.forEach((place, distance) {
-        dbMapLocations.forEach((placeinfo, map) {
-          if (place == placeinfo) {
-            Map<String, String> distanceInfo = {"Distance": "$distance"};
-            map.addAll(distanceInfo);
-            nearbyLocationsInfo[place] = map;
+      mapTimeOrdersWaitingAditionTimeDistance.forEach((placeAdit, timeTotal) {
+        mapDistances.forEach((place, distance) {
+            if(placeAdit == place){
+                dbMapLocations.forEach((placeinfo, map) {
+                if (place == placeinfo) {
+                  Map<String, String> distanceInfo = {"Distance": "$distance"};
+                  map.addAll(distanceInfo);
+                  nearbyLocationsInfo[place] = map;
+                }
+              });
+
+            }
+        });
+
+        
+      });
+      return nearbyLocationsInfo;
+    }
+
+    Map getMapTimeOrdersWaitingAditionTimeDistances(
+        Map mapLocations, Map mapDistancesSort) {
+      Map ordersWaiting = {};
+      int minutetimeWaitperOrder = 1;
+      int distancetimeWaitperOrder = 1 * 10;
+      mapLocations.forEach((place, map) {
+        mapDistances.forEach((placeDistance, distance) {
+          if (placeDistance == place) {
+            map.forEach((info, value) {
+              if (info == "Ordenes") {
+                String operation =
+                    ((int.parse(value) * distancetimeWaitperOrder) + distance)
+                        .toString();
+
+                ordersWaiting.addAll({place: operation});
+              }
+            });
           }
         });
       });
-      return nearbyLocationsInfo;
+
+      return ordersWaiting;
     }
 
     setState(() {
@@ -168,70 +211,117 @@ class _myLocationState extends State<myLocation> {
       }); //
 
       mapDistances = getDistancesSort(mapDistances);
-      nearbyLocationsInfoSort =
-          getNearbyLocationsInfo(mapDistances, dbMapLocations);
+      mapTimeOrdersWaitingAditionTimeDistance =
+          getMapTimeOrdersWaitingAditionTimeDistances(
+              dbMapLocations, mapDistances);
+      mapTimeOrdersWaitingAditionTimeDistance =
+          getDistancesSort(mapTimeOrdersWaitingAditionTimeDistance);
+
+      nearbyLocationsInfoSort = getNearbyLocationsInfo(mapDistances,
+          dbMapLocations, mapTimeOrdersWaitingAditionTimeDistance);
 
       placeLocation.clear();
+      Map productosSeleccionados = widget.productosSeleccionados;
+
       nearbyLocationsInfoSort.forEach((place, map) {
         String Place = place;
         int Ordenes = 0;
         double Lon = 0;
         double Lat = 0;
         double Distance = 0;
-        map.forEach((info, value) {
-          if (info == "Lon") Lon = double.parse(value);
-          if (info == "Ordenes") Ordenes = int.parse(value);
-          if (info == "Lat") Lat = double.parse(value);
-          if (info == "Distance") Distance = double.parse(value);
-          if (map.keys.last == info)
-            placeLocation
-                .add(myPlaceLocationInfo(Place, Ordenes, Distance, Lat, Lon));
+        bool addplace = true;
+        dbMapInventory.forEach((placeInventario, inventario) {
+          if (placeInventario == place) {
+            inventario.forEach((producto, cantidadDisponible) {
+              productosSeleccionados
+                  .forEach((productoUser, cantidadProductoUser) {
+                if (producto == productoUser) {
+                  if (int.parse(cantidadProductoUser) != 0 &&
+                      int.parse(cantidadDisponible) <
+                          int.parse(cantidadProductoUser)) {
+                    addplace = false;
+                    print("###################################");
+                    print("$placeInventario no cuenta con $productoUser");
+                    print("###################################");
+                  }
+                }
+              });
+            });
+          }
         });
+
+        if (addplace == true) {
+          map.forEach((info, value) {
+            if (info == "Lon") Lon = double.parse(value);
+            if (info == "Ordenes") Ordenes = int.parse(value);
+            if (info == "Lat") Lat = double.parse(value);
+            if (info == "Distance") Distance = double.parse(value);
+            if (map.keys.last == info)
+              placeLocation
+                  .add(myPlaceLocationInfo(Place, Ordenes, Distance, Lat, Lon));
+          });
+        }
       });
 
-      placeLat = placeLocation[0].lat;
-      placeLong = placeLocation[0].lon;
+      if (placeLocation.length != 0) {
+        placeLat = placeLocation[0].lat;
+        placeLong = placeLocation[0].lon;
+        indexIsThereAnyPlace = 0;
 
-      if (placeLat != 0 || placeLong != 0) {
-        _updateCameraPosition();
-      }
+        if (placeLat != 0 || placeLong != 0) {
+          _updateCameraPosition();
+        }
 
-      if (indexPlaceLocationlimitEnd == 0) {
-        indexPlaceLocationlimitEnd = 1;
+        if (placeLocation.length > 1) {
+          indexPlaceLocationlimitEnd = 1;
+        }
+      } else {
+        indexIsThereAnyPlace = 1;
+        placeLocation.add(myPlaceLocationInfo("Cargando...", 0, 0, 0, 0));
       }
     });
   }
 
   void arrowLeft(double newLat, double newLong) {
-    if ((indexPlaceLocation - 1) >= 0) {
-      placeLat = newLat;
-      placeLong = newLong;
-      --indexPlaceLocation;
-      _updateCameraPosition();
+    if (placeLocation.length > 1) {
+      if ((indexPlaceLocation - 1) >= 0) {
+        placeLat = newLat;
+        placeLong = newLong;
+        print(placeLat);
+        print(placeLong);
+        --indexPlaceLocation;
+        _updateCameraPosition();
+      }
+      if (indexPlaceLocation < 1) {
+        indexPlaceLocationlimitStart = 0;
+        indexPlaceLocationlimitEnd = 1;
+      } else {
+        indexPlaceLocationlimitEnd = 1;
+        indexPlaceLocationlimitStart = 1;
+      }
+      actualizar();
     }
-    if (indexPlaceLocation < 1) {
-      indexPlaceLocationlimitStart = 0;
-    } else {
-      indexPlaceLocationlimitEnd = 1;
-      indexPlaceLocationlimitStart = 1;
-    }
-    actualizar();
   }
 
   void arrowRight(double newLat, double newLong) {
-    if ((indexPlaceLocation + 1) != placeLocation.length) {
-      placeLat = newLat;
-      placeLong = newLong;
-      ++indexPlaceLocation;
-      _updateCameraPosition();
+    if (placeLocation.length > 1) {
+      if ((indexPlaceLocation + 1) != placeLocation.length) {
+        placeLat = newLat;
+        placeLong = newLong;
+        print(placeLat);
+        print(placeLong);
+        ++indexPlaceLocation;
+        _updateCameraPosition();
+      }
+      if (placeLocation.length - 1 == indexPlaceLocation) {
+        indexPlaceLocationlimitEnd = 0;
+        indexPlaceLocationlimitStart = 1;
+      } else {
+        indexPlaceLocationlimitStart = 1;
+        indexPlaceLocationlimitEnd = 1;
+      }
+      actualizar();
     }
-    if (placeLocation.length - 1 == indexPlaceLocation) {
-      indexPlaceLocationlimitEnd = 0;
-    } else {
-      indexPlaceLocationlimitStart = 1;
-      indexPlaceLocationlimitEnd = 1;
-    }
-    actualizar();
   }
 
   void actualizar() {
@@ -249,31 +339,81 @@ class _myLocationState extends State<myLocation> {
 
   @override
   Widget build(BuildContext context) {
-    String distanciacon = "Distancia: Cargando...";
-    String tiempocon = "Tiempo: Cargando...";
+    String distanciacon = "Distancia: ---";
+    String tiempocon = "Tiempo: ---";
+    String ordenescon = "Fila: ---";
 
-    double distance = placeLocation[indexPlaceLocation].distance;
-    double time = (double.parse(
-        ((placeLocation[indexPlaceLocation].distance) / 10)
-            .toStringAsFixed(1)));
+    if (indexIsThereAnyPlace == 0) {
+      double distance = placeLocation[indexPlaceLocation].distance;
+      double time = (double.parse(
+          ((placeLocation[indexPlaceLocation].distance) / 10)
+              .toStringAsFixed(1)));
 
-    if (placeLocation[indexPlaceLocation].distance < 1000) {
-      distanciacon = "Distancia: $distance m";
-    } else {
-      distanciacon = "Distancia: ${(distance / 1000).toStringAsFixed(1)} Km";
+      if (placeLocation[indexPlaceLocation].distance < 1000) {
+        distanciacon = "Distancia: $distance m";
+      } else {
+        distanciacon = "Distancia: ${(distance / 1000).toStringAsFixed(1)} Km";
+      }
+
+      if (time < 60) {
+        tiempocon = "Tiempo: $time Minutos";
+      } else {
+        tiempocon = "Tiempo: ${(time / 60).toStringAsFixed(1)} Horas";
+      }
+
+      ordenescon = "Fila: ${placeLocation[indexPlaceLocation].orders} Ordenes";
     }
 
-    if (time < 60) {
-      tiempocon = "Tiempo: $time Minutos";
-    } else {
-      tiempocon = "Tiempo: ${(time / 60).toStringAsFixed(1)} Horas";
-    }
-
-    if (indexPlaceLocation == 0) {
+    if (indexPlaceLocation == 0 && indexIsThereAnyPlace == 0) {
       msjRecomended = const myLocationMsjRecomended();
     } else {
       msjRecomended = const SizedBox(height: 0);
     }
+
+    List myButtons = const [
+      myLocationsButton(),
+      myLocationsButtonDisabled(),
+    ];
+    List myDashBoardAnyPlace = [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          myButtonsArrowChangePlace(
+            icon: Icons.arrow_left,
+            changePlace: () => arrowLeft(
+                placeLocation[indexPlaceLocation - indexPlaceLocationlimitStart]
+                    .lat,
+                placeLocation[indexPlaceLocation - indexPlaceLocationlimitStart]
+                    .lon),
+          ),
+          Text(
+            placeLocation[indexPlaceLocation].place,
+            style: TextStyle(
+                color: Theme.of(context).colorScheme.inverseSurface,
+                fontWeight: FontWeight.bold,
+                fontSize: 18),
+          ),
+          myButtonsArrowChangePlace(
+            icon: Icons.arrow_right,
+            changePlace: () => arrowRight(
+                placeLocation[indexPlaceLocation + indexPlaceLocationlimitEnd]
+                    .lat,
+                placeLocation[indexPlaceLocation + indexPlaceLocationlimitEnd]
+                    .lon),
+          )
+        ],
+      ),
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 30),
+        child: Text(
+          "Lo sentimos, al parecer en este momento no hay algun lugar que cuente con todo lo que necesites.",
+          style: TextStyle(
+              color: Theme.of(context).colorScheme.inverseSurface,
+              fontWeight: FontWeight.bold,
+              fontSize: 12),
+        ),
+      ),
+    ];
 
     return Center(
         child: Container(
@@ -284,17 +424,15 @@ class _myLocationState extends State<myLocation> {
               topLeft: Radius.circular(20), topRight: Radius.circular(20))),
       child: Stack(
         children: [
-          Expanded(
-              child: GoogleMap(
-                  mapType: MapType.normal,
-                  markers: Set.from(predefinedMarkers),
-                  onMapCreated: (GoogleMapController controller) {
-                    controllerNew = controller;
-                    generateImageMarker.call(30);
-                  },
-                  initialCameraPosition: CameraPosition(
-                      target: LatLng(widget.userLat, widget.userLong),
-                      zoom: 100))),
+          GoogleMap(
+              mapType: MapType.normal,
+              markers: Set.from(predefinedMarkers),
+              onMapCreated: (GoogleMapController controller) {
+                controllerNew = controller;
+                generateImageMarker.call(30);
+              },
+              initialCameraPosition: CameraPosition(
+                  target: LatLng(widget.userLat, widget.userLong), zoom: 100)),
           Positioned(
             bottom: 0,
             left: 0,
@@ -312,39 +450,7 @@ class _myLocationState extends State<myLocation> {
                     decoration: const BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.all(Radius.circular(30))),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        myButtonsArrowChangePlace(
-                          icon: Icons.arrow_left,
-                          changePlace: () => arrowLeft(
-                              placeLocation[indexPlaceLocation -
-                                      indexPlaceLocationlimitStart]
-                                  .lat,
-                              placeLocation[indexPlaceLocation -
-                                      indexPlaceLocationlimitStart]
-                                  .lon),
-                        ),
-                        Text(
-                          placeLocation[indexPlaceLocation].place,
-                          style: TextStyle(
-                              color:
-                                  Theme.of(context).colorScheme.inverseSurface,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18),
-                        ),
-                        myButtonsArrowChangePlace(
-                          icon: Icons.arrow_right,
-                          changePlace: () => arrowRight(
-                              placeLocation[indexPlaceLocation +
-                                      indexPlaceLocationlimitEnd]
-                                  .lat,
-                              placeLocation[indexPlaceLocation +
-                                      indexPlaceLocationlimitEnd]
-                                  .lon),
-                        )
-                      ],
-                    )),
+                    child: myDashBoardAnyPlace[indexIsThereAnyPlace]),
                 const SizedBox(
                   height: 15,
                 ),
@@ -391,7 +497,7 @@ class _myLocationState extends State<myLocation> {
                               ],
                             ),
                             Text(
-                              "Fila: ${placeLocation[indexPlaceLocation].orders} Ordenes",
+                              ordenescon,
                               style: TextStyle(
                                   color: Colors.grey.shade500,
                                   fontWeight: FontWeight.bold,
@@ -399,7 +505,7 @@ class _myLocationState extends State<myLocation> {
                             ),
                           ],
                         ),
-                        const myLocationsButton()
+                        myButtons[indexIsThereAnyPlace]
                       ],
                     )),
               ],
@@ -474,6 +580,33 @@ class myLocationsButton extends StatelessWidget {
       ),
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.greenAccent.shade400,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
+    );
+  }
+}
+
+class myLocationsButtonDisabled extends StatelessWidget {
+  const myLocationsButtonDisabled({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: () {},
+      // ignore: sort_child_properties_last
+      child: const Text(
+        "Comprar",
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.greenAccent.shade100,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
         shape: RoundedRectangleBorder(
