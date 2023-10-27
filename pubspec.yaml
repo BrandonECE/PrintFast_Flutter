@@ -42,6 +42,8 @@ dependencies:
   file_picker: ^5.5.0
   pdf: ^3.10.4
   pdf_render: ^1.4.0
+  jetpack: ^1.0.3
+  provider: ^6.0.5
 
 flutter_native_splash:
   fullscreen: true

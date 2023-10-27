@@ -4,5 +4,7 @@ class myPlaceLocationInfo {
   double distance;
   double lat;
   double lon;
-  myPlaceLocationInfo(this.place, this.orders, this.distance, this.lat, this.lon);
+  int time;
+  myPlaceLocationInfo(
+      this.place, this.orders, this.distance, this.lat, this.lon, this.time);
 }

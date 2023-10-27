@@ -13,9 +13,12 @@ import 'package:pdf_render/pdf_render.dart';
 
 // ignore: must_be_immutable
 class myShopping extends StatelessWidget {
-  myShopping({super.key, required this.chIndexButtonLocation});
+  myShopping(
+      {super.key,
+      required this.chIndexButtonLocation,
+      required this.getSumaTotal});
   Function(Map) chIndexButtonLocation;
-
+  Function(double) getSumaTotal;
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -23,10 +26,13 @@ class myShopping extends StatelessWidget {
         width: MediaQuery.of(context).size.width * 0.95,
         decoration: const BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(20), topRight: Radius.circular(20))),
-        child:
-            containerMyShopping(chIndexButtonLocation: chIndexButtonLocation),
+            borderRadius: BorderRadius.all(Radius.circular(20))
+            // borderRadius: BorderRadius.only(
+            //     topLeft: Radius.circular(20), topRight: Radius.circular(20))
+            ),
+        child: containerMyShopping(
+            chIndexButtonLocation: chIndexButtonLocation,
+            getSumaTotal: getSumaTotal),
       ),
     );
   }
@@ -83,9 +89,12 @@ class myAppBarShopping extends StatelessWidget {
 
 // ignore: must_be_immutable
 class containerMyShopping extends StatefulWidget {
-  containerMyShopping({super.key, required this.chIndexButtonLocation});
+  containerMyShopping(
+      {super.key,
+      required this.chIndexButtonLocation,
+      required this.getSumaTotal});
   Function(Map) chIndexButtonLocation;
-
+  Function(double) getSumaTotal;
   @override
   State<containerMyShopping> createState() => _containerMyShoppingState();
 }
@@ -98,7 +107,7 @@ class _containerMyShoppingState extends State<containerMyShopping> {
     myItemProduct("Plumas", 15, 0),
   ];
   Map productosSeleccionados = {};
-
+  int pagesCount = 0;
   FilePickerResult? result;
   double sumaTotalImpresion = 0;
   int sectionCopyWidgetsIndex = 0;
@@ -106,8 +115,13 @@ class _containerMyShoppingState extends State<containerMyShopping> {
 
   @override
   Widget build(BuildContext context) {
+    Future<void> pageCount(int pages) async {
+      
+      pagesCount = pages;
+    }
+
     if (result != null) {
-      productosSeleccionados.addAll({"Impresiones": "1"});
+      productosSeleccionados.addAll({"Impresiones": "$pagesCount"});
     } else {
       productosSeleccionados.addAll({"Impresiones": "0"});
     }
@@ -137,7 +151,9 @@ class _containerMyShoppingState extends State<containerMyShopping> {
           final List<int> bytes = await filePath.readAsBytes();
           PdfDocument pdfdoc =
               await PdfDocument.openData(Uint8List.fromList(bytes));
+
           print('El PDF tiene ${pdfdoc.pageCount} páginas.');
+          await pageCount(pdfdoc.pageCount);
           sumaTotalImpresion += pdfdoc.pageCount * 2;
           countPagesDocumentCopy = pdfdoc.pageCount;
           print(sumaTotalImpresion);
@@ -311,7 +327,8 @@ class _containerMyShoppingState extends State<containerMyShopping> {
         sectionContainerMyShoppingInfo(
             chIndexButtonLocation: widget.chIndexButtonLocation,
             sumaTotal: sumaTotal,
-            productosSeleccionados: productosSeleccionados),
+            productosSeleccionados: productosSeleccionados,
+            getSumaTotal: widget.getSumaTotal),
       ],
     );
   }
@@ -561,7 +578,11 @@ class sectionContainerMyShoppingInfoButton extends StatelessWidget {
   sectionContainerMyShoppingInfoButton(
       {super.key,
       required this.chIndexButtonLocation,
-      required this.productosSeleccionados});
+      required this.productosSeleccionados,
+      required this.getSumaTotal,
+      required this.sumaTota});
+  double sumaTota;
+  Function(double) getSumaTotal;
   Function(Map) chIndexButtonLocation;
   Map productosSeleccionados;
   @override
@@ -569,7 +590,8 @@ class sectionContainerMyShoppingInfoButton extends StatelessWidget {
     return ElevatedButton(
       onPressed: () {
         // await updateDB(productosSeleccionados);
-        chIndexButtonLocation(productosSeleccionados);
+        getSumaTotal.call(sumaTota);
+        chIndexButtonLocation.call(productosSeleccionados);
       },
       // ignore: sort_child_properties_last
       child: const Text(
@@ -625,8 +647,10 @@ class sectionContainerMyShoppingInfo extends StatelessWidget {
       {super.key,
       required this.chIndexButtonLocation,
       required this.sumaTotal,
-      required this.productosSeleccionados});
+      required this.productosSeleccionados,
+      required this.getSumaTotal});
   Function(Map) chIndexButtonLocation;
+  Function(double) getSumaTotal;
   Map productosSeleccionados;
   int ButtonWidgetIndex = 0;
   double sumaTotal;
@@ -641,7 +665,9 @@ class sectionContainerMyShoppingInfo extends StatelessWidget {
       const sectionContainerMyShoppingInfoButtonDisabled(),
       sectionContainerMyShoppingInfoButton(
           chIndexButtonLocation: chIndexButtonLocation,
-          productosSeleccionados: productosSeleccionados)
+          productosSeleccionados: productosSeleccionados,
+          getSumaTotal: getSumaTotal,
+          sumaTota: sumaTotal)
     ];
 
     return Container(

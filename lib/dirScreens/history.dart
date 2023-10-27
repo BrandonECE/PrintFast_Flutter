@@ -9,8 +9,10 @@ class myHistory extends StatelessWidget {
         width: MediaQuery.of(context).size.width * 0.95,
         decoration: const BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(20), topRight: Radius.circular(20))),
+            borderRadius: BorderRadius.all(Radius.circular(20))
+            // borderRadius: BorderRadius.only(
+            //     topLeft: Radius.circular(20), topRight: Radius.circular(20))
+                ),
         child: const containerMyHistory(),
       ),
     );
@@ -118,18 +120,54 @@ class sectionContainerMyHistoryOrder extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(
-          fecha,
-          style: TextStyle(color: Colors.grey.shade500),
+        Container(
+          alignment: Alignment.center,
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+              border: Border.all(color:Colors.grey.shade600),
+              color: Theme.of(context).colorScheme.primary, borderRadius: BorderRadius.circular(10)),
+          width: MediaQuery.of(context).size.width,
+          child: Text(
+            fecha,
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
         ),
         const SizedBox(
           height: 10,
         ),
         Container(
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade400),
+
               color: Colors.white, borderRadius: BorderRadius.circular(10)),
           width: MediaQuery.of(context).size.width,
           height: 85,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Text("24/7", style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.inverseSurface),),
+                  const SizedBox(
+                    width: 4,
+                  ),
+                  Icon(Icons.location_on_rounded, color: Theme.of(context).colorScheme.inverseSurface, size: 18,)
+                ],
+              ),
+              
+              Text("300\$", style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.inverseSurface),),
+              ElevatedButton(onPressed: (){}, 
+              style: ElevatedButton.styleFrom(
+                onPrimary: Colors.white,
+                primary: Theme.of(context).colorScheme.primary,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(15))
+                )
+              ),
+              child: const Icon(Icons.remove_red_eye))
+            ],
+          ),
         ),
         const SizedBox(
           height: 20,
@@ -145,8 +183,8 @@ class sectionContainerMyHistory extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     List<Widget> ordersSectionContainerMyHistory = [
-      sectionContainerMyHistoryOrder(fecha: "26 de Abril"),
-      sectionContainerMyHistoryOrder(fecha: "14 de Febrero"),
+      sectionContainerMyHistoryOrder(fecha: "26 de Abril del 2023"),
+      sectionContainerMyHistoryOrder(fecha: "14 de Febrero del 2023"),
       sectionContainerMyHistoryOrder(fecha: "05 de Diciembre del 2022"),
       sectionContainerMyHistoryOrder(fecha: "23 de Novimebre del 2022"),
       sectionContainerMyHistoryOrder(fecha: "10 de Octubre del 2022"),

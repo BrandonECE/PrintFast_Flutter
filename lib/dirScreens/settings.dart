@@ -116,8 +116,10 @@ class _mySettingsState extends State<mySettings> {
       width: MediaQuery.of(context).size.width * 0.95,
       decoration: const BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20), topRight: Radius.circular(20))),
+          borderRadius: BorderRadius.all(Radius.circular(20))
+          // borderRadius: BorderRadius.only(
+          //     topLeft: Radius.circular(20), topRight: Radius.circular(20))
+              ),
       child: Container(
         // color: Colors.amber,
         margin: const EdgeInsets.only(top: 20, bottom: 20),
@@ -284,7 +286,7 @@ class myDetailsUser extends StatelessWidget {
                     fontSize: 16),
               ),
               Container(
-                width: MediaQuery.of(context).size.width * 0.5,
+                width: MediaQuery.of(context).size.width * 0.45,
                 // color: Colors.amber,
                 child: Text(
                   overflow: TextOverflow.ellipsis,

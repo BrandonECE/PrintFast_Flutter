@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:print_fast/dirScreens/orderActive.dart';
+import 'package:print_fast/dirScreens/placelocation.dart';
 import 'package:print_fast/dirScreens/screenload.dart';
 import 'package:print_fast/dirScreens/login.dart';
 import 'package:print_fast/dirScreens/register.dart';
-import 'package:print_fast/firestore_service.dart';
+import 'package:print_fast/sharedviewmodel.dart';
+import 'package:provider/provider.dart';
+// import 'package:print_fast/firestore_service.dart';
 import 'dirScreens/location.dart';
 import 'dirScreens/menu.dart';
 import 'dirScreens/history.dart';
@@ -24,7 +28,10 @@ class _myScreensState extends State<myScreens> {
   late double userLat = 0;
   late double userLong = 0;
   Map productosSeleccionados = {};
-
+  Map productosSeleccionadosDB = {};
+  double sumaTotal = 0;
+  double sumaTotalDB = 0;
+  myPlaceLocationInfo orderActive = myPlaceLocationInfo('---', 0, 0, 0, 0, 0);
   String name = "";
   String matricula = "";
   String email = "";
@@ -85,7 +92,7 @@ class _myScreensState extends State<myScreens> {
           permission == LocationPermission.whileInUse) {
         changeindex(7);
         print(productosSeleccionados);
-        await updateDB(productosSeleccionados);
+        // await updateDB(productosSeleccionados);
         changeindexloadtoLocation();
       }
     } else if (permissionCheck == LocationPermission.always ||
@@ -93,7 +100,7 @@ class _myScreensState extends State<myScreens> {
         permissionCheck == LocationPermission.whileInUse) {
       changeindex(7);
       print(productosSeleccionados);
-      await updateDB(productosSeleccionados);
+      // await updateDB(productosSeleccionados);
       changeindexloadtoLocation();
     }
   }
@@ -120,9 +127,33 @@ class _myScreensState extends State<myScreens> {
   @override
   Widget build(BuildContext context) {
     // ignore: prefer_function_declarations_over_variables
+
+    // ignore: prefer_function_declarations_over_variables
+    Function(myPlaceLocationInfo) getPlaceOrderActive = (placeLocationInfo) {
+      orderActive = placeLocationInfo;
+    };
+
+    Function(double) getSumaTotal = (sumaT) {
+      print("!!!!!!!!!!!!!!!!!!!!!!!!!");
+      print(sumaT);
+      sumaTotal = sumaT;
+      print("!!!!!!!!!!!!!!!!!!!!!!!!!");
+    };
+
+    // ignore: prefer_function_declarations_over_variables
     Function(Map) getProductosSeleccionados = (products) {
       productosSeleccionados = products;
       locationpermission();
+    };
+
+    // ignore: prefer_function_declarations_over_variables, unused_local_variable
+    Function(Map) getProductosSeleccionadosDB = (products) {
+      productosSeleccionadosDB = products;
+    };
+
+    // ignore: unused_local_variable, prefer_function_declarations_over_variables
+    Function(double) getSumaTotalDB = (sumaT) {
+      sumaTotalDB = sumaT;
     };
 
     // ignore: prefer_function_declarations_over_variables
@@ -165,28 +196,47 @@ class _myScreensState extends State<myScreens> {
         chindex: () => changeindex(2),
         icon: Icons.location_on_rounded,
       ),
+      myAppBarmyOrderActiveScreenInfo(
+        chindex: () => changeindex(2),
+      )
     ];
 
-    List<Widget> screensBody = [
-      myLogin(
-          chIndexMenu: () => changeIndexLogin(),
-          chIndexRegister: () => changeindex(1),
-          functionInfoUser: getUserData),
-      myRegister(chIndexLogin: () => changeindex(0)),
-      myMenu(
-        chIndexShopping: () => changeindex(3),
-        chIndexHistory: () => changeindex(4),
-        name: name,
-      ),
-      myShopping(chIndexButtonLocation: getProductosSeleccionados),
-      myHistory(),
-      mySettings(chIndexMenu: () => changeIndexLogout(), name: name, telefono: telefono, email: email, matricula: matricula),
-      myLocation(
-          userLat: userLat,
-          userLong: userLong,
-          productosSeleccionados: productosSeleccionados),
-      const myScreenLoad(),
-    ];
+    // List<Widget> screensBody = [
+    //   myLogin(
+    //       chIndexMenu: () => changeIndexLogin(),
+    //       chIndexRegister: () => changeindex(1),
+    //       functionInfoUser: getUserData),
+    //   myRegister(chIndexLogin: () => changeindex(0)),
+    //   myMenu(
+    //       getProductosSeleccionadosDB: getProductosSeleccionadosDB,
+    //       getSumaTotalDB: getSumaTotalDB,
+    //       chIndexShopping: () => changeindex(3),
+    //       chIndexHistory: () => changeindex(4),
+    //       chIndexOrderActive: () => changeindex(8),
+    //       name: name,
+    //       matricula: matricula),
+    //   myShopping(
+    //       chIndexButtonLocation: getProductosSeleccionados,
+    //       getSumaTotal: getSumaTotal),
+    //   myHistory(),
+    //   mySettings(
+    //       chIndexMenu: () => changeIndexLogout(),
+    //       name: name,
+    //       telefono: telefono,
+    //       email: email,
+    //       matricula: matricula),
+    //   myLocation(
+    //       chIndexMenu: () => changeindex(2),
+    //       userLat: userLat,
+    //       userLong: userLong,
+    //       productosSeleccionados: productosSeleccionados,
+    //       placeOrderActive: getPlaceOrderActive,
+    //       sumaTotal: sumaTotal),
+    //   const myScreenLoad(),
+    //   myOrderActiveScreenInfo(
+    //       productosSeleccionadosDB: productosSeleccionadosDB,
+    //       sumaTotalDB: sumaTotalDB)
+    // ];
 
     List<Widget> typesbottombar = [
       Container(
@@ -218,7 +268,54 @@ class _myScreensState extends State<myScreens> {
           backgroundColor: Theme.of(context).colorScheme.primary,
           flexibleSpace: SafeArea(child: screensAppbar[_indexscreen]),
         ),
-        body: screensBody[_indexscreen],
+        body: ChangeNotifierProvider<SharedChangeNotifier>(
+            create: (context) => SharedChangeNotifier(),
+            builder: (context, child) {
+
+              final sharedChangeNotifier = context.watch<SharedChangeNotifier>();
+
+              List<Widget> screensBody = [
+                myLogin(
+                    chIndexMenu: () => changeIndexLogin(),
+                    chIndexRegister: () => changeindex(1),
+                    functionInfoUser: getUserData),
+                myRegister(chIndexLogin: () => changeindex(0)),
+                myMenu(
+                    sharedChangeNotifier: sharedChangeNotifier,
+                    getProductosSeleccionadosDB: getProductosSeleccionadosDB,
+                    getSumaTotalDB: getSumaTotalDB,
+                    chIndexShopping: () => changeindex(3),
+                    chIndexHistory: () => changeindex(4),
+                    chIndexOrderActive: () => changeindex(8),
+                    name: name,
+                    matricula: matricula),
+                myShopping(
+                    chIndexButtonLocation: getProductosSeleccionados,
+                    getSumaTotal: getSumaTotal),
+                myHistory(),
+                mySettings(
+                    chIndexMenu: () => changeIndexLogout(),
+                    name: name,
+                    telefono: telefono,
+                    email: email,
+                    matricula: matricula),
+                myLocation(
+                    matricula: matricula,
+                    chIndexMenu: () => changeindex(2),
+                    userLat: userLat,
+                    userLong: userLong,
+                    productosSeleccionados: productosSeleccionados,
+                    placeOrderActive: getPlaceOrderActive,
+                    sumaTotal: sumaTotal),
+                const myScreenLoad(),
+                myOrderActiveScreenInfo(
+                    productosSeleccionadosDB: productosSeleccionadosDB,
+                    sumaTotalDB: sumaTotalDB)
+              ];
+
+              return screensBody[_indexscreen];
+            },
+            ),
         bottomNavigationBar: typesbottombar[_indexTypeNavigationBar]);
   }
 }

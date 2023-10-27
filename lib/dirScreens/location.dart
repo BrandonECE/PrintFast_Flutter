@@ -13,9 +13,17 @@ import 'dart:math';
 class myLocation extends StatefulWidget {
   myLocation(
       {super.key,
+      required this.matricula,
       required this.userLat,
       required this.userLong,
-      required this.productosSeleccionados});
+      required this.productosSeleccionados,
+      required this.placeOrderActive,
+      required this.sumaTotal,
+      required this.chIndexMenu});
+  VoidCallback chIndexMenu;
+  Function(myPlaceLocationInfo) placeOrderActive;
+  String matricula;
+  double sumaTotal;
   double userLat;
   double userLong;
   Map productosSeleccionados;
@@ -32,7 +40,7 @@ class _myLocationState extends State<myLocation> {
   double placeLong = 0;
   Map<String, Map<String, String>> nearbyLocationsInfoSort = {};
   List<myPlaceLocationInfo> placeLocation = [
-    myPlaceLocationInfo("Cargando...", 0, 0, 0, 0)
+    myPlaceLocationInfo("Cargando...", 0, 0, 0, 0, 0)
   ];
   int indexPlaceLocation = 0;
   int indexPlaceLocationlimitStart = 0;
@@ -54,7 +62,7 @@ class _myLocationState extends State<myLocation> {
 
     Map<dynamic, dynamic> dbMapDynamic = {};
     Map<String, Map<String, String>> dbMapLocations = {};
-    
+
     Map<String, Map<String, String>> dbMapInventory = {};
     Map dbMapUsers = {};
     Map MapUser = {};
@@ -140,19 +148,28 @@ class _myLocationState extends State<myLocation> {
 
       mapTimeOrdersWaitingAditionTimeDistance.forEach((placeAdit, timeTotal) {
         mapDistances.forEach((place, distance) {
-            if(placeAdit == place){
-                dbMapLocations.forEach((placeinfo, map) {
-                if (place == placeinfo) {
-                  Map<String, String> distanceInfo = {"Distance": "$distance"};
-                  map.addAll(distanceInfo);
-                  nearbyLocationsInfo[place] = map;
+          if (placeAdit == place) {
+            ///
+            dbMapLocations.forEach((placeinfo, map) {
+              if (place == placeinfo) {
+                Map<String, String> distanceInfo = {"Distance": "$distance"};
+                map.addAll(distanceInfo);
+                double timeAsDistance = timeTotal;
+                int timeInt = 0;
+                double timeDouble = ((timeAsDistance / 10));
+                if (timeDouble <= 1 && timeDouble > 0) {
+                  timeInt = timeDouble.ceil();
+                } else {
+                  timeInt = timeDouble.round();
                 }
-              });
-
-            }
+                print(timeInt);
+                distanceInfo = {"Time": timeInt.toString()};
+                map.addAll(distanceInfo);
+                nearbyLocationsInfo[place] = map;
+              }
+            });
+          }
         });
-
-        
       });
       return nearbyLocationsInfo;
     }
@@ -161,15 +178,15 @@ class _myLocationState extends State<myLocation> {
         Map mapLocations, Map mapDistancesSort) {
       Map ordersWaiting = {};
       int minutetimeWaitperOrder = 1;
-      int distancetimeWaitperOrder = 1 * 10;
+      int distancetimeWaitperOrder = minutetimeWaitperOrder * 10;
       mapLocations.forEach((place, map) {
         mapDistances.forEach((placeDistance, distance) {
           if (placeDistance == place) {
             map.forEach((info, value) {
               if (info == "Ordenes") {
-                String operation =
-                    ((int.parse(value) * distancetimeWaitperOrder) + distance)
-                        .toString();
+                double operation =
+                    ((double.parse(value) * distancetimeWaitperOrder) +
+                        distance);
 
                 ordersWaiting.addAll({place: operation});
               }
@@ -211,17 +228,23 @@ class _myLocationState extends State<myLocation> {
       }); //
 
       mapDistances = getDistancesSort(mapDistances);
+      print(mapDistances);
       mapTimeOrdersWaitingAditionTimeDistance =
           getMapTimeOrdersWaitingAditionTimeDistances(
               dbMapLocations, mapDistances);
+      print(mapTimeOrdersWaitingAditionTimeDistance);
       mapTimeOrdersWaitingAditionTimeDistance =
           getDistancesSort(mapTimeOrdersWaitingAditionTimeDistance);
-
+      print(mapTimeOrdersWaitingAditionTimeDistance);
       nearbyLocationsInfoSort = getNearbyLocationsInfo(mapDistances,
           dbMapLocations, mapTimeOrdersWaitingAditionTimeDistance);
-
       placeLocation.clear();
       Map productosSeleccionados = widget.productosSeleccionados;
+
+      print("DATAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+      print(nearbyLocationsInfoSort);
+      print(productosSeleccionados);
+      print("DATAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
 
       nearbyLocationsInfoSort.forEach((place, map) {
         String Place = place;
@@ -229,6 +252,7 @@ class _myLocationState extends State<myLocation> {
         double Lon = 0;
         double Lat = 0;
         double Distance = 0;
+        int time = 0;
         bool addplace = true;
         dbMapInventory.forEach((placeInventario, inventario) {
           if (placeInventario == place) {
@@ -238,7 +262,21 @@ class _myLocationState extends State<myLocation> {
                 if (producto == productoUser) {
                   if (int.parse(cantidadProductoUser) != 0 &&
                       int.parse(cantidadDisponible) <
-                          int.parse(cantidadProductoUser)) {
+                          int.parse(cantidadProductoUser) &&
+                      productoUser != "Impresiones") {
+                    //MODIFICACION
+                    addplace = false;
+                    print("###################################");
+                    print("$placeInventario no cuenta con $productoUser");
+                    print("###################################");
+                  }
+
+                  if (int.parse(cantidadProductoUser) != 0 &&
+                      int.parse(cantidadDisponible) == 0 &&
+                      productoUser == "Impresiones") {
+                    //MODIFICACION
+                    print(productoUser);
+                    print(cantidadDisponible);
                     addplace = false;
                     print("###################################");
                     print("$placeInventario no cuenta con $productoUser");
@@ -256,9 +294,10 @@ class _myLocationState extends State<myLocation> {
             if (info == "Ordenes") Ordenes = int.parse(value);
             if (info == "Lat") Lat = double.parse(value);
             if (info == "Distance") Distance = double.parse(value);
+            if (info == "Time") time = int.parse(value);
             if (map.keys.last == info)
-              placeLocation
-                  .add(myPlaceLocationInfo(Place, Ordenes, Distance, Lat, Lon));
+              placeLocation.add(myPlaceLocationInfo(
+                  Place, Ordenes, Distance, Lat, Lon, time));
           });
         }
       });
@@ -277,7 +316,7 @@ class _myLocationState extends State<myLocation> {
         }
       } else {
         indexIsThereAnyPlace = 1;
-        placeLocation.add(myPlaceLocationInfo("Cargando...", 0, 0, 0, 0));
+        placeLocation.add(myPlaceLocationInfo("Cargando...", 0, 0, 0, 0, 0));
       }
     });
   }
@@ -345,9 +384,7 @@ class _myLocationState extends State<myLocation> {
 
     if (indexIsThereAnyPlace == 0) {
       double distance = placeLocation[indexPlaceLocation].distance;
-      double time = (double.parse(
-          ((placeLocation[indexPlaceLocation].distance) / 10)
-              .toStringAsFixed(1)));
+      int time = placeLocation[indexPlaceLocation].time;
 
       if (placeLocation[indexPlaceLocation].distance < 1000) {
         distanciacon = "Distancia: $distance m";
@@ -355,7 +392,9 @@ class _myLocationState extends State<myLocation> {
         distanciacon = "Distancia: ${(distance / 1000).toStringAsFixed(1)} Km";
       }
 
-      if (time < 60) {
+      if (time < 1 && time > 0) {
+        tiempocon = "Tiempo: ${(time * 60).toInt()} Segundos";
+      } else if (time < 60) {
         tiempocon = "Tiempo: $time Minutos";
       } else {
         tiempocon = "Tiempo: ${(time / 60).toStringAsFixed(1)} Horas";
@@ -370,9 +409,15 @@ class _myLocationState extends State<myLocation> {
       msjRecomended = const SizedBox(height: 0);
     }
 
-    List myButtons = const [
-      myLocationsButton(),
-      myLocationsButtonDisabled(),
+    List myButtons = [
+      myLocationsButton(
+          matricula: widget.matricula,
+          placeLocation: placeLocation[indexPlaceLocation],
+          placeOrderActive: widget.placeOrderActive,
+          productosSeleccionados: widget.productosSeleccionados,
+          chIndexMenu: widget.chIndexMenu,
+          sumaTotal: widget.sumaTotal),
+      const myLocationsButtonDisabled(),
     ];
     List myDashBoardAnyPlace = [
       Row(
@@ -420,8 +465,10 @@ class _myLocationState extends State<myLocation> {
       width: MediaQuery.of(context).size.width * 0.95,
       decoration: const BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20), topRight: Radius.circular(20))),
+          borderRadius: BorderRadius.all(Radius.circular(20))
+          // borderRadius: BorderRadius.only(
+          //     topLeft: Radius.circular(20), topRight: Radius.circular(20))
+          ),
       child: Stack(
         children: [
           GoogleMap(
@@ -563,13 +610,36 @@ class myAppBarLocation extends StatelessWidget {
   }
 }
 
+// ignore: must_be_immutable
 class myLocationsButton extends StatelessWidget {
-  const myLocationsButton({super.key});
-
+  myLocationsButton(
+      {super.key,
+      required this.matricula,
+      required this.placeLocation,
+      required this.placeOrderActive,
+      required this.productosSeleccionados,
+      required this.sumaTotal,
+      required this.chIndexMenu});
+  String matricula;
+  VoidCallback chIndexMenu;
+  double sumaTotal;
+  Function(myPlaceLocationInfo) placeOrderActive;
+  Map productosSeleccionados;
+  myPlaceLocationInfo placeLocation;
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
-      onPressed: () {},
+      onPressed: () async {
+        Map updateInfoAOrden = {
+          "Compras": productosSeleccionados,
+          "Time": "${placeLocation.time}",
+          "Place": "${placeLocation.place}",
+          "Price": "$sumaTotal"
+        };
+        print(updateInfoAOrden);
+        await updateDB(updateInfoAOrden, matricula);
+        chIndexMenu.call();
+      },
       // ignore: sort_child_properties_last
       child: const Text(
         "Comprar",

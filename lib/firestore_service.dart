@@ -30,12 +30,38 @@ Future<Map> getDBUser(String matricula) async {
   return dbMapUser;
 }
 
-Future<void> updateDB(Map ShoppingUser) async {
+Future<Map> getDBUserOrderA(String matricula) async {
+  Map? dbMapUser;
+  Map? dbMapUserOrderA;
   CollectionReference collectionReferenceLocation =
       await db.collection("usuarios");
-  DocumentReference userRef = await collectionReferenceLocation.doc("1974238");
+  DocumentReference userRef = await collectionReferenceLocation.doc(matricula);
+  DocumentSnapshot snapShotData = await userRef.get();
+  dbMapUser = snapShotData.data() as Map<String, dynamic>;
+  dbMapUser.forEach((key, value) {
+    if ("AOrden" == key) {
+      print(key);
+      dbMapUserOrderA = value;
+    }
+  });
+  return dbMapUserOrderA as Map;
+}
+
+Future<void> updateDB(Map infoOrder, String matricula) async {
+  CollectionReference collectionReferenceLocation =
+      await db.collection("usuarios");
+  DocumentReference userRef = await collectionReferenceLocation.doc(matricula);
   await userRef.update({
-    "Compras": ShoppingUser,
+    "AOrden": infoOrder,
+  });
+}
+
+Future<void> updateDBTime(String time, String matricula) async {
+  CollectionReference collectionReferenceLocation =
+      await db.collection("usuarios");
+  DocumentReference userRef = await collectionReferenceLocation.doc(matricula);
+  await userRef.update({
+    "AOrden.Time": time,
   });
 }
 
@@ -47,17 +73,19 @@ Future<void> registeDBUser(
   contrasena,
 ) async {
   Map<String, dynamic> dataUser = {};
-  Map<String, dynamic> compras = {"Compras": {}};
+  // Map<String, dynamic> compras = {"Compras": {}};
   Map<String, dynamic> noti = {"Notificaciones": {}};
   Map<String, dynamic> ordenesHistorial = {"HOrdenes": {}};
-  Map<String, dynamic> ordenActiva = {"AOrden": {}};
+  Map<String, dynamic> ordenActiva = {
+    "AOrden": {"Compras": {}, "Time": "0", "Place": "---", "Price": "0"}
+  };
 
   dataUser.addAll({"Nombre": name});
   dataUser.addAll({"Matricula": matricula});
   dataUser.addAll({"E-mail": email});
   dataUser.addAll({"Telefono": telefono});
   dataUser.addAll({"Contrasena": contrasena});
-  dataUser.addAll(compras);
+  // dataUser.addAll(compras);
   dataUser.addAll(noti);
   dataUser.addAll(ordenesHistorial);
   dataUser.addAll(ordenActiva);
