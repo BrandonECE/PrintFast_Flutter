@@ -3,6 +3,7 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:print_fast/dirScreens/convertTime.dart';
 import 'package:print_fast/dirScreens/placelocation.dart';
 import '../firestore_service.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -630,11 +631,30 @@ class myLocationsButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ElevatedButton(
       onPressed: () async {
+        int mes = DateTime.now().month;
+        String mesName = "";
+
+        if (mes == 1) mesName = "Enero";
+        else if (mes == 2) mesName = "Febrero";
+        else if (mes == 3) mesName = "Marzo";
+        else if (mes == 4) mesName = "Abril";
+        else if (mes == 5) mesName = "Mayo";
+        else if (mes == 6) mesName = "Junio";
+        else if (mes == 7) mesName = "Julio";
+        else if (mes == 8) mesName = "Agosto";
+        else if (mes == 9) mesName = "Septiembre";
+        else if (mes == 10) mesName = "Octubre";
+        else if (mes == 11) mesName = "Noviembre";
+        else mesName = "Diciembre";
+
         Map updateInfoAOrden = {
           "Compras": productosSeleccionados,
           "Time": "${placeLocation.time}",
           "Place": "${placeLocation.place}",
-          "Price": "$sumaTotal"
+          "Price": "$sumaTotal",
+          "initDate": ConvertTime().getFecha(),
+          "initDateTime": ConvertTime().getHora(),
+          "initDateComplete": "${DateTime.now().day} de $mesName del ${DateTime.now().year}"
         };
         print(updateInfoAOrden);
         await updateDB(updateInfoAOrden, matricula);

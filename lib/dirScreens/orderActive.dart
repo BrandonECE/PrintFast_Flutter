@@ -5,8 +5,10 @@ class myOrderActiveScreenInfo extends StatelessWidget {
   myOrderActiveScreenInfo(
       {super.key,
       required this.productosSeleccionadosDB,
-      required this.sumaTotalDB});
+      required this.sumaTotalDB, required this.initDateOrderA, required this.initTimeOrderA});
   double sumaTotalDB;
+    String initDateOrderA;
+  String initTimeOrderA;
   Map productosSeleccionadosDB;
   List<Widget> productos = [
     // itemProductImpresion(
@@ -37,44 +39,129 @@ class myOrderActiveScreenInfo extends StatelessWidget {
     });
 
     return Center(
-      child: Container(
-        width: MediaQuery.of(context).size.width * 0.95,
-        decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.all(Radius.circular(20))
-            // borderRadius: BorderRadius.only(
-            //     topLeft: Radius.circular(20), topRight: Radius.circular(20))
-
-            ),
-        child: Column(
-          children: [
-            titlesContainer("PRODUCTOS"),
-            Expanded(
-                child: Container(
-              margin: const EdgeInsets.only(bottom: 20),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: const BorderRadius.all(Radius.circular(20))),
-              width: MediaQuery.of(context).size.width * 0.83,
-              child: ListView(children: productos),
-            )),
-            Container(
-              child: Container(
-                width: MediaQuery.of(context).size.width * 0.78,
-                margin: const EdgeInsets.only(bottom: 30, top: 10),
-                child: Text(
-                  "Total: $sumaTotalDB \$",
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.inverseSurface,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            width: MediaQuery.of(context).size.width * 0.95,
+            // ignore: sort_child_properties_last
+            child: Column(
+              children: [
+                Row(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 5),
+                    child: Text(
+                      "ORDENADO",
+                      style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.inverseSurface),
+                    ),
+                  ),
+                  const Icon(
+                    Icons.arrow_drop_down,
+                    size: 25,
+                  )
+                ],
+              ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Row(
+                    children: [
+                      Container(
+                        child: Row(
+                          children: [
+                            const Icon(Icons.calendar_month),
+                            Padding(
+                              padding: const EdgeInsets.only(left: 8),
+                              child: Text(
+                                  initDateOrderA,
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.inverseSurface,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        margin: const EdgeInsets.only(left: 10),
+                        child: Row(
+                                        children: [
+                        const Icon(Icons.access_time_outlined),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: Text(
+                              initTimeOrderA,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.inverseSurface,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                        ),
+                                        ],
+                                      ),
+                      ),
+                    ],
                   ),
                 ),
+              ],
+            ),
+            //  padding: const EdgeInsets.all(20),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.all(Radius.circular(20))
+            ),
+          ),
+          SizedBox(
+            height: MediaQuery.of(context).size.width * 0.03,
+          ),
+          Expanded(
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.95,
+              decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.all(Radius.circular(20))
+                  // borderRadius: BorderRadius.only(
+                  //     topLeft: Radius.circular(20), topRight: Radius.circular(20))
+          
+                  ),
+              child: Column(
+                children: [
+                  titlesContainer("PRODUCTOS"),
+                  Expanded(
+                      child: Container(
+                    margin: const EdgeInsets.only(bottom: 20),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: const BorderRadius.all(Radius.circular(20))),
+                    width: MediaQuery.of(context).size.width * 0.83,
+                    child: ListView(children: productos),
+                  )),
+                  Container(
+                    child: Container(
+                      width: MediaQuery.of(context).size.width * 0.78,
+                      margin: const EdgeInsets.only(bottom: 30, top: 10),
+                      child: Text(
+                        "Total: $sumaTotalDB \$",
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.inverseSurface,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  )
+                ],
               ),
-            )
-          ],
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }

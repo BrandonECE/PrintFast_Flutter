@@ -1,8 +1,18 @@
+// ignore: unused_import
+import 'dart:ffi';
+import 'dart:isolate';
+
 import 'package:flutter/material.dart';
+import 'package:print_fast/dirScreens/convertTime.dart';
+import 'package:print_fast/dirScreens/isolates.dart';
 import 'dart:async';
 import 'package:print_fast/sharedviewmodel.dart';
 import 'package:print_fast/dirScreens/orderActiveInfo.dart';
 import 'package:print_fast/firestore_service.dart';
+import 'package:provider/provider.dart';
+// import 'package:intl/intl.dart';
+// import 'package:intl/date_symbol_data_file.dart';
+// import 'package:intl/intl_browser.dart';
 
 // import '../screens.dart';
 
@@ -17,13 +27,17 @@ class myMenu extends StatefulWidget {
       required this.matricula,
       required this.chIndexOrderActive,
       required this.getProductosSeleccionadosDB,
-      required this.getSumaTotalDB});
+      required this.getSumaTotalDB,
+      required this.getInitDate,
+      required this.getInitTime});
   VoidCallback chIndexOrderActive;
   Function(double) getSumaTotalDB;
   SharedChangeNotifier sharedChangeNotifier;
   String matricula;
   VoidCallback chIndexShopping;
   VoidCallback chIndexHistory;
+  Function(String) getInitDate;
+  Function(String) getInitTime;
   Function(Map) getProductosSeleccionadosDB;
   String name;
   @override
@@ -35,7 +49,7 @@ class _myMenuState extends State<myMenu> {
   bool once = false;
   bool orderActive = false;
   myOrderActiveInfo orderActiveInfo =
-      myOrderActiveInfo("Cargando...", "0", "0", {});
+      myOrderActiveInfo("Cargando...", "0", "0", {}, "---", "---", "00:00");
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +59,16 @@ class _myMenuState extends State<myMenu> {
     void _actualizarOrderActiva() {
       once = false;
       orderActive = false;
+      widget.sharedChangeNotifier.updateAddOrderToHistory(true);
       setState(() {});
+      // if (widget.sharedChangeNotifier.sharedindexScreen.value == 2) {
+      //   try {
+      //     setState(() {});
+      //   } catch (e) {
+      //     print("ERROR");
+      //     print(e);
+      //   }
+      // }
     }
 
     void verifyOrderActive() async {
@@ -57,6 +80,9 @@ class _myMenuState extends State<myMenu> {
         String? place;
         String? price;
         String? time;
+        String? fecha;
+        String? hora;
+        String? fechaComplete;
         Map? productos;
         orderActive = true;
         infoUserOrderActive.forEach((key, value) {
@@ -64,17 +90,30 @@ class _myMenuState extends State<myMenu> {
           if (key == "Price") price = value;
           if (key == "Time") time = value;
           if (key == "Compras") productos = value;
+          if (key == "initDate") {
+            fecha = value;
+            widget.getInitDate.call(value);
+          }
+          ;
+          if (key == "initDateTime") {
+            hora = value;
+            widget.getInitTime.call(value);
+          }
+          if (key == "initDateComplete") fechaComplete = value;
         });
-        orderActiveInfo = myOrderActiveInfo(place!, price!, time!, productos!);
+
+        orderActiveInfo = myOrderActiveInfo(
+            place!, price!, time!, productos!, fechaComplete!, fecha!, hora!);
         print("SI HAY");
         if (changeInitTime == false) {
-           widget.sharedChangeNotifier.updateMatricula(widget.matricula);
+          widget.sharedChangeNotifier.updateMatricula(widget.matricula);
           widget.sharedChangeNotifier.updateTime(int.parse(time!));
           widget.sharedChangeNotifier.updateTimeInit(true);
           widget.sharedChangeNotifier.initTimerPeriodic();
         }
       }
       print(infoUserOrderActive);
+
       setState(() {});
     }
 
@@ -104,6 +143,7 @@ class _myMenuState extends State<myMenu> {
                 children: [
                   briefGreeting(name: widget.name),
                   containerMenuOptions(
+                      orderActive: orderActive,
                       chIndexShopping: widget.chIndexShopping,
                       chIndexHistory: widget.chIndexHistory),
                 ],
@@ -171,53 +211,140 @@ class _myMenuState extends State<myMenu> {
   }
 }
 
+// ignore: must_be_immutable
 class myAppBarMenu extends StatelessWidget {
-  const myAppBarMenu({super.key});
-
+  myAppBarMenu(
+      {super.key,
+      required this.chIndexNotification,
+      required this.matricula,
+      required this.sharedChangeNotifier});
+  SharedChangeNotifier sharedChangeNotifier;
+  String matricula;
+  VoidCallback chIndexNotification;
+  bool verificacion = false;
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        // padding: const EdgeInsets.only(top: 33),
-        // margin: const EdgeInsets.only(top: 33), //HABILITAR SOLO PARA EL CELULAR
-        // color: Colors.red,
-        width: MediaQuery.of(context).size.width * 0.9,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
+    Widget signoNoti = SizedBox(
+      height: 0,
+      width: 0,
+    );
+
+    return ChangeNotifierProvider<
+        SharedChangeNotifierAppBarMenuCountNotification>(
+      create: (context) => SharedChangeNotifierAppBarMenuCountNotification(),
+      builder: (context, child) {
+        final sharedChangeNotifierAppBarMenuCountNotification =
+            context.watch<SharedChangeNotifierAppBarMenuCountNotification>();
+
+        void loadNotis() async {
+          Map notis = {};
+          notis = await getDBUserNotis(matricula);
+          final recivePort = ReceivePort();
+
+          final isolate = await Isolate.spawn(isolateNotifs,
+              IsolateNotifsParametros(recivePort.sendPort, notis));
+          recivePort.listen((message) {
+            print(message);
+            print(sharedChangeNotifier.sharedindexScreen.value);
+            if (sharedChangeNotifier.sharedindexScreen.value == 2) {
+              try {
+                sharedChangeNotifierAppBarMenuCountNotification
+                    .updateCountNotificatione(message);
+                print(sharedChangeNotifier.sharedindexScreen.value);
+              } catch (e) {
+                print(
+                    "NO SE ACTUALIZO EL COUNT DE NOTIFICACIONES DEL ICONO NOTIFICACION");
+              }
+              isolate.kill(priority: Isolate.immediate);
+              verificacion = false;
+            }
+          });
+        }
+
+        // if(sharedChangeNotifier.sharedindexScreen.value == 2){
+        // loadNotis();
+        // }
+
+        if (verificacion == false) {
+          verificacion = true;
+          loadNotis();
+        }
+
+        if (sharedChangeNotifierAppBarMenuCountNotification
+                .sharedCountNotification.value !=
+            0) {
+          signoNoti = Positioned(
+            right: 5,
+            top: 5,
+            child: Container(
+              alignment: Alignment.center,
+              width: 20,
+              height: 20,
+              decoration: const BoxDecoration(
+                  color: Colors.redAccent,
+                  borderRadius: BorderRadius.all(Radius.circular(100))),
+              child: Text(
+                sharedChangeNotifierAppBarMenuCountNotification
+                    .sharedCountNotification.value
+                    .toString(),
+                style: const TextStyle(color: Colors.white, fontSize: 12),
+              ),
+            ),
+          );
+        }
+
+        return Center(
+          child: Container(
+            // padding: const EdgeInsets.only(top: 33),
+            // margin: const EdgeInsets.only(top: 33), //HABILITAR SOLO PARA EL CELULAR
+            // color: Colors.red,
+            width: MediaQuery.of(context).size.width * 0.9,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  "PrintFast",
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: Image.asset(
-                      'assets/images/printfast_logo.png',
+                Row(
+                  children: [
+                    const Text(
+                      "PrintFast",
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20),
                     ),
-                  ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: Image.asset(
+                          'assets/images/printfast_logo.png',
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
+                Container(
+                  // color: Colors.amber,
+                  child: Stack(
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          chIndexNotification.call();
+                        },
+                        icon: const Icon(
+                          Icons.notifications,
+                          color: Colors.white,
+                        ),
+                      ),
+                      signoNoti
+                    ],
+                  ),
+                )
               ],
             ),
-            IconButton(
-              onPressed: () {
-                print("NOTI");
-              },
-              icon: const Icon(
-                Icons.notifications,
-                color: Colors.white,
-              ),
-            )
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -246,22 +373,42 @@ class titlesContainerMenu extends StatelessWidget {
 // ignore: must_be_immutable
 class containerMenuOptions extends StatelessWidget {
   containerMenuOptions(
-      {super.key, required this.chIndexShopping, required this.chIndexHistory});
+      {super.key,
+      required this.chIndexShopping,
+      required this.chIndexHistory,
+      required this.orderActive});
   VoidCallback chIndexShopping;
   VoidCallback chIndexHistory;
+  bool orderActive;
   @override
   Widget build(BuildContext context) {
+    Widget buttonComprar = menuOptionsFake(
+      coloButton: Theme.of(context).colorScheme.primary,
+      icon: Icons.shopping_cart_rounded,
+      nameOption: "Comprar",
+    );
+
+    if (orderActive == false) {
+      buttonComprar = menuOptions(
+          icon: Icons.shopping_cart_rounded,
+          index: 3,
+          nameOption: "Comprar",
+          ChIndex: chIndexShopping);
+    } else {
+      buttonComprar = menuOptionsFake(
+        coloButton: Theme.of(context).colorScheme.primary.withOpacity(0.6),
+        icon: Icons.shopping_cart_rounded,
+        nameOption: "Comprar",
+      );
+    }
+
     return Container(
         width: MediaQuery.of(context).size.width * 0.83,
         // color: Colors.amber,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            menuOptions(
-                icon: Icons.shopping_cart_rounded,
-                index: 3,
-                nameOption: "Comprar",
-                ChIndex: chIndexShopping),
+            buttonComprar,
             menuOptions(
                 icon: Icons.history,
                 index: 4,
@@ -300,6 +447,55 @@ class menuOptions extends StatelessWidget {
               await Future.delayed(const Duration(milliseconds: 250));
               ChIndex.call();
             },
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Center(
+                  child: Icon(
+                    icon,
+                    color: Colors.white,
+                    size: 35,
+                  ),
+                ),
+                Container(
+                    margin: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      nameOption,
+                      style: const TextStyle(color: Colors.white, fontSize: 16),
+                    ))
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ignore: must_be_immutable
+class menuOptionsFake extends StatelessWidget {
+  menuOptionsFake({
+    required this.icon,
+    required this.coloButton,
+    required this.nameOption,
+  });
+
+  IconData icon;
+  Color coloButton;
+  String nameOption;
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: 15),
+      child: Material(
+        child: Ink(
+          decoration: BoxDecoration(
+              color: coloButton, borderRadius: BorderRadius.circular(20)),
+          width: MediaQuery.of(context).size.width * 0.4,
+          height: 100,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: () {},
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -513,16 +709,12 @@ class sectionContainerMyActiveOrders extends StatefulWidget {
 class _sectionContainerMyActiveOrdersState
     extends State<sectionContainerMyActiveOrders> {
   // late Timer _timer;
-
-  int __indexSectionOrderActive = 0;
   // int countChange = 0;
 
   @override
   Widget build(BuildContext context) {
-    // if (widget.sharedChangeNotifier.sharedTime.value != countChange) {
-    //   countChange = widget.sharedChangeNotifier.sharedTime.value;
-    //   setState(() {});
-    // }
+    int __indexSectionOrderActive =
+        widget.sharedChangeNotifier.sharedindexSectionOrderActive.value;
 
     double time = widget.sharedChangeNotifier.sharedTime.value.toDouble();
     String timeString = "---";
@@ -535,21 +727,63 @@ class _sectionContainerMyActiveOrdersState
       timeString = "${(time / 60).toStringAsFixed(1)} h";
     }
 
-    if (widget.orderActive == false) {
-      __indexSectionOrderActive = 0;
-      print("SIN ANUNCIO DE ORDENA");
-    } else {
-      __indexSectionOrderActive = 1;
-      print("CON ANUNCIO DE ORDENA");
-      // _timer = Timer.periodic(Duration(seconds: 1), (timer) {
-      //   ++count;
-      //   print(count);
-      //   // setState(() {
+    void ordenA() async {
+      print("GUARDANDO");
 
-      //   // });
-      // });
+      final recivePort = ReceivePort();
+      // ignore: unused_local_variable
+      final isolate = await Isolate.spawn(isolateOrdenA, recivePort.sendPort);
+      recivePort.listen((message) async {
+        Map updateInfoHOrden = {
+          "Compras": widget.orderActiveInfo.productos,
+          "Time": widget.orderActiveInfo.time,
+          "Place": widget.orderActiveInfo.place,
+          "Price": widget.orderActiveInfo.price,
+          "initDate": widget.orderActiveInfo.dateInit,
+          "initDateTime": widget.orderActiveInfo.dateTimeInit,
+          "finalDate": ConvertTime().getFecha(),
+          "finalDateTime": ConvertTime().getHora(),
+          "initDateComplete": widget.orderActiveInfo.dateTimeComplete
+        };
+
+        print("BORRANDO AHORITA");
+        await updateDB({}, widget.matricula);
+        await updateDBHistory(updateInfoHOrden, widget.matricula);
+
+        try {
+          widget.sharedChangeNotifier.OrderCancel();
+          widget.actualizarOrderA.call();
+        } catch (e) {
+          print(e);
+          print("ERROR A LA HORA DE GUARDAR LA COMPRA FINALIZADA");
+        }
+        isolate.kill(priority: Isolate.immediate);
+      });
     }
 
+    if (widget.orderActive == false) {
+      __indexSectionOrderActive = 0;
+
+      print("SIN ANUNCIO DE ORDENA");
+    } else {
+      if (widget.sharedChangeNotifier.sharedTime.value == 0) {
+        __indexSectionOrderActive = 2;
+         ordenA();
+
+
+          // if (widget.sharedChangeNotifier.shareAddOrderToHistory.value == true) {
+            
+          //   widget.sharedChangeNotifier.updateAddOrderToHistory(false);
+          //   ordenA();
+          // }
+          
+      } else {
+        __indexSectionOrderActive = 1;
+      }
+      print("CON ANUNCIO DE ORDENA");
+    }
+
+  
     List<Widget> orderActiveSectionContainer = [
       Center(
         child: Container(
@@ -724,6 +958,139 @@ class _sectionContainerMyActiveOrdersState
           ),
         ),
       ),
+      Container(
+        decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300, width: 1),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10)),
+        width: MediaQuery.of(context).size.width,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+          // color: Colors.amber,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(5),
+                  //  color: Colors.blue,
+                  child: Container(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.location_on_rounded,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .inverseSurface,
+                                    size: 18,
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 5),
+                                    child: Container(
+                                      width: MediaQuery.of(context).size.width *
+                                          0.15,
+                                      child: Text(
+                                        widget.orderActiveInfo.place,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .inverseSurface,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 18),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: 5),
+                                        child: Text(
+                                          timeString,
+                                          style: TextStyle(
+                                              color: Colors.grey.shade600,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 14),
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: 5),
+                                        child: Icon(
+                                          Icons.access_time_rounded,
+                                          color: Colors.grey.shade600,
+                                          size: 18,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: 5),
+                                        child: Text(
+                                          "${widget.orderActiveInfo.price} Mxn",
+                                          style: TextStyle(
+                                              color: Colors.grey.shade600,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 14),
+                                        ),
+                                      ),
+                                      Icon(
+                                        Icons.attach_money_rounded,
+                                        color: Colors.grey.shade600,
+                                        size: 18,
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            Text(" ¡Entregado!",
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .inverseSurface,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16)),
+                            const Padding(
+                              padding: EdgeInsets.only(left: 10),
+                              child: Icon(
+                                Icons.check_circle,
+                                color: Colors.greenAccent,
+                                size: 35,
+                              ),
+                            ),
+                          ],
+                        )
+                      ],
+                    ),
+                  ),
+                ),
+              )
+            ],
+          ),
+        ),
+      ),
     ];
 
     return Container(
@@ -781,3 +1148,97 @@ class titlesContainer extends StatelessWidget {
     );
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  //  void changeIndex(int index) async {
+
+    //   final recivePort = ReceivePort();
+    //   // ignore: unused_local_variable
+    //   final isolate =
+    //       await Isolate.spawn(isolateChandeIndexOrden, recivePort.sendPort);
+    //   recivePort.listen((message) async {
+    //     print("PRUEBA. INDEX $index");
+    //     widget.sharedChangeNotifier.updateindexSectionOrderActive(index);
+    //     isolate.kill(priority: Isolate.immediate);
+    //   });
+
+    // }
+
+    // void ordenA() async {
+    //   print("GUARDANDO");
+
+    //   final recivePort = ReceivePort();
+    //   // ignore: unused_local_variable
+    //   final isolate = await Isolate.spawn(isolateOrdenA, recivePort.sendPort);
+    //   recivePort.listen((message) async {
+    //     Map updateInfoHOrden = {
+    //       "Compras": widget.orderActiveInfo.productos,
+    //       "Time": widget.orderActiveInfo.time,
+    //       "Place": widget.orderActiveInfo.place,
+    //       "Price": widget.orderActiveInfo.price,
+    //       "initDate": widget.orderActiveInfo.dateInit,
+    //       "initDateTime": widget.orderActiveInfo.dateTimeInit,
+    //       "finalDate": ConvertTime().getFecha(),
+    //       "finalDateTime": ConvertTime().getHora(),
+    //       "initDateComplete": widget.orderActiveInfo.dateTimeComplete
+    //     };
+
+    //     print("BORRANDO AHORITA");
+    //     await updateDB({}, widget.matricula);
+    //     await updateDBHistory(updateInfoHOrden, widget.matricula);
+
+    //     try {
+    //       widget.sharedChangeNotifier.OrderCancel();
+    //     } catch (e) {
+    //       print(e);
+    //       print("ERROR A LA HORA DE GUARDAR LA COMPRA FINALIZADA");
+    //     }
+
+    //     isolate.kill(priority: Isolate.immediate);
+    //   });
+    // }
+
+    // if (widget.orderActive == false) {
+    //   if(widget.sharedChangeNotifier.sharedindexSectionOrderActive0.value == false){
+    //   changeIndex(0);
+    //   }
+    //   print("SIN ANUNCIO DE ORDENA");
+    // } else {
+    //   if (widget.sharedChangeNotifier.sharedTime.value == 0) {
+    //     if(widget.sharedChangeNotifier.sharedindexSectionOrderActive0.value == false){
+    //   changeIndex(0);
+    //   }
+    //     changeIndex(2);
+    //     if (widget.sharedChangeNotifier.shareAddOrderToHistory.value == true) {
+    //       widget.sharedChangeNotifier.updateAddOrderToHistory(false);
+    //       ordenA();
+    //     }
+    //   } else {
+    //     if(widget.sharedChangeNotifier.sharedindexSectionOrderActive1.value == false){
+    //       changeIndex(1);
+    //     }
+
+    //   }
+    //   print("CON ANUNCIO DE ORDENA");
+    // }

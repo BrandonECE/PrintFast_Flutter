@@ -44,6 +44,8 @@ dependencies:
   pdf_render: ^1.4.0
   jetpack: ^1.0.3
   provider: ^6.0.5
+  intl: ^0.18.1
+  flutter_local_notifications: ^16.1.0
 
 flutter_native_splash:
   fullscreen: true

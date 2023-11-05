@@ -56,6 +56,120 @@ Future<void> updateDB(Map infoOrder, String matricula) async {
   });
 }
 
+Future<void> updateDBHistory(Map infoOrder, String matricula) async {
+  Map? dbMapUser;
+  Map ordenesHistory = {};
+  int count = 0;
+  CollectionReference collectionReferenceLocation =
+      await db.collection("usuarios");
+  DocumentReference userRef = await collectionReferenceLocation.doc(matricula);
+  DocumentSnapshot snapShotData = await userRef.get();
+  dbMapUser = snapShotData.data() as Map<String, dynamic>;
+
+  dbMapUser.forEach((key, value) {
+    if ("HOrdenes" == key) {
+      // print("KEY: $key -> ValueL $value");
+      ordenesHistory = value;
+      count = value.length;
+    }
+  });
+
+  ordenesHistory["${++count}"] = infoOrder;
+
+  await userRef.update({
+    "HOrdenes": ordenesHistory,
+  });
+}
+
+Future<Map> getDBUserOrdersH(String matricula) async {
+  Map dbMapUser = {};
+  Map dbMapUserOrderA = {};
+  CollectionReference collectionReferenceLocation =
+      await db.collection("usuarios");
+  DocumentReference userRef = await collectionReferenceLocation.doc(matricula);
+  DocumentSnapshot snapShotData = await userRef.get();
+  dbMapUser = snapShotData.data() as Map<String, dynamic>;
+  dbMapUser.forEach((key, value) {
+    if ("HOrdenes" == key) {
+      print(key);
+      dbMapUserOrderA = value;
+    }
+  });
+  return dbMapUserOrderA as Map;
+}
+
+Future<Map> getDBUserNotis(String matricula) async {
+  Map dbMapUser = {};
+  Map dbMapUserNotis = {};
+  CollectionReference collectionReferenceLocation =
+      await db.collection("usuarios");
+  DocumentReference userRef = await collectionReferenceLocation.doc(matricula);
+  DocumentSnapshot snapShotData = await userRef.get();
+  dbMapUser = snapShotData.data() as Map<String, dynamic>;
+  dbMapUser.forEach((key, value) {
+    if ("Notificaciones" == key) {
+      print(key);
+      dbMapUserNotis = value;
+    }
+  });
+  return dbMapUserNotis as Map;
+}
+
+Future<void> updateDBUserNotis(Map infoNoti, String matricula) async {
+  Map? dbMapUser;
+  Map notificaciones = {};
+  int count = 0;
+  CollectionReference collectionReferenceLocation =
+      await db.collection("usuarios");
+  DocumentReference userRef = await collectionReferenceLocation.doc(matricula);
+  DocumentSnapshot snapShotData = await userRef.get();
+  dbMapUser = snapShotData.data() as Map<String, dynamic>;
+
+  dbMapUser.forEach((key, value) {
+    if ("Notificaciones" == key) {
+      // print("KEY: $key -> ValueL $value");
+      notificaciones = value;
+      count = value.length;
+    }
+  });
+
+  notificaciones["${++count}"] = infoNoti;
+
+  await userRef.update({
+    "Notificaciones": notificaciones,
+  });
+}
+
+Future<void> updateNotisDeletedOne(Map infoNoti, String matricula) async {
+  // ignore: unused_local_variable
+  Map? dbMapUser;
+
+  CollectionReference collectionReferenceLocation =
+      await db.collection("usuarios");
+  DocumentReference userRef = await collectionReferenceLocation.doc(matricula);
+  DocumentSnapshot snapShotData = await userRef.get();
+  dbMapUser = snapShotData.data() as Map<String, dynamic>;
+
+  await userRef.update({
+    "Notificaciones": infoNoti,
+  });
+}
+
+Future<void> updateNotiVista(List<int> listaIndex, String matricula) async {
+  CollectionReference collectionReferenceLocation =
+      await db.collection("usuarios");
+  DocumentReference userRef = await collectionReferenceLocation.doc(matricula);
+
+  listaIndex.forEach((element) async {
+
+      await userRef.update({
+          "Notificaciones.$element.vista": true,
+        });
+
+  });
+
+}
+
 Future<void> updateDBTime(String time, String matricula) async {
   CollectionReference collectionReferenceLocation =
       await db.collection("usuarios");

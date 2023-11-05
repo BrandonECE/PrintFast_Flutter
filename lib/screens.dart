@@ -1,10 +1,17 @@
+import 'dart:isolate';
+
 import 'package:flutter/material.dart';
+import 'package:print_fast/dirScreens/isolates.dart';
 import 'package:print_fast/dirScreens/orderActive.dart';
+import 'package:print_fast/dirScreens/orderHistoryInfo.dart';
+import 'package:print_fast/dirScreens/orderNotificationInfo.dart';
 import 'package:print_fast/dirScreens/placelocation.dart';
 import 'package:print_fast/dirScreens/screenload.dart';
 import 'package:print_fast/dirScreens/login.dart';
 import 'package:print_fast/dirScreens/register.dart';
+import 'package:print_fast/firestore_service.dart';
 import 'package:print_fast/sharedviewmodel.dart';
+import 'package:print_fast/dirScreens/orderhistory.dart';
 import 'package:provider/provider.dart';
 // import 'package:print_fast/firestore_service.dart';
 import 'dirScreens/location.dart';
@@ -12,6 +19,7 @@ import 'dirScreens/menu.dart';
 import 'dirScreens/history.dart';
 import 'dirScreens/shopping.dart';
 import 'dirScreens/settings.dart';
+import 'dirScreens/notificactionscreen.dart';
 import 'package:geolocator/geolocator.dart';
 
 class myScreens extends StatefulWidget {
@@ -36,8 +44,14 @@ class _myScreensState extends State<myScreens> {
   String matricula = "";
   String email = "";
   String telefono = "";
+  String initDateOrderA = "";
+  String initTimeOrderA = "";
+  // List<myOrderHistoryInfo> orderHistoryInfo = [];
+  myOrderHistoryInfo orderHistoryInfoScreen = myOrderHistoryInfo(
+      "---", "---", "---", {}, "---", "---", "---", "---", "---");
+  Map notis = {};
 
-  void changeindex(int newIndex) {
+  void changeindex(int newIndex) async {
     setState(() {
       if (_indexAntes != 5) {
         ///El index 5 es el de los settings, mientras el index no sea ese (5) el NavigationBarBottom tendra que estar con el icono home como el presionado
@@ -156,6 +170,19 @@ class _myScreensState extends State<myScreens> {
       sumaTotalDB = sumaT;
     };
 
+    Function(String) getInitDate = (String date) {
+      initDateOrderA = date;
+    };
+
+    Function(String) getInitTime = (String time) {
+      initTimeOrderA = time;
+    };
+
+    Function(myOrderHistoryInfo) getOrderHistoryScreen =
+        (myOrderHistoryInfo orderHistory) {
+      orderHistoryInfoScreen = orderHistory;
+    };
+
     // ignore: prefer_function_declarations_over_variables
     Function(Map) getUserData = (infoUser) {
       infoUser.forEach((info, value) {
@@ -179,64 +206,6 @@ class _myScreensState extends State<myScreens> {
     } else {
       _indexTypeNavigationBar = 0;
     }
-
-    List<Widget> screensAppbar = [
-      const myAppBarLogin(),
-      myAppBarRegister(chIndexRegisterToLogin: () => changeindex(0)),
-      const myAppBarMenu(),
-      myAppBarShopping(chindex: () => changeindex(2)),
-      myAppBarHistory(
-        chindex: () => changeindex(2),
-      ),
-      myAppBarSettings(() {}),
-      myAppBarLocation(
-        chindex: () => changeindex(2),
-      ),
-      myAppBarScreenLoad(
-        chindex: () => changeindex(2),
-        icon: Icons.location_on_rounded,
-      ),
-      myAppBarmyOrderActiveScreenInfo(
-        chindex: () => changeindex(2),
-      )
-    ];
-
-    // List<Widget> screensBody = [
-    //   myLogin(
-    //       chIndexMenu: () => changeIndexLogin(),
-    //       chIndexRegister: () => changeindex(1),
-    //       functionInfoUser: getUserData),
-    //   myRegister(chIndexLogin: () => changeindex(0)),
-    //   myMenu(
-    //       getProductosSeleccionadosDB: getProductosSeleccionadosDB,
-    //       getSumaTotalDB: getSumaTotalDB,
-    //       chIndexShopping: () => changeindex(3),
-    //       chIndexHistory: () => changeindex(4),
-    //       chIndexOrderActive: () => changeindex(8),
-    //       name: name,
-    //       matricula: matricula),
-    //   myShopping(
-    //       chIndexButtonLocation: getProductosSeleccionados,
-    //       getSumaTotal: getSumaTotal),
-    //   myHistory(),
-    //   mySettings(
-    //       chIndexMenu: () => changeIndexLogout(),
-    //       name: name,
-    //       telefono: telefono,
-    //       email: email,
-    //       matricula: matricula),
-    //   myLocation(
-    //       chIndexMenu: () => changeindex(2),
-    //       userLat: userLat,
-    //       userLong: userLong,
-    //       productosSeleccionados: productosSeleccionados,
-    //       placeOrderActive: getPlaceOrderActive,
-    //       sumaTotal: sumaTotal),
-    //   const myScreenLoad(),
-    //   myOrderActiveScreenInfo(
-    //       productosSeleccionadosDB: productosSeleccionadosDB,
-    //       sumaTotalDB: sumaTotalDB)
-    // ];
 
     List<Widget> typesbottombar = [
       Container(
@@ -262,60 +231,161 @@ class _myScreensState extends State<myScreens> {
           ]),
     ];
 
-    return Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        appBar: AppBar(
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          flexibleSpace: SafeArea(child: screensAppbar[_indexscreen]),
-        ),
-        body: ChangeNotifierProvider<SharedChangeNotifier>(
-            create: (context) => SharedChangeNotifier(),
-            builder: (context, child) {
+    return ChangeNotifierProvider<SharedChangeNotifier>(
+        create: (context) => SharedChangeNotifier(),
+        builder: (context, child) {
+          final sharedChangeNotifier = context.watch<SharedChangeNotifier>();
 
-              final sharedChangeNotifier = context.watch<SharedChangeNotifier>();
+          sharedChangeNotifier.updateScreenIndex(_indexscreen);
 
-              List<Widget> screensBody = [
-                myLogin(
-                    chIndexMenu: () => changeIndexLogin(),
-                    chIndexRegister: () => changeindex(1),
-                    functionInfoUser: getUserData),
-                myRegister(chIndexLogin: () => changeindex(0)),
-                myMenu(
-                    sharedChangeNotifier: sharedChangeNotifier,
-                    getProductosSeleccionadosDB: getProductosSeleccionadosDB,
-                    getSumaTotalDB: getSumaTotalDB,
-                    chIndexShopping: () => changeindex(3),
-                    chIndexHistory: () => changeindex(4),
-                    chIndexOrderActive: () => changeindex(8),
-                    name: name,
-                    matricula: matricula),
-                myShopping(
-                    chIndexButtonLocation: getProductosSeleccionados,
-                    getSumaTotal: getSumaTotal),
-                myHistory(),
-                mySettings(
-                    chIndexMenu: () => changeIndexLogout(),
-                    name: name,
-                    telefono: telefono,
-                    email: email,
-                    matricula: matricula),
-                myLocation(
-                    matricula: matricula,
-                    chIndexMenu: () => changeindex(2),
-                    userLat: userLat,
-                    userLong: userLong,
-                    productosSeleccionados: productosSeleccionados,
-                    placeOrderActive: getPlaceOrderActive,
-                    sumaTotal: sumaTotal),
-                const myScreenLoad(),
-                myOrderActiveScreenInfo(
-                    productosSeleccionadosDB: productosSeleccionadosDB,
-                    sumaTotalDB: sumaTotalDB)
-              ];
+          void changeIndexHistory() async {
+            sharedChangeNotifier.sharedorderHistoryInfo.value.clear();
+            sharedChangeNotifier.updateIsThereOrderHistoryInfo(false);
+            Map historyOrders = await getDBUserOrdersH(matricula);
+            final recivePort = ReceivePort();
+            final isolate = await Isolate.spawn(
+                isolateOrdersHistoryOrdenar,
+                IsolateOrdersHistoryOrdenar(
+                    historyOrders, recivePort.sendPort));
 
-              return screensBody[_indexscreen];
-            },
+            recivePort.listen((message) {
+              sharedChangeNotifier
+                  .updateorderHistoryInfo(message as List<myOrderHistoryInfo>);
+              isolate.kill(priority: Isolate.immediate);
+            });
+            // orderHistoryInfo = orderHistoryInfo.reversed.toList();
+            changeindex(4);
+          }
+
+          void changeIndexNotification() async {
+            sharedChangeNotifier.sharedNotificationInfo.value.clear();
+            sharedChangeNotifier.updateIsThereNotificationInfo(false);
+            Map notificaciones = await getDBUserNotis(matricula);
+            final recivePort = ReceivePort();
+            final isolate = await Isolate.spawn(isolateNotificationInfo,
+                IsolateNotificationInfo(notificaciones, recivePort.sendPort));
+
+            recivePort.listen((message) {
+              sharedChangeNotifier.updateNotificationInfo(
+                  message as List<myOrderNotificationInfo>);
+              isolate.kill(priority: Isolate.immediate);
+            });
+            // orderHistoryInfo = orderHistoryInfo.reversed.toList();
+            changeindex(10);
+          }
+
+          // ignore: unused_local_variable, prefer_function_declarations_over_variables
+          Function(int) deleteNotification = (int index) async {
+            changeindex(10);
+            sharedChangeNotifier.sharedNotificationInfo.value.clear();
+            sharedChangeNotifier.updateIsThereNotificationInfo(false);
+            Map notificaciones = await getDBUserNotis(matricula);
+            final recivePort = ReceivePort();
+            final isolate = await Isolate.spawn(
+                isolateDeleteNotification,
+                IsolateDeleteNotification(
+                    notificaciones, recivePort.sendPort, index));
+            recivePort.listen((message) async {
+              try {
+                await updateNotisDeletedOne(message as Map, matricula);
+                changeIndexNotification();
+              } catch (e) {
+                print(e);
+                print("EXCEPCION A LA HORAN DE BORRAR UNA NOTIFICACION");
+              }
+              isolate.kill(priority: Isolate.immediate);
+            });
+            // orderHistoryInfo = orderHistoryInfo.reversed.toList();
+          };
+
+          List<Widget> screensAppbar = [
+            const myAppBarLogin(),
+            myAppBarRegister(chIndexRegisterToLogin: () => changeindex(0)),
+            myAppBarMenu(
+              sharedChangeNotifier: sharedChangeNotifier,
+              matricula: matricula,
+              chIndexNotification: () => changeIndexNotification(),
             ),
-        bottomNavigationBar: typesbottombar[_indexTypeNavigationBar]);
+            myAppBarShopping(chindex: () => changeindex(2)),
+            myAppBarHistory(
+              chindex: () => changeindex(2),
+            ),
+            myAppBarSettings(() {}),
+            myAppBarLocation(
+              chindex: () => changeindex(2),
+            ),
+            myAppBarScreenLoad(
+              chindex: () => changeindex(2),
+              icon: Icons.location_on_rounded,
+            ),
+            myAppBarmyOrderActiveScreenInfo(
+              chindex: () => changeindex(2),
+            ),
+            myAppBarHistoryOrder(chindex: () => changeindex(4)),
+            myAppBarNotificationScreens(chindex: () => changeindex(2))
+          ];
+
+          List<Widget> screensBody = [
+            myLogin(
+                chIndexMenu: () => changeIndexLogin(),
+                chIndexRegister: () => changeindex(1),
+                functionInfoUser: getUserData),
+            myRegister(chIndexLogin: () => changeindex(0)),
+            myMenu(
+                getInitDate: getInitDate,
+                getInitTime: getInitTime,
+                sharedChangeNotifier: sharedChangeNotifier,
+                getProductosSeleccionadosDB: getProductosSeleccionadosDB,
+                getSumaTotalDB: getSumaTotalDB,
+                chIndexShopping: () => changeindex(3),
+                chIndexHistory: () => changeIndexHistory(),
+                chIndexOrderActive: () => changeindex(8),
+                name: name,
+                matricula: matricula),
+            myShopping(
+                chIndexButtonLocation: getProductosSeleccionados,
+                getSumaTotal: getSumaTotal),
+            myHistory(
+                // orderHistoryInfo: orderHistoryInfo,
+                sharedChangeNotifier: sharedChangeNotifier,
+                getOrderHistoryScreen: getOrderHistoryScreen,
+                chIndexOrderHistory: () => changeindex(9)),
+            mySettings(
+                chIndexMenu: () => changeIndexLogout(),
+                name: name,
+                telefono: telefono,
+                email: email,
+                matricula: matricula),
+            myLocation(
+                matricula: matricula,
+                chIndexMenu: () => changeindex(2),
+                userLat: userLat,
+                userLong: userLong,
+                productosSeleccionados: productosSeleccionados,
+                placeOrderActive: getPlaceOrderActive,
+                sumaTotal: sumaTotal),
+            const myScreenLoad(),
+            myOrderActiveScreenInfo(
+                initDateOrderA: initDateOrderA,
+                initTimeOrderA: initTimeOrderA,
+                productosSeleccionadosDB: productosSeleccionadosDB,
+                sumaTotalDB: sumaTotalDB),
+            myHistoryOrder(orderHistoryInfoScreen: orderHistoryInfoScreen),
+            NotificationScreens(
+              matricula: matricula,
+              sharedChangeNotifier: sharedChangeNotifier,
+              deleteNotification: deleteNotification,
+            )
+          ];
+
+          return Scaffold(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              appBar: AppBar(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                flexibleSpace: SafeArea(child: screensAppbar[_indexscreen]),
+              ),
+              body: screensBody[_indexscreen],
+              bottomNavigationBar: typesbottombar[_indexTypeNavigationBar]);
+        });
   }
 }
