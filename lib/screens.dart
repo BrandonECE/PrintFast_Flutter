@@ -50,6 +50,7 @@ class _myScreensState extends State<myScreens> {
   myOrderHistoryInfo orderHistoryInfoScreen = myOrderHistoryInfo(
       "---", "---", "---", {}, "---", "---", "---", "---", "---");
   Map notis = {};
+  
 
   void changeindex(int newIndex) async {
     setState(() {

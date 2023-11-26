@@ -1,5 +1,3 @@
-import 'dart:isolate';
-
 import 'package:flutter/material.dart';
 import 'package:jetpack/jetpack.dart';
 import 'package:print_fast/dirScreens/convertTime.dart';
@@ -41,32 +39,24 @@ class SharedChangeNotifier extends ChangeNotifier {
     _sharedMatricula.value = newMatricula;
   }
 
+  // final MutableLiveData<bool> _sharedindexSectionOrderActive0 =
+  //     MutableLiveData(false);
+  // MutableLiveData<bool> get sharedindexSectionOrderActive0 =>
+  //     _sharedindexSectionOrderActive0;
+
+  // final MutableLiveData<bool> _sharedindexSectionOrderActive1 =
+  //     MutableLiveData(false);
+  // MutableLiveData<bool> get sharedindexSectionOrderActive1 =>
+  //     _sharedindexSectionOrderActive1;
+
+  // final MutableLiveData<bool> _sharedindexSectionOrderActive2 =
+  //     MutableLiveData(false);
+  // MutableLiveData<bool> get sharedindexSectionOrderActive2 =>
+  //     _sharedindexSectionOrderActive2;
+
   void updateindexSectionOrderActive(int newindexSectionOrderActive) {
     _sharedindexSectionOrderActive.value = newindexSectionOrderActive;
-  }
-
-  void procesindexSectionOrderActive(int newindexSectionOrderActive) async {
-
-    void procesIsolate(SendPort sendport) {
-     
-      bool bucle = true;
-
-      while(bucle == true){
-
-        
-
-      }
-
-       sendport.send("#######PROBANDO PROCESO TERMINADO / ORDEN A#######");
-    }
-
-    final recivePort = ReceivePort();
-    final isolate = await Isolate.spawn(procesIsolate, recivePort.sendPort);
-    recivePort.listen((message) {
-      print(message);
-      isolate.kill(priority: Isolate.immediate);
-    });
-
+    notifyListeners();
   }
 
   void updateTime(int newTime) {
@@ -152,6 +142,7 @@ class SharedChangeNotifier extends ChangeNotifier {
 
   void updateAddOrderToHistory(bool newAddOrderToHistory) {
     _sharedAddOrderToHistory.value = newAddOrderToHistory;
+    // notifyListeners();
   }
 
   void OrderCancel() {
@@ -159,7 +150,6 @@ class SharedChangeNotifier extends ChangeNotifier {
     initTimerPeriodicCancel();
     updateTime(0);
     updateTimeInit(false);
-    // _sharedAddOrderToHistory.value = true;
     _sharedindexSectionOrderActive.value = 0;
     notifyListeners();
   }
@@ -171,7 +161,7 @@ class SharedChangeNotifier extends ChangeNotifier {
   MutableLiveData<List<myOrderHistoryInfo>> get sharedorderHistoryInfo =>
       _sharedorderHistoryInfo;
 
-  final MutableLiveData<bool> _sharedIsThereOrderHistoryInfo =
+  static final MutableLiveData<bool> _sharedIsThereOrderHistoryInfo =
       MutableLiveData(false);
   MutableLiveData<bool> get sharedIsThereOrderHistoryInfo =>
       _sharedIsThereOrderHistoryInfo;

@@ -9,19 +9,23 @@ class ConvertTime {
 
   String getHora() {
     String hora = "";
+    String minutos = DateTime.now().minute.toString();
+    int minutoInt = DateTime.now().minute;
+    if(minutoInt < 10){
+      minutos = "0${DateTime.now().minute.toString()}";
+    }
     if (DateTime.now().hour >= 12 && DateTime.now().hour != 0) {
-
       if (DateTime.now().hour > 12)
         // ignore: curly_braces_in_flow_control_structures
-        hora = "${DateTime.now().hour - 12}:${DateTime.now().minute} PM";
+        hora = "${DateTime.now().hour - 12}:${minutos} PM";
       else
         // ignore: curly_braces_in_flow_control_structures
-        hora = "${DateTime.now().hour}:${DateTime.now().minute} PM";
+        hora = "${DateTime.now().hour}:${minutos} PM";
     } else {
-
-      if(DateTime.now().hour == 0) hora = "12:${DateTime.now().minute} AM";
-      else hora = "${DateTime.now().hour}:${DateTime.now().minute} AM";
-
+      if (DateTime.now().hour == 0)
+        hora = "12:${minutos} AM";
+      else
+        hora = "${DateTime.now().hour}:${minutos} AM";
     }
 
     return hora;

@@ -59,16 +59,9 @@ class _myMenuState extends State<myMenu> {
     void _actualizarOrderActiva() {
       once = false;
       orderActive = false;
-      widget.sharedChangeNotifier.updateAddOrderToHistory(true);
+       addOrdenHistoryBool.switchBool = true;
       setState(() {});
-      // if (widget.sharedChangeNotifier.sharedindexScreen.value == 2) {
-      //   try {
-      //     setState(() {});
-      //   } catch (e) {
-      //     print("ERROR");
-      //     print(e);
-      //   }
-      // }
+  
     }
 
     void verifyOrderActive() async {
@@ -727,6 +720,19 @@ class _sectionContainerMyActiveOrdersState
       timeString = "${(time / 60).toStringAsFixed(1)} h";
     }
 
+    void saveOrderHistory(bool state) async {
+      final recivePort = ReceivePort();
+      // ignore: unused_local_variable
+      final isolate =
+          await Isolate.spawn(isolateChandeIndexOrden, recivePort.sendPort);
+      recivePort.listen((message) {
+        widget.sharedChangeNotifier.updateAddOrderToHistory(state);
+        print("ISOLATEEEEEEEEEEE");
+        
+        isolate.kill(priority: Isolate.immediate);
+      });
+    }
+
     void ordenA() async {
       print("GUARDANDO");
 
@@ -757,33 +763,32 @@ class _sectionContainerMyActiveOrdersState
           print(e);
           print("ERROR A LA HORA DE GUARDAR LA COMPRA FINALIZADA");
         }
+       
         isolate.kill(priority: Isolate.immediate);
       });
     }
 
     if (widget.orderActive == false) {
+      print("AQUIIIIIIII");
       __indexSectionOrderActive = 0;
 
       print("SIN ANUNCIO DE ORDENA");
     } else {
       if (widget.sharedChangeNotifier.sharedTime.value == 0) {
         __indexSectionOrderActive = 2;
-         ordenA();
-
-
-          // if (widget.sharedChangeNotifier.shareAddOrderToHistory.value == true) {
-            
-          //   widget.sharedChangeNotifier.updateAddOrderToHistory(false);
-          //   ordenA();
-          // }
-          
+        print(
+            "####################VALOR: ${addOrdenHistoryBool.switchBool}#############################");
+        if (addOrdenHistoryBool.switchBool == true) {
+          ordenA();
+          addOrdenHistoryBool.switchBool = false;
+          // setState(() {});
+        }
       } else {
         __indexSectionOrderActive = 1;
       }
       print("CON ANUNCIO DE ORDENA");
     }
 
-  
     List<Widget> orderActiveSectionContainer = [
       Center(
         child: Container(
@@ -1149,96 +1154,6 @@ class titlesContainer extends StatelessWidget {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  //  void changeIndex(int index) async {
-
-    //   final recivePort = ReceivePort();
-    //   // ignore: unused_local_variable
-    //   final isolate =
-    //       await Isolate.spawn(isolateChandeIndexOrden, recivePort.sendPort);
-    //   recivePort.listen((message) async {
-    //     print("PRUEBA. INDEX $index");
-    //     widget.sharedChangeNotifier.updateindexSectionOrderActive(index);
-    //     isolate.kill(priority: Isolate.immediate);
-    //   });
-
-    // }
-
-    // void ordenA() async {
-    //   print("GUARDANDO");
-
-    //   final recivePort = ReceivePort();
-    //   // ignore: unused_local_variable
-    //   final isolate = await Isolate.spawn(isolateOrdenA, recivePort.sendPort);
-    //   recivePort.listen((message) async {
-    //     Map updateInfoHOrden = {
-    //       "Compras": widget.orderActiveInfo.productos,
-    //       "Time": widget.orderActiveInfo.time,
-    //       "Place": widget.orderActiveInfo.place,
-    //       "Price": widget.orderActiveInfo.price,
-    //       "initDate": widget.orderActiveInfo.dateInit,
-    //       "initDateTime": widget.orderActiveInfo.dateTimeInit,
-    //       "finalDate": ConvertTime().getFecha(),
-    //       "finalDateTime": ConvertTime().getHora(),
-    //       "initDateComplete": widget.orderActiveInfo.dateTimeComplete
-    //     };
-
-    //     print("BORRANDO AHORITA");
-    //     await updateDB({}, widget.matricula);
-    //     await updateDBHistory(updateInfoHOrden, widget.matricula);
-
-    //     try {
-    //       widget.sharedChangeNotifier.OrderCancel();
-    //     } catch (e) {
-    //       print(e);
-    //       print("ERROR A LA HORA DE GUARDAR LA COMPRA FINALIZADA");
-    //     }
-
-    //     isolate.kill(priority: Isolate.immediate);
-    //   });
-    // }
-
-    // if (widget.orderActive == false) {
-    //   if(widget.sharedChangeNotifier.sharedindexSectionOrderActive0.value == false){
-    //   changeIndex(0);
-    //   }
-    //   print("SIN ANUNCIO DE ORDENA");
-    // } else {
-    //   if (widget.sharedChangeNotifier.sharedTime.value == 0) {
-    //     if(widget.sharedChangeNotifier.sharedindexSectionOrderActive0.value == false){
-    //   changeIndex(0);
-    //   }
-    //     changeIndex(2);
-    //     if (widget.sharedChangeNotifier.shareAddOrderToHistory.value == true) {
-    //       widget.sharedChangeNotifier.updateAddOrderToHistory(false);
-    //       ordenA();
-    //     }
-    //   } else {
-    //     if(widget.sharedChangeNotifier.sharedindexSectionOrderActive1.value == false){
-    //       changeIndex(1);
-    //     }
-
-    //   }
-    //   print("CON ANUNCIO DE ORDENA");
-    // }
+class addOrdenHistoryBool {
+  static bool switchBool = true;
+}
