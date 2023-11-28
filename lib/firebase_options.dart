@@ -44,41 +44,37 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDkJ-Otq2KaGiZc21M8rxnDuOgEfEsAQ6A',
-    appId: '1:468189408152:web:18437202209b215a8fd9ed',
-    messagingSenderId: '468189408152',
-    projectId: 'printfastfirebase',
-    authDomain: 'printfastfirebase.firebaseapp.com',
-    databaseURL: 'https://printfastfirebase-default-rtdb.firebaseio.com',
-    storageBucket: 'printfastfirebase.appspot.com',
+    apiKey: 'AIzaSyDjRlpPh55inZGXZr7W1KEHDJLHwbGJv50',
+    appId: '1:213366385233:web:45c7047d302040014c2670',
+    messagingSenderId: '213366385233',
+    projectId: 'printfastoficial',
+    authDomain: 'printfastoficial.firebaseapp.com',
+    storageBucket: 'printfastoficial.appspot.com',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCbmcOKxl9R_2OMT6SYS3aWs4jymC2_etQ',
-    appId: '1:468189408152:android:78bdef2064eec3528fd9ed',
-    messagingSenderId: '468189408152',
-    projectId: 'printfastfirebase',
-    databaseURL: 'https://printfastfirebase-default-rtdb.firebaseio.com',
-    storageBucket: 'printfastfirebase.appspot.com',
+    apiKey: 'AIzaSyAdIeP885DykIgdfjPk3Peo4x3Dip7_Xt0',
+    appId: '1:213366385233:android:7ef4144de40b3d074c2670',
+    messagingSenderId: '213366385233',
+    projectId: 'printfastoficial',
+    storageBucket: 'printfastoficial.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBdIkhjeOX9tEfb-lj_lifMzXVXFXJtpDY',
-    appId: '1:468189408152:ios:c87f6546791341f78fd9ed',
-    messagingSenderId: '468189408152',
-    projectId: 'printfastfirebase',
-    databaseURL: 'https://printfastfirebase-default-rtdb.firebaseio.com',
-    storageBucket: 'printfastfirebase.appspot.com',
+    apiKey: 'AIzaSyAmCkXoSCFPkUVT-Wp7kpyaUlFauWUX5A4',
+    appId: '1:213366385233:ios:0abac7d13e65c8de4c2670',
+    messagingSenderId: '213366385233',
+    projectId: 'printfastoficial',
+    storageBucket: 'printfastoficial.appspot.com',
     iosBundleId: 'com.example.printFast',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyBdIkhjeOX9tEfb-lj_lifMzXVXFXJtpDY',
-    appId: '1:468189408152:ios:ce85a46b5bffc0d58fd9ed',
-    messagingSenderId: '468189408152',
-    projectId: 'printfastfirebase',
-    databaseURL: 'https://printfastfirebase-default-rtdb.firebaseio.com',
-    storageBucket: 'printfastfirebase.appspot.com',
+    apiKey: 'AIzaSyAmCkXoSCFPkUVT-Wp7kpyaUlFauWUX5A4',
+    appId: '1:213366385233:ios:ba941fa1d66f58cd4c2670',
+    messagingSenderId: '213366385233',
+    projectId: 'printfastoficial',
+    storageBucket: 'printfastoficial.appspot.com',
     iosBundleId: 'com.example.printFast.RunnerTests',
   );
 }

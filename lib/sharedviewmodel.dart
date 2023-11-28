@@ -75,7 +75,7 @@ class SharedChangeNotifier extends ChangeNotifier {
     int timeMitad = (_sharedTime.value / 2).round();
     bool timeMitadOnce = false;
     _sharedTimePeriodic = MutableLiveData(
-        Timer.periodic(const Duration(milliseconds: 10), (timer) {
+        Timer.periodic(const Duration(milliseconds: 20), (timer) {
       if (_sharedTimeSeconds.value == 0) {
         ++_sharedIDNotification.value;
 

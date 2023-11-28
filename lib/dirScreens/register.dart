@@ -1,7 +1,10 @@
 // ignore_for_file: prefer_is_empty
 
+// ignore: unused_import
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:print_fast/firestore_service.dart';
+import 'package:restart_app/restart_app.dart';
 
 // ignore: must_be_immutable
 class myRegister extends StatefulWidget {
@@ -58,7 +61,8 @@ class _myRegisterState extends State<myRegister> {
         setState(() {});
         await Future.delayed(const Duration(milliseconds: 1500), () {
           _indexinfoToLoad = 0;
-          widget.chIndexLogin.call();
+          Restart.restartApp();
+          // widget.chIndexLogin.call();
         });
       });
     }
@@ -72,9 +76,7 @@ class _myRegisterState extends State<myRegister> {
         setState(() {
           Future.delayed(const Duration(seconds: 5), () {
             _indexadvertErrorPasword = 0;
-            setState(() {
-              
-            });
+            setState(() {});
           });
         });
       });

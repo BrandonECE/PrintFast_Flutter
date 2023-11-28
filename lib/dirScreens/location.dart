@@ -3,12 +3,14 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:print_fast/apikeygoogle.dart';
 import 'package:print_fast/dirScreens/convertTime.dart';
 import 'package:print_fast/dirScreens/placelocation.dart';
 import '../firestore_service.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:ui' as ui;
 import 'dart:math';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 
 // ignore: must_be_immutable
 class myLocation extends StatefulWidget {
@@ -157,7 +159,7 @@ class _myLocationState extends State<myLocation> {
                 map.addAll(distanceInfo);
                 double timeAsDistance = timeTotal;
                 int timeInt = 0;
-                double timeDouble = ((timeAsDistance / 10));
+                double timeDouble = ((timeAsDistance / 45));
                 if (timeDouble <= 1 && timeDouble > 0) {
                   timeInt = timeDouble.ceil();
                 } else {
@@ -208,6 +210,7 @@ class _myLocationState extends State<myLocation> {
       int cont = 1; //ID
       predefinedMarkers
           .add(myMarkerCustomUser("0", widget.userLat, widget.userLong, "Tú"));
+          
       dbMapLocations.forEach((title, map) {
         //
         String lugar = title;
@@ -369,12 +372,61 @@ class _myLocationState extends State<myLocation> {
   }
 
   GoogleMapController? controllerNew;
+  Map<PolylineId, Polyline> polylines = {};
+  List<LatLng> polylineCoordinates = [];
+  PolylinePoints polylinePoints = PolylinePoints();
+  String googleAPiKey = API_KEY_GOOGLE;
+
+  int contPoly = 0;
+  _addPolyLine() {
+    ++contPoly;
+    PolylineId id = PolylineId("$contPoly");
+    Polyline polyline = Polyline(
+        polylineId: id,
+        color: Theme.of(context).colorScheme.primary,
+        points: polylineCoordinates);
+    polylines.clear();
+    polylines[id] = polyline;
+
+    setState(() {});
+  }
+
+  _getPolyline() async {
+    try {
+      // print("@@@@@@@@@@@COORDENADAS DE USUARIOOOOOOOOOOOOOO@@@@@@@@@@@@@@@@");
+      // print("LAT: ${widget.userLat},LONG: ${widget.userLong}");
+      // print("@@@@@@@@@@@COORDENADAS DE USUARIOOOOOOOOOOOOOO@@@@@@@@@@@@@@@@");
+      PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
+        googleAPiKey,
+        PointLatLng(widget.userLat, widget.userLong),
+        PointLatLng(placeLat, placeLong),
+        travelMode: TravelMode.walking,
+      );
+      if (result.points.isNotEmpty) {
+        polylineCoordinates.clear();
+        result.points.forEach((PointLatLng point) {
+          polylineCoordinates.add(LatLng(point.latitude, point.longitude));
+        });
+      }
+      _addPolyLine();
+    } catch (e) {
+      print(e);
+      print("ERROR");
+    }
+  }
 
   void _updateCameraPosition() {
     if (controllerNew != null) {
       controllerNew!.animateCamera(
           CameraUpdate.newLatLngZoom(LatLng(placeLat, placeLong), 18));
+      _updatePolylines();
     }
+  }
+
+  ///
+
+  void _updatePolylines() {
+    _getPolyline();
   }
 
   @override
@@ -412,6 +464,8 @@ class _myLocationState extends State<myLocation> {
 
     List myButtons = [
       myLocationsButton(
+          placeLat: placeLat,
+          placeLong: placeLong,
           matricula: widget.matricula,
           placeLocation: placeLocation[indexPlaceLocation],
           placeOrderActive: widget.placeOrderActive,
@@ -473,6 +527,7 @@ class _myLocationState extends State<myLocation> {
       child: Stack(
         children: [
           GoogleMap(
+              polylines: Set<Polyline>.of(polylines.values),
               mapType: MapType.normal,
               markers: Set.from(predefinedMarkers),
               onMapCreated: (GoogleMapController controller) {
@@ -615,12 +670,16 @@ class myAppBarLocation extends StatelessWidget {
 class myLocationsButton extends StatelessWidget {
   myLocationsButton(
       {super.key,
+      required this.placeLat,
+      required this.placeLong,
       required this.matricula,
       required this.placeLocation,
       required this.placeOrderActive,
       required this.productosSeleccionados,
       required this.sumaTotal,
       required this.chIndexMenu});
+  double placeLat;
+  double placeLong;
   String matricula;
   VoidCallback chIndexMenu;
   double sumaTotal;
@@ -634,27 +693,42 @@ class myLocationsButton extends StatelessWidget {
         int mes = DateTime.now().month;
         String mesName = "";
 
-        if (mes == 1) mesName = "Enero";
-        else if (mes == 2) mesName = "Febrero";
-        else if (mes == 3) mesName = "Marzo";
-        else if (mes == 4) mesName = "Abril";
-        else if (mes == 5) mesName = "Mayo";
-        else if (mes == 6) mesName = "Junio";
-        else if (mes == 7) mesName = "Julio";
-        else if (mes == 8) mesName = "Agosto";
-        else if (mes == 9) mesName = "Septiembre";
-        else if (mes == 10) mesName = "Octubre";
-        else if (mes == 11) mesName = "Noviembre";
-        else mesName = "Diciembre";
+        if (mes == 1)
+          mesName = "Enero";
+        else if (mes == 2)
+          mesName = "Febrero";
+        else if (mes == 3)
+          mesName = "Marzo";
+        else if (mes == 4)
+          mesName = "Abril";
+        else if (mes == 5)
+          mesName = "Mayo";
+        else if (mes == 6)
+          mesName = "Junio";
+        else if (mes == 7)
+          mesName = "Julio";
+        else if (mes == 8)
+          mesName = "Agosto";
+        else if (mes == 9)
+          mesName = "Septiembre";
+        else if (mes == 10)
+          mesName = "Octubre";
+        else if (mes == 11)
+          mesName = "Noviembre";
+        else
+          mesName = "Diciembre";
 
         Map updateInfoAOrden = {
           "Compras": productosSeleccionados,
           "Time": "${placeLocation.time}",
           "Place": "${placeLocation.place}",
           "Price": "$sumaTotal",
+          "PlaceLat": placeLat.toString(),
+          "PlaceLong":placeLong.toString(),
           "initDate": ConvertTime().getFecha(),
           "initDateTime": ConvertTime().getHora(),
-          "initDateComplete": "${DateTime.now().day} de $mesName del ${DateTime.now().year}"
+          "initDateComplete":
+              "${DateTime.now().day} de $mesName del ${DateTime.now().year}"
         };
         print(updateInfoAOrden);
         await updateDB(updateInfoAOrden, matricula);

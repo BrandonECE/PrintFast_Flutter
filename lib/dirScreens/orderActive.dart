@@ -5,9 +5,13 @@ class myOrderActiveScreenInfo extends StatelessWidget {
   myOrderActiveScreenInfo(
       {super.key,
       required this.productosSeleccionadosDB,
-      required this.sumaTotalDB, required this.initDateOrderA, required this.initTimeOrderA});
+      required this.sumaTotalDB,
+      required this.initDateOrderA,
+      required this.initTimeOrderA,
+      required this.chIndexLocationDirections});
   double sumaTotalDB;
-    String initDateOrderA;
+  VoidCallback chIndexLocationDirections;
+  String initDateOrderA;
   String initTimeOrderA;
   Map productosSeleccionadosDB;
   List<Widget> productos = [
@@ -21,6 +25,8 @@ class myOrderActiveScreenInfo extends StatelessWidget {
     // ),
   ];
 
+  
+
   @override
   Widget build(BuildContext context) {
     productosSeleccionadosDB.forEach((key, value) {
@@ -32,8 +38,8 @@ class myOrderActiveScreenInfo extends StatelessWidget {
               howMany: value,
             ));
       } else {
-        if(int.parse(value) != 0){
-        productos.add(itemProductNormal(howMany: value, product: key));
+        if (int.parse(value) != 0) {
+          productos.add(itemProductNormal(howMany: value, product: key));
         }
       }
     });
@@ -48,23 +54,24 @@ class myOrderActiveScreenInfo extends StatelessWidget {
             child: Column(
               children: [
                 Row(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 5),
-                    child: Text(
-                      "ORDENADO",
-                      style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.inverseSurface),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 5),
+                      child: Text(
+                        "ORDENADO",
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color:
+                                Theme.of(context).colorScheme.inverseSurface),
+                      ),
                     ),
-                  ),
-                  const Icon(
-                    Icons.arrow_drop_down,
-                    size: 25,
-                  )
-                ],
-              ),
+                    const Icon(
+                      Icons.arrow_drop_down,
+                      size: 25,
+                    )
+                  ],
+                ),
                 Padding(
                   padding: const EdgeInsets.only(left: 8),
                   child: Row(
@@ -76,13 +83,15 @@ class myOrderActiveScreenInfo extends StatelessWidget {
                             Padding(
                               padding: const EdgeInsets.only(left: 8),
                               child: Text(
-                                  initDateOrderA,
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.inverseSurface,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                initDateOrderA,
+                                style: TextStyle(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .inverseSurface,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
                                 ),
+                              ),
                             ),
                           ],
                         ),
@@ -90,21 +99,23 @@ class myOrderActiveScreenInfo extends StatelessWidget {
                       Container(
                         margin: const EdgeInsets.only(left: 10),
                         child: Row(
-                                        children: [
-                        const Icon(Icons.access_time_outlined),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 8),
-                          child: Text(
-                              initTimeOrderA,
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.inverseSurface,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                          children: [
+                            const Icon(Icons.access_time_outlined),
+                            Padding(
+                              padding: const EdgeInsets.only(left: 8),
+                              child: Text(
+                                initTimeOrderA,
+                                style: TextStyle(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .inverseSurface,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
+                          ],
                         ),
-                                        ],
-                                      ),
                       ),
                     ],
                   ),
@@ -113,9 +124,8 @@ class myOrderActiveScreenInfo extends StatelessWidget {
             ),
             //  padding: const EdgeInsets.all(20),
             decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.all(Radius.circular(20))
-            ),
+                color: Colors.white,
+                borderRadius: BorderRadius.all(Radius.circular(20))),
           ),
           SizedBox(
             height: MediaQuery.of(context).size.width * 0.03,
@@ -128,7 +138,7 @@ class myOrderActiveScreenInfo extends StatelessWidget {
                   borderRadius: BorderRadius.all(Radius.circular(20))
                   // borderRadius: BorderRadius.only(
                   //     topLeft: Radius.circular(20), topRight: Radius.circular(20))
-          
+
                   ),
               child: Column(
                 children: [
@@ -139,10 +149,46 @@ class myOrderActiveScreenInfo extends StatelessWidget {
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                         color: Colors.grey.shade300,
-                        borderRadius: const BorderRadius.all(Radius.circular(20))),
+                        borderRadius:
+                            const BorderRadius.all(Radius.circular(20))),
                     width: MediaQuery.of(context).size.width * 0.83,
                     child: ListView(children: productos),
                   )),
+                  Container(
+                    width: MediaQuery.of(context).size.width * 0.8,
+                    margin: const EdgeInsets.only(bottom: 20, top: 5),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        chIndexLocationDirections.call();
+                      },
+                      // ignore: sort_child_properties_last
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(Icons.directions),
+                          Padding(
+                            padding: EdgeInsets.only(left: 5),
+                            child: Text(
+                              "Ver dirección",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                  ),
                   Container(
                     child: Container(
                       width: MediaQuery.of(context).size.width * 0.78,

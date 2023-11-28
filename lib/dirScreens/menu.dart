@@ -10,9 +10,7 @@ import 'package:print_fast/sharedviewmodel.dart';
 import 'package:print_fast/dirScreens/orderActiveInfo.dart';
 import 'package:print_fast/firestore_service.dart';
 import 'package:provider/provider.dart';
-// import 'package:intl/intl.dart';
-// import 'package:intl/date_symbol_data_file.dart';
-// import 'package:intl/intl_browser.dart';
+
 
 // import '../screens.dart';
 
@@ -29,7 +27,11 @@ class myMenu extends StatefulWidget {
       required this.getProductosSeleccionadosDB,
       required this.getSumaTotalDB,
       required this.getInitDate,
-      required this.getInitTime});
+      required this.getInitTime,
+      required this.getPlaceCoordenadas,
+      required this.getNamePlace});
+  Function(String) getNamePlace;
+  Function(String, String) getPlaceCoordenadas;
   VoidCallback chIndexOrderActive;
   Function(double) getSumaTotalDB;
   SharedChangeNotifier sharedChangeNotifier;
@@ -48,8 +50,8 @@ class _myMenuState extends State<myMenu> {
   Map infoUserOrderActive = {};
   bool once = false;
   bool orderActive = false;
-  myOrderActiveInfo orderActiveInfo =
-      myOrderActiveInfo("Cargando...", "0", "0", {}, "---", "---", "00:00");
+  myOrderActiveInfo orderActiveInfo = myOrderActiveInfo(
+      "Cargando...", "0", "0", {}, "---", "---", "00:00", "0", "0");
 
   @override
   Widget build(BuildContext context) {
@@ -59,9 +61,8 @@ class _myMenuState extends State<myMenu> {
     void _actualizarOrderActiva() {
       once = false;
       orderActive = false;
-       addOrdenHistoryBool.switchBool = true;
+      addOrdenHistoryBool.switchBool = true;
       setState(() {});
-  
     }
 
     void verifyOrderActive() async {
@@ -76,7 +77,10 @@ class _myMenuState extends State<myMenu> {
         String? fecha;
         String? hora;
         String? fechaComplete;
+        String? placeLat;
+        String? placeLong;
         Map? productos;
+
         orderActive = true;
         infoUserOrderActive.forEach((key, value) {
           if (key == "Place") place = value;
@@ -93,10 +97,12 @@ class _myMenuState extends State<myMenu> {
             widget.getInitTime.call(value);
           }
           if (key == "initDateComplete") fechaComplete = value;
+          if (key == "PlaceLat") placeLat = value;
+          if (key == "PlaceLong") placeLong = value;
         });
 
-        orderActiveInfo = myOrderActiveInfo(
-            place!, price!, time!, productos!, fechaComplete!, fecha!, hora!);
+        orderActiveInfo = myOrderActiveInfo(place!, price!, time!, productos!,
+            fechaComplete!, fecha!, hora!, placeLat!, placeLong!);
         print("SI HAY");
         if (changeInitTime == false) {
           widget.sharedChangeNotifier.updateMatricula(widget.matricula);
@@ -179,6 +185,8 @@ class _myMenuState extends State<myMenu> {
                               padd: 0,
                             ),
                             sectionContainerMyActiveOrders(
+                              getNamePlace: widget.getNamePlace,
+                              getPlaceCoordenadas: widget.getPlaceCoordenadas,
                               sharedChangeNotifier: widget.sharedChangeNotifier,
                               matricula: widget.matricula,
                               getSumaTotalDB: widget.getSumaTotalDB,
@@ -684,7 +692,11 @@ class sectionContainerMyActiveOrders extends StatefulWidget {
       required this.orderActiveInfo,
       required this.chIndexOrderActive,
       required this.getProductosSeleccionadosDB,
-      required this.getSumaTotalDB});
+      required this.getSumaTotalDB,
+      required this.getPlaceCoordenadas,
+      required this.getNamePlace});
+  Function(String) getNamePlace;
+  Function(String, String) getPlaceCoordenadas;
   Function(double) getSumaTotalDB;
   String matricula;
   SharedChangeNotifier sharedChangeNotifier;
@@ -728,7 +740,7 @@ class _sectionContainerMyActiveOrdersState
       recivePort.listen((message) {
         widget.sharedChangeNotifier.updateAddOrderToHistory(state);
         print("ISOLATEEEEEEEEEEE");
-        
+
         isolate.kill(priority: Isolate.immediate);
       });
     }
@@ -763,7 +775,7 @@ class _sectionContainerMyActiveOrdersState
           print(e);
           print("ERROR A LA HORA DE GUARDAR LA COMPRA FINALIZADA");
         }
-       
+
         isolate.kill(priority: Isolate.immediate);
       });
     }
@@ -905,6 +917,11 @@ class _sectionContainerMyActiveOrdersState
                           children: [
                             ElevatedButton(
                               onPressed: () async {
+                                await widget.getNamePlace
+                                    .call(widget.orderActiveInfo.place);
+                                await widget.getPlaceCoordenadas.call(
+                                    widget.orderActiveInfo.placeLat,
+                                    widget.orderActiveInfo.placeLong);
                                 await widget.getProductosSeleccionadosDB
                                     .call(widget.orderActiveInfo.productos);
                                 await widget.getSumaTotalDB.call(

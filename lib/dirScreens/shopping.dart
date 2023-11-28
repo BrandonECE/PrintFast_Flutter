@@ -1,15 +1,12 @@
 import 'dart:io';
 import 'dart:typed_data';
-// import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-// import 'package:pdf_render/pdf_render_widgets.dart';
 import 'package:print_fast/dirScreens/shoppingitemproduct.dart';
 // ignore: unused_import
 import 'package:print_fast/firestore_service.dart';
 import 'history.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:pdf_render/pdf_render.dart';
-// import 'package:pdf/pdf.dart' as pdfLib;
 
 // ignore: must_be_immutable
 class myShopping extends StatelessWidget {

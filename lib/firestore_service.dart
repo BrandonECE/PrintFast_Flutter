@@ -191,7 +191,7 @@ Future<void> registeDBUser(
   Map<String, dynamic> noti = {"Notificaciones": {}};
   Map<String, dynamic> ordenesHistorial = {"HOrdenes": {}};
   Map<String, dynamic> ordenActiva = {
-    "AOrden": {"Compras": {}}
+    "AOrden": {}
   };
 
   dataUser.addAll({"Nombre": name});

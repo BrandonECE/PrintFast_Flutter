@@ -2,6 +2,7 @@ import 'dart:isolate';
 
 import 'package:flutter/material.dart';
 import 'package:print_fast/dirScreens/isolates.dart';
+import 'package:print_fast/dirScreens/locationDirection.dart';
 import 'package:print_fast/dirScreens/orderActive.dart';
 import 'package:print_fast/dirScreens/orderHistoryInfo.dart';
 import 'package:print_fast/dirScreens/orderNotificationInfo.dart';
@@ -46,28 +47,34 @@ class _myScreensState extends State<myScreens> {
   String telefono = "";
   String initDateOrderA = "";
   String initTimeOrderA = "";
+  String placeLat = "0";
+  String placeLong = "0";
+  String namePlace = "Cargando...";
   // List<myOrderHistoryInfo> orderHistoryInfo = [];
   myOrderHistoryInfo orderHistoryInfoScreen = myOrderHistoryInfo(
       "---", "---", "---", {}, "---", "---", "---", "---", "---");
   Map notis = {};
-  
 
   void changeindex(int newIndex) async {
-    setState(() {
-      if (_indexAntes != 5) {
-        ///El index 5 es el de los settings, mientras el index no sea ese (5) el NavigationBarBottom tendra que estar con el icono home como el presionado
-        _indexscreeNavigationBar = 0;
-      }
+    try {
+      setState(() {
+        if (_indexAntes != 5) {
+          ///El index 5 es el de los settings, mientras el index no sea ese (5) el NavigationBarBottom tendra que estar con el icono home como el presionado
+          _indexscreeNavigationBar = 0;
+        }
 
-      _indexscreen = newIndex;
+        _indexscreen = newIndex;
 
-      ///Esto tiene como funcionalidad cambiar a la pantalla en la que se esta
-      _indexAntes = newIndex;
+        ///Esto tiene como funcionalidad cambiar a la pantalla en la que se esta
+        _indexAntes = newIndex;
 
-      ///Esto tiene como funcionalidad volver a la pantalla en la que se estaba antes de cambiar a setting en el NavigationBarBottom
+        ///Esto tiene como funcionalidad volver a la pantalla en la que se estaba antes de cambiar a setting en el NavigationBarBottom
 
-      print("Cambiando a index ${_indexscreen}");
-    });
+        print("Cambiando a index ${_indexscreen}");
+      });
+    } catch (e) {
+      print("ERROR AL CAMBIAR DE INDEX");
+    }
   }
 
   void changeindexNavigationBar(int newIndex) {
@@ -107,7 +114,6 @@ class _myScreensState extends State<myScreens> {
           permission == LocationPermission.whileInUse) {
         changeindex(7);
         print(productosSeleccionados);
-        // await updateDB(productosSeleccionados);
         changeindexloadtoLocation();
       }
     } else if (permissionCheck == LocationPermission.always ||
@@ -115,8 +121,37 @@ class _myScreensState extends State<myScreens> {
         permissionCheck == LocationPermission.whileInUse) {
       changeindex(7);
       print(productosSeleccionados);
-      // await updateDB(productosSeleccionados);
       changeindexloadtoLocation();
+    }
+  }
+
+  void changeindexloadtoLocationDirections() async {
+    Position position;
+    position = await determinatePosition();
+    userLat = await position.latitude;
+    userLong = await position.longitude;
+    print(position.latitude);
+    print(position.longitude);
+    changeindex(11);
+  }
+
+  void locationpermissionDirections() async {
+    LocationPermission permissionCheck;
+    permissionCheck = await Geolocator.checkPermission();
+    if (permissionCheck == LocationPermission.denied) {
+      LocationPermission permission;
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.always ||
+          permission == LocationPermission.unableToDetermine ||
+          permission == LocationPermission.whileInUse) {
+        changeindex(7);
+        changeindexloadtoLocationDirections();
+      }
+    } else if (permissionCheck == LocationPermission.always ||
+        permissionCheck == LocationPermission.unableToDetermine ||
+        permissionCheck == LocationPermission.whileInUse) {
+      changeindex(7);
+      changeindexloadtoLocationDirections();
     }
   }
 
@@ -166,6 +201,11 @@ class _myScreensState extends State<myScreens> {
       productosSeleccionadosDB = products;
     };
 
+    Function(String, String) getPlaceCoordenadas = (Lat, Long) {
+      placeLat = Lat;
+      placeLong = Long;
+    };
+
     // ignore: unused_local_variable, prefer_function_declarations_over_variables
     Function(double) getSumaTotalDB = (sumaT) {
       sumaTotalDB = sumaT;
@@ -177,6 +217,10 @@ class _myScreensState extends State<myScreens> {
 
     Function(String) getInitTime = (String time) {
       initTimeOrderA = time;
+    };
+
+    Function(String) getNamePlace = (String nameplace) {
+      namePlace = nameplace;
     };
 
     Function(myOrderHistoryInfo) getOrderHistoryScreen =
@@ -323,7 +367,8 @@ class _myScreensState extends State<myScreens> {
               chindex: () => changeindex(2),
             ),
             myAppBarHistoryOrder(chindex: () => changeindex(4)),
-            myAppBarNotificationScreens(chindex: () => changeindex(2))
+            myAppBarNotificationScreens(chindex: () => changeindex(2)),
+            myAppBarLocationDirections(chindex: () => changeindex(8))
           ];
 
           List<Widget> screensBody = [
@@ -333,6 +378,8 @@ class _myScreensState extends State<myScreens> {
                 functionInfoUser: getUserData),
             myRegister(chIndexLogin: () => changeindex(0)),
             myMenu(
+                getNamePlace: getNamePlace,
+                getPlaceCoordenadas: getPlaceCoordenadas,
                 getInitDate: getInitDate,
                 getInitTime: getInitTime,
                 sharedChangeNotifier: sharedChangeNotifier,
@@ -367,6 +414,7 @@ class _myScreensState extends State<myScreens> {
                 sumaTotal: sumaTotal),
             const myScreenLoad(),
             myOrderActiveScreenInfo(
+                chIndexLocationDirections: () => locationpermissionDirections(),
                 initDateOrderA: initDateOrderA,
                 initTimeOrderA: initTimeOrderA,
                 productosSeleccionadosDB: productosSeleccionadosDB,
@@ -376,6 +424,14 @@ class _myScreensState extends State<myScreens> {
               matricula: matricula,
               sharedChangeNotifier: sharedChangeNotifier,
               deleteNotification: deleteNotification,
+            ),
+            myLocationDirections(
+              sharedChangeNotifier: sharedChangeNotifier,
+              namePlace: namePlace,
+              userLong: userLong,
+              userLat: userLat,
+              placeLat: placeLat,
+              placeLong: placeLong,
             )
           ];
 
