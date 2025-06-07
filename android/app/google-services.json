@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "213366385233",
+    "project_id": "printfastoficial",
+    "storage_bucket": "printfastoficial.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:213366385233:android:7ef4144de40b3d074c2670",
+        "android_client_info": {
+          "package_name": "com.example.print_fast"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAdIeP885DykIgdfjPk3Peo4x3Dip7_Xt0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
