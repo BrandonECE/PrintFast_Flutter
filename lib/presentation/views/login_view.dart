@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:printfast_rebuild/config/routes/routes.dart';
-import 'package:printfast_rebuild/presentation/blocs/home_bloc/home_bloc.dart';
-import 'package:printfast_rebuild/presentation/blocs/login_bloc/login_bloc.dart';
-import 'package:printfast_rebuild/presentation/blocs/message_error_warning_bloc/message_error_warning_bloc.dart';
+import 'package:printfast_rebuild/presentation/blocs/user_blocs/home_bloc/home_bloc.dart';
+import 'package:printfast_rebuild/presentation/blocs/shared_blocs/login_bloc/login_bloc.dart';
+import 'package:printfast_rebuild/presentation/blocs/shared_blocs/message_error_warning_bloc/message_error_warning_bloc.dart';
 import 'package:printfast_rebuild/presentation/widgets/widgets.dart';
 
 class MyLoginView extends StatelessWidget {
@@ -19,7 +19,8 @@ class MyLoginView extends StatelessWidget {
     final messageErrorWarningBloc = context.read<MessageErrorWarningBloc>();
 
     void goToRegisterScreen() {
-      if(loginBloc.state.loginStatus != LoginStatus.loading && loginBloc.state.loginStatus != LoginStatus.success){
+      if (loginBloc.state.loginStatus != LoginStatus.loading &&
+          loginBloc.state.loginStatus != LoginStatus.success) {
         FocusManager.instance.primaryFocus?.unfocus();
         context.go(Routes.register);
         loginBloc.reset();
@@ -27,17 +28,23 @@ class MyLoginView extends StatelessWidget {
     }
 
     void signIn() async {
-    if(loginBloc.state.loginStatus != LoginStatus.loading && loginBloc.state.loginStatus != LoginStatus.success){
+      if (loginBloc.state.loginStatus != LoginStatus.loading &&
+          loginBloc.state.loginStatus != LoginStatus.success) {
         FocusManager.instance.primaryFocus?.unfocus();
         await loginBloc.signIn();
       }
     }
 
-    void goToHomeScreen(HomeBloc homeBloc, LoginState state, BuildContext context, LoginBloc loginBloc) {
+    void goToHomeScreen(
+      HomeBloc homeBloc,
+      LoginState state,
+      BuildContext context,
+      LoginBloc loginBloc,
+    ) {
       homeBloc.add(HomeUpdateUserEntityEvent(userEntity: state.userEntity!));
       context.go(Routes.home);
       loginBloc.reset();
-       loginBloc.add(
+      loginBloc.add(
         LoginChangeLoginStatusEvent(
           loginStatus: LoginStatus.initial,
           messageError: null,
@@ -45,8 +52,11 @@ class MyLoginView extends StatelessWidget {
       );
     }
 
-  
-    void thereWasAnError(MessageErrorWarningBloc messageErrorWarningBloc, LoginState state, LoginBloc loginBloc) {
+    void thereWasAnError(
+      MessageErrorWarningBloc messageErrorWarningBloc,
+      LoginState state,
+      LoginBloc loginBloc,
+    ) {
       messageErrorWarningBloc.updateMessageErrorWarning(
         "¡Error inesperado!",
         state.messageError ?? "",
@@ -61,19 +71,16 @@ class MyLoginView extends StatelessWidget {
         ),
       );
     }
-    
 
     return BlocListener<LoginBloc, LoginState>(
       listener: (context, state) {
-
         if (state.loginStatus == LoginStatus.success) {
-            goToHomeScreen(homeBloc, state, context, loginBloc);
+          goToHomeScreen(homeBloc, state, context, loginBloc);
         }
 
         if (state.loginStatus == LoginStatus.failure) {
-            thereWasAnError(messageErrorWarningBloc, state, loginBloc);
+          thereWasAnError(messageErrorWarningBloc, state, loginBloc);
         }
-
       },
       child: BlocBuilder<LoginBloc, LoginState>(
         builder: (context, state) {
@@ -91,15 +98,14 @@ class MyLoginView extends StatelessWidget {
                   goToRegisterScreen,
                 ),
               ),
-              MyErrorWarning(),
+              MyMessageErrorWarning(voidCallback: () => messageErrorWarningBloc.add(
+              ShowMessageErrorWarningEvent(showMessageErrorWarning: false),),),
             ],
           );
         },
       ),
     );
   }
-
-
 
   Scaffold myLoginScreen(
     BuildContext context,
@@ -190,46 +196,53 @@ class MyLoginView extends StatelessWidget {
     );
   }
 
-  AnimatedSwitcher _animatedSwitcherButton(LoginState state, Color primaryColor) {
+  AnimatedSwitcher _animatedSwitcherButton(
+    LoginState state,
+    Color primaryColor,
+  ) {
     return AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 180),
-                        switchInCurve: Curves.easeOut,
-                        switchOutCurve: Curves.easeIn,
-                        layoutBuilder: (currentChild, previousChildren) {
-                          return Stack(
-                            alignment: Alignment.center,
-                            children: <Widget>[
-                              ...previousChildren,
-                              if (currentChild != null) currentChild,
-                            ],
-                          );
-                        },
-                        transitionBuilder: (child, animation) {
-                          // Fade + tiny scale for a snappy feeling
-                          final fade = FadeTransition(opacity: animation, child: child);
-                          final scale = ScaleTransition(
-                            scale: Tween<double>(begin: 0.97, end: 1.0).animate(
-                              CurvedAnimation(parent: animation, curve: Curves.easeOut),
-                            ),
-                            child: fade,
-                          );
-                          return scale;
-                        },
-                        child: state.loginStatus != LoginStatus.loading
-                            ? Text(
-                                'Iniciar sesión',
-                                key: const ValueKey('login_text'),
-                                style: TextStyle(
-                                  color: primaryColor,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
-                              )
-                            : SizedBox(
-                                key: const ValueKey('login_loader'),
-                                child: MyLoadingIndicator(size: 65, key: ValueKey('login_loader'))
-                              ),
-                      );
+      duration: const Duration(milliseconds: 180),
+      switchInCurve: Curves.easeOut,
+      switchOutCurve: Curves.easeIn,
+      layoutBuilder: (currentChild, previousChildren) {
+        return Stack(
+          alignment: Alignment.center,
+          children: <Widget>[
+            ...previousChildren,
+            if (currentChild != null) currentChild,
+          ],
+        );
+      },
+      transitionBuilder: (child, animation) {
+        // Fade + tiny scale for a snappy feeling
+        final fade = FadeTransition(opacity: animation, child: child);
+        final scale = ScaleTransition(
+          scale: Tween<double>(
+            begin: 0.97,
+            end: 1.0,
+          ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut)),
+          child: fade,
+        );
+        return scale;
+      },
+      child: state.loginStatus != LoginStatus.loading
+          ? Text(
+              'Iniciar sesión',
+              key: const ValueKey('login_text'),
+              style: TextStyle(
+                color: primaryColor,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            )
+          : SizedBox(
+              key: const ValueKey('login_loader'),
+              child: MyLoadingIndicator(
+                size: 65,
+                key: ValueKey('login_loader'),
+              ),
+            ),
+    );
   }
 
   AppBar _appBar(BuildContext context) {

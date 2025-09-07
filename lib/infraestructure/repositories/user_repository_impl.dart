@@ -1,4 +1,3 @@
-
 import 'package:printfast_rebuild/domain/entities/aorder_entity.dart';
 import 'package:printfast_rebuild/domain/entities/horder_entity.dart';
 import 'package:printfast_rebuild/domain/entities/notification_entity.dart';
@@ -54,7 +53,7 @@ class UserRepositoryImpl extends UserRepository {
       return Future.error(e);
     }
   }
-  
+
   @override
   Stream<int> unseenNotificationsCount(String registration) {
     try {
@@ -65,12 +64,11 @@ class UserRepositoryImpl extends UserRepository {
   }
 
   @override
-  Stream<AorderEntity?> getAordersStream(String registration) {
+  Stream<AorderEntity?> getAorderStream(String registration) {
     try {
-      return userService.getAordersStream(registration);
+      return userService.getAorderStream(registration);
     } catch (e) {
       return Stream.error(e); // devolvemos un stream con un valor por defecto
     }
   }
-  
 }

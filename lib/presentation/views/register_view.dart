@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:printfast_rebuild/config/routes/routes.dart';
-import 'package:printfast_rebuild/presentation/blocs/message_error_warning_bloc/message_error_warning_bloc.dart';
-import 'package:printfast_rebuild/presentation/blocs/register_bloc/register_bloc.dart';
+import 'package:printfast_rebuild/presentation/blocs/shared_blocs/message_error_warning_bloc/message_error_warning_bloc.dart';
+import 'package:printfast_rebuild/presentation/blocs/shared_blocs/register_bloc/register_bloc.dart';
 import 'package:printfast_rebuild/presentation/widgets/widgets.dart';
 
 class MyRegisterView extends StatelessWidget {
@@ -14,7 +14,6 @@ class MyRegisterView extends StatelessWidget {
     final primary = Theme.of(context).colorScheme.primary;
     final registerBloc = context.read<RegisterBloc>();
     final messageErrorWarningBloc = context.read<MessageErrorWarningBloc>();
-    
 
     // final onPrimary = Theme.of(context).colorScheme.onPrimary;
 
@@ -26,11 +25,10 @@ class MyRegisterView extends StatelessWidget {
       }
     }
 
-    
     void goToLoginScreen(BuildContext context, RegisterBloc registerBloc) {
-        context.go(Routes.login);
+      context.go(Routes.login);
       registerBloc.reset();
-       registerBloc.add(
+      registerBloc.add(
         RegisterChangeRegisterStatusEvent(
           registerStatus: RegisterStatus.initial,
           messageError: null,
@@ -38,8 +36,11 @@ class MyRegisterView extends StatelessWidget {
       );
     }
 
-
-    void thereWasAnError(MessageErrorWarningBloc messageErrorWarningBloc, RegisterState state, RegisterBloc registerBloc) {
+    void thereWasAnError(
+      MessageErrorWarningBloc messageErrorWarningBloc,
+      RegisterState state,
+      RegisterBloc registerBloc,
+    ) {
       messageErrorWarningBloc.updateMessageErrorWarning(
         "¡Error inesperado!",
         state.messageError ?? "",
@@ -54,7 +55,6 @@ class MyRegisterView extends StatelessWidget {
         ),
       );
     }
-
 
     return BlocListener<RegisterBloc, RegisterState>(
       listener: (context, state) {
@@ -80,14 +80,14 @@ class MyRegisterView extends StatelessWidget {
                   registerBloc,
                 ),
               ),
-              MyErrorWarning(),
+               MyMessageErrorWarning(voidCallback: () => messageErrorWarningBloc.add(
+              ShowMessageErrorWarningEvent(showMessageErrorWarning: false),),),
             ],
           );
         },
       ),
     );
   }
-
 
   Scaffold myRegisterScreen(
     BuildContext context,

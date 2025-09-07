@@ -6,16 +6,21 @@ import 'package:printfast_rebuild/config/routes/routes.dart';
 import 'package:printfast_rebuild/di/service.locator.dart';
 import 'package:printfast_rebuild/domain/entities/entities.dart';
 import 'package:printfast_rebuild/domain/repositories/auth_repository.dart';
-import 'package:printfast_rebuild/presentation/blocs/home_bloc/home_bloc.dart';
-import 'package:printfast_rebuild/presentation/blocs/login_bloc/login_bloc.dart';
-import 'package:printfast_rebuild/presentation/blocs/message_error_warning_bloc/message_error_warning_bloc.dart';
-import 'package:printfast_rebuild/presentation/blocs/register_bloc/register_bloc.dart';
-import 'package:printfast_rebuild/presentation/blocs/shopping_bloc/shopping_bloc.dart';
+import 'package:printfast_rebuild/domain/repositories/storage_repository.dart';
+import 'package:printfast_rebuild/presentation/blocs/admin_blocs/admin_change_report_date_range_bloc/admin_change_report_date_range_bloc.dart';
+import 'package:printfast_rebuild/presentation/blocs/admin_blocs/admin_home_bloc/admin_home_bloc.dart';
+import 'package:printfast_rebuild/presentation/blocs/admin_blocs/admin_order_change_delivery_time_bloc/admin_order_change_delivery_time_bloc.dart';
+import 'package:printfast_rebuild/presentation/blocs/shared_blocs/cloud_storage_pdf_bloc.dart/cloud_storage_pdf_bloc.dart';
+import 'package:printfast_rebuild/presentation/blocs/user_blocs/home_bloc/home_bloc.dart';
+import 'package:printfast_rebuild/presentation/blocs/shared_blocs/login_bloc/login_bloc.dart';
+import 'package:printfast_rebuild/presentation/blocs/shared_blocs/message_error_warning_bloc/message_error_warning_bloc.dart';
+import 'package:printfast_rebuild/presentation/blocs/shared_blocs/register_bloc/register_bloc.dart';
+import 'package:printfast_rebuild/presentation/blocs/user_blocs/shopping_bloc/shopping_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  // await UserInitializer().setNewUser(UserEntity(email: "email@gmail.com", name: "Max", phone: "23423423", registration: "1842345"));
+  // await UserInitializer().setNewUser(UserEntity.defaultValues);
   setupServiceLocator();
   runApp(const MyApp());
 }
@@ -28,9 +33,26 @@ class MyApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (context) => MessageErrorWarningBloc()),
-        BlocProvider(create: (context) => LoginBloc(authRepository: getIt<AuthRepository>())),
-        BlocProvider(create: (context) => RegisterBloc(authRepository: getIt<AuthRepository>())),
-        BlocProvider(create: (context) => HomeBloc(authRepository: getIt<AuthRepository>())),
+        BlocProvider(
+          create: (context) => CloudStoragePdfBloc(
+            storageRepository: getIt<StorageRepository>(),
+          ),
+        ),
+        BlocProvider(
+          create: (context) =>
+              LoginBloc(authRepository: getIt<AuthRepository>()),
+        ),
+        BlocProvider(
+          create: (context) =>
+              RegisterBloc(authRepository: getIt<AuthRepository>()),
+        ),
+        BlocProvider(
+          create: (context) =>
+              HomeBloc(authRepository: getIt<AuthRepository>()),
+        ),
+        BlocProvider(create: (context) => AdminOrderChangeDeliveryTimeBloc()),
+        BlocProvider(create: (context) => AdminChangeReportDateRangeBloc()),
+        BlocProvider(create: (context) => AdminHomeBloc()),
         BlocProvider(create: (context) => ShoppingBloc()),
       ],
       child: MaterialApp.router(
@@ -143,14 +165,14 @@ class UserInitializer {
         'queue': '2',
       },
     };
-      await docRef.set(data, SetOptions(merge: true));
-
+    await docRef.set(data, SetOptions(merge: true));
   }
 
-
-    Future<void> setNewUser(UserEntity userEntity) async {
+  Future<void> setNewUser(UserEntity userEntity) async {
     try {
-      final userDocRef = _firestore.collection('users').doc(userEntity.registration);
+      final userDocRef = _firestore
+          .collection('users')
+          .doc(userEntity.registration);
 
       // 1) Documento principal del usuario
       await userDocRef.set({
@@ -158,10 +180,13 @@ class UserInitializer {
         'name': userEntity.name,
         'phone': userEntity.phone,
         'registration': userEntity.registration,
+        'isAdmin': userEntity.isAdmin,
       }, SetOptions(merge: true));
 
       // 2) notifications -> information { items: [] }
-      final notificationsRef = userDocRef.collection('notifications').doc('information');
+      final notificationsRef = userDocRef
+          .collection('notifications')
+          .doc('information');
       await notificationsRef.set({
         'items': <Map<String, dynamic>>[], // lista vacía de mapas
       }, SetOptions(merge: true));
@@ -175,7 +200,24 @@ class UserInitializer {
       // 4) aorder -> information { specifications: {} }
       final aorderRef = userDocRef.collection('aorder').doc('information');
       await aorderRef.set({
-        'specifications': <String, dynamic>{}, // mapa vacío
+        'specifications': <String, dynamic>{
+          'pdfName': 'exampleActiveOrder.pdf',
+          'hasItBeenAccepted': false,
+          'pages': 5,
+          'format': 'Oficio',
+          'isColor': false,
+          'price': 25,
+          'place': 'FACDYC',
+          'placeLat': '25.725208',
+          'placeLong': '-100.312523',
+          'initDate': Timestamp.now(),
+          'estimatedDeliveryTime': Timestamp.now(),
+          'url': '',
+          'userRegistration': userEntity.registration,
+          'userName': userEntity.name,
+          'orderCode': "345",
+          'hasItBeenCanceledByUser': false,
+        }, // mapa vacío
       }, SetOptions(merge: true));
 
       return;
@@ -184,5 +226,4 @@ class UserInitializer {
       return Future.error("Error creando el usuario: $e");
     }
   }
-
 }
