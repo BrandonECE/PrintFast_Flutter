@@ -10,20 +10,34 @@ class Routes {
 
   static final String login = "/login";
   static final String register = "/register";
+
+  //User
   static final String home = "/home";
   static final String notifications = "/notifications";
   static final String shopping = "/shopping";
   static final String history = "/history";
   static final String activeOrder = "/activeOrder";
   static final String historyOrder = "/historyOrder";
-  static final String pdfView = "/pdfView";
+  static final String shoppingPdfView = "/shoppingPdfView";
   static final String locationPicker = "/locationPicker";
   static final String liveTracking = "/liveTracking";
 
+  //Admin
+
+  static final String adminHome = "/adminHome";
+  static final String adminNotifications = "/adminNotifications";
+  static final String adminOrderView = "/adminOrderView";
+  static final String adminOrderHistoryView = "/adminOrderHistoryView";
+  static final String adminMonthOrdersHistorySelectedView = "/adminMonthOrdersHistorySelectedView";
+
+  //Shared
+  static final String cloudStoragePdfView = "/cloudStoragePdfView";
+
   Routes._internal() {
     routes = GoRouter(
-      initialLocation: login, // Inicio en "/login"
+      initialLocation: adminHome, // Inicio en "/login"
       routes: <GoRoute>[
+        //User
         _myLogin(),
         _myRegister(),
         _myHome(),
@@ -32,9 +46,17 @@ class Routes {
         _myHistory(),
         _myActiveOrder(),
         _myHistoryOrder(),
-        _mypdfView(),
+        _myShoppingPdfView(),
         _myLocationPicker(),
-        _myLiveTracking()
+        _myLiveTracking(),
+        //Admin
+        _myAdminHome(),
+        _myAdminNotifications(),
+        _myAdminOrderView(),
+        _myAdminOrderHistoryView(),
+         _myAdminMonthOrdersHistorySelectedView(),
+        //Shared
+        _myCloudStoragePdfView(),
       ],
     );
   }
@@ -250,12 +272,12 @@ class Routes {
     );
   }
 
-  GoRoute _mypdfView() {
+  GoRoute _myShoppingPdfView() {
     return GoRoute(
-      path: pdfView,
+      path: shoppingPdfView,
       pageBuilder: (context, state) => CustomTransitionPage(
         key: state.pageKey,
-        child: const MyPdfView(),
+        child: const MyShoppingPdfView(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           final curvedAnimation = CurvedAnimation(
             parent: animation,
@@ -324,4 +346,159 @@ class Routes {
       ),
     );
   }
+
+  GoRoute _myAdminHome() {
+    return GoRoute(
+      path: adminHome,
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: const MyAdminHomeView(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final curvedAnimation = CurvedAnimation(
+            parent: animation,
+            curve: Curves.fastEaseInToSlowEaseOut,
+          );
+
+          // Deslizar hacia abajo + Fade
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0.0, 1.0), // Desde arriba
+              end: Offset.zero, // A su posición normal
+            ).animate(curvedAnimation),
+            child: child,
+          );
+        },
+      ),
+    );
+  }
+
+  GoRoute _myAdminNotifications() {
+    return GoRoute(
+      path: adminNotifications,
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: MyAdminNotificationsView(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          // CurvedAnimation para suavizar la transición
+          final curvedAnimation = CurvedAnimation(
+            parent: animation,
+            curve: Curves.fastEaseInToSlowEaseOut, // Aplica una curva suave
+          );
+
+          // Fade + SlideTransition: Deslizar desde la izquierda y desvanecer
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1.0, 0.0), // Desde la izquierda
+              end: Offset.zero, // A su posición normal
+            ).animate(curvedAnimation),
+            child: child,
+          );
+        },
+      ),
+    );
+  }
+
+  GoRoute _myAdminOrderView() {
+    return GoRoute(
+      path: adminOrderView,
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: const MyAdminOrderView(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          // CurvedAnimation para suavizar la transición
+          final curvedAnimation = CurvedAnimation(
+            parent: animation,
+            curve: Curves.fastEaseInToSlowEaseOut, // Aplica una curva suave
+          );
+
+          // Fade + SlideTransition: Deslizar desde la izquierda y desvanecer
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1.0, 0.0), // Desde la izquierda
+              end: Offset.zero, // A su posición normal
+            ).animate(curvedAnimation),
+            child: child,
+          );
+        },
+      ),
+    );
+  }
+
+  GoRoute _myAdminOrderHistoryView() {
+    return GoRoute(
+      path: adminOrderHistoryView,
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: const MyAdminOrderHistoryView(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          // CurvedAnimation para suavizar la transición
+          final curvedAnimation = CurvedAnimation(
+            parent: animation,
+            curve: Curves.fastEaseInToSlowEaseOut, // Aplica una curva suave
+          );
+
+          // Fade + SlideTransition: Deslizar desde la izquierda y desvanecer
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1.0, 0.0), // Desde la izquierda
+              end: Offset.zero, // A su posición normal
+            ).animate(curvedAnimation),
+            child: child,
+          );
+        },
+      ),
+    );
+  }
+
+  GoRoute _myCloudStoragePdfView() {
+    return GoRoute(
+      path: cloudStoragePdfView,
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: const MyCloudStoragePdfView(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final curvedAnimation = CurvedAnimation(
+            parent: animation,
+            curve: Curves.fastEaseInToSlowEaseOut,
+          );
+
+          // Deslizar hacia abajo + Fade
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0.0, 1.0), // Desde arriba
+              end: Offset.zero, // A su posición normal
+            ).animate(curvedAnimation),
+            child: child,
+          );
+        },
+      ),
+    );
+  }
+
+  GoRoute _myAdminMonthOrdersHistorySelectedView() {
+    return GoRoute(
+      path: adminMonthOrdersHistorySelectedView,
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: MyAdminMonthOrdersHistorySelectedView(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          // CurvedAnimation para suavizar la transición
+          final curvedAnimation = CurvedAnimation(
+            parent: animation,
+            curve: Curves.fastEaseInToSlowEaseOut, // Aplica una curva suave
+          );
+
+          // Fade + SlideTransition: Deslizar desde la izquierda y desvanecer
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1.0, 0.0), // Desde la izquierda
+              end: Offset.zero, // A su posición normal
+            ).animate(curvedAnimation),
+            child: child,
+          );
+        },
+      ),
+    );
+  }
+
 }

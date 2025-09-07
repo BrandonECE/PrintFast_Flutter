@@ -32,6 +32,7 @@ class UserServiceImpl extends UserService {
         'name': userEntity.name,
         'phone': userEntity.phone,
         'registration': userEntity.registration,
+        'isAdmin': userEntity.isAdmin,
       }, SetOptions(merge: true));
 
       // 2) notifications -> information { items: [] }
@@ -106,7 +107,7 @@ class UserServiceImpl extends UserService {
       return Future.error('Error obteniendo horders: $e');
     }
   }
-  
+
   @override
   Future<List<NotificationEntity>> getNotifications(String registration) async {
     try {
@@ -126,7 +127,9 @@ class UserServiceImpl extends UserService {
       final data = snap.data() ?? {};
       final rawList = List.from(data['items'] ?? []);
 
-      final List<NotificationEntity> result = rawList.map<NotificationEntity>((raw) {
+      final List<NotificationEntity> result = rawList.map<NotificationEntity>((
+        raw,
+      ) {
         if (raw is Map<String, dynamic>) {
           return NotificationEntity.fromMap(raw);
         } else if (raw is Map) {
@@ -142,7 +145,7 @@ class UserServiceImpl extends UserService {
       return Future.error('Error obteniendo notifications: $e');
     }
   }
-  
+
   @override
   Stream<int> unseenNotificationsCount(String registration) {
     try {
@@ -157,9 +160,9 @@ class UserServiceImpl extends UserService {
       return Stream.value(0);
     }
   }
-  
+
   @override
-  Stream<AorderEntity?> getAordersStream(String registration) {
+  Stream<AorderEntity?> getAorderStream(String registration) {
     try {
       return _firestore
           .collection('users')
@@ -173,10 +176,13 @@ class UserServiceImpl extends UserService {
 
             final data = snapshot.data();
             // Si no hay data o specifications, significa que tampoco hay orden activa
-            if (data == null || !data.containsKey('specifications')) return null;
+            if (data == null || !data.containsKey('specifications'))
+              return null;
 
             // Extraemos specifications y convertimos a entidad
-            final specifications = Map<String, dynamic>.from(data['specifications']);
+            final specifications = Map<String, dynamic>.from(
+              data['specifications'],
+            );
             return AorderEntity.fromMap(specifications);
           })
           .handleError((error) {
@@ -188,5 +194,4 @@ class UserServiceImpl extends UserService {
       return Stream.error("Error iniciando el stream: $e");
     }
   }
-
 }

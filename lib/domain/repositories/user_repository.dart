@@ -7,5 +7,5 @@ abstract class UserRepository {
   Future<List<HorderEntity>> getHOrders(String registration);
   Future<List<NotificationEntity>> getNotifications(String registration);
   Stream<int> unseenNotificationsCount(String registration);
-  Stream<AorderEntity?> getAordersStream(String registration);
+  Stream<AorderEntity?> getAorderStream(String registration);
 }
