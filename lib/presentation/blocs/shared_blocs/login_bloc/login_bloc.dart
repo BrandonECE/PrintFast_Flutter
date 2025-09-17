@@ -51,36 +51,16 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
   }
 
   Future<void> signIn() async {
-    add(
-      LoginChangeLoginStatusEvent(
-        loginStatus: LoginStatus.loading,
-        messageError: null,
-      ),
-    );
 
+    add( LoginChangeLoginStatusEvent( loginStatus: LoginStatus.loading, messageError: null, ), );
     await Future.delayed(Duration(milliseconds: 1500));
 
     try {
-      final UserEntity userEntity = await authRepository.signInAndGetUser(
-        registration: registration,
-        password: password,
-      );
-
+      final UserEntity userEntity = await authRepository.signInAndGetUser( registration: registration, password: password, );
       add(LoginUpdateUserEntityEvent(userEntity: userEntity));
-
-      add(
-        LoginChangeLoginStatusEvent(
-          loginStatus: LoginStatus.success,
-          messageError: null,
-        ),
-      );
+      add(LoginChangeLoginStatusEvent( loginStatus: LoginStatus.success, messageError: null, ), );
     } catch (e) {
-      add(
-        LoginChangeLoginStatusEvent(
-          loginStatus: LoginStatus.failure,
-          messageError: e.toString(),
-        ),
-      );
+      add( LoginChangeLoginStatusEvent( loginStatus: LoginStatus.failure, messageError: e.toString(), ), );
     }
   }
 

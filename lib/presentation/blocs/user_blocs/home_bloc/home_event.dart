@@ -31,15 +31,14 @@ final class HomeUpdateSelectedOrderEvent extends HomeEvent {
   List<Object> get props => [selectedOrder];
 }
 
-final class HomeUpdateHomeStatusEvent extends HomeEvent {
-  const HomeUpdateHomeStatusEvent({
-    required this.homeStatus,
+final class HomeUpdateHomeLogOutStatusEvent extends HomeEvent {
+  const HomeUpdateHomeLogOutStatusEvent({
+    required this.homeLogOutStatus,
     required this.messageError,
   });
-  final HomeStatus homeStatus;
+  final HomeLogOutStatus homeLogOutStatus;
   final String? messageError;
 
   @override
-  List<Object?> get props => [homeStatus, messageError];
+  List<Object?> get props => [homeLogOutStatus, messageError];
 }
-

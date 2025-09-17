@@ -49,6 +49,7 @@ dependencies:
   animated_segmented_tab_control: ^2.0.0
   printing: ^5.14.2
   calendar_date_picker2: ^2.0.1
+  flutter_pin_code_fields: ^2.2.0
 
 dev_dependencies:
   flutter_test:

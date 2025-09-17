@@ -1,3 +1,4 @@
+
 import 'package:animated_segmented_tab_control/animated_segmented_tab_control.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -9,36 +10,46 @@ import 'package:printfast_rebuild/presentation/widgets/widgets.dart';
 import 'package:printfast_rebuild/utils/utils.dart';
 
 class MyAdminOrdersView extends StatelessWidget {
-  const MyAdminOrdersView({super.key});
+  const MyAdminOrdersView({super.key, required this.callBack});
+  final void Function(int index) callBack;
+
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
-    final primary = Theme.of(context).colorScheme.primary;
+    final colorScheme = Theme.of(context).colorScheme;
 
-    return _myBody(width, context);
-  }
-
-  Center _myBody(double width, BuildContext context) {
     return Center(
       child: Container(
         width: width * 0.95,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.all(Radius.circular(20)),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        child: _buildBody(context, width),
+        child: _buildBody(context, width, callBack),
       ),
     );
   }
 
-  // ---------------- Body: título + sección ----------------
-  Widget _buildBody(BuildContext context, double width) {
-    final primaryColor = Theme.of(context).colorScheme.primary;
-    return Expanded(
+  Widget _buildBody(
+    BuildContext context,
+    double width,
+    void Function(int index) callBack,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          _buildTitleRow(context, width),
-          SizedBox(height: 5),
+          _buildTitleRow(context, width, callBack),
+          const SizedBox(height: 16),
           DefaultTabController(
             length: 2,
             initialIndex: 0,
@@ -48,60 +59,61 @@ class MyAdminOrdersView extends StatelessWidget {
                   SizedBox(
                     width: width * 0.83,
                     child: SegmentedTabControl(
-                      textStyle: Theme.of(context).textTheme.titleMedium,
+                      textStyle: TextStyle(
+                        fontSize: 14,
+                        color: colorScheme.inverseSurface,
+                        fontWeight: FontWeight.w500,
+                      ),
                       splashColor: Colors.white.withOpacity(0.1),
-                      selectedTextStyle: Theme.of(context).textTheme.titleSmall!
-                          .copyWith(fontWeight: FontWeight.w600),
-                      tabTextColor:
-                          primaryColor, // color de texto no seleccionado
-                      selectedTabTextColor:
-                          Colors.white, // color de texto seleccionado
-                      height: 57.5,
-                      indicatorPadding: const EdgeInsets.all(0),
+                      selectedTextStyle: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      tabTextColor: colorScheme.inverseSurface.withOpacity(0.7),
+                      selectedTabTextColor: Colors.white,
+                      height: 48,
+                      indicatorPadding: const EdgeInsets.all(2),
                       squeezeIntensity: 2,
                       tabPadding: const EdgeInsets.symmetric(horizontal: 4),
-
-                      // Barra blanca con borde
                       barDecoration: BoxDecoration(
-                        color: Colors.white, // <-- fondo blanco
-                        borderRadius: BorderRadius.circular(20),
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.grey.shade300),
                       ),
-
-                      // Solo la pestaña seleccionada en color primary
                       indicatorDecoration: BoxDecoration(
-                        color: primaryColor, // <-- color del botón activo
-                        borderRadius: BorderRadius.circular(20),
+                        color: colorScheme.primary,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: colorScheme.primary.withOpacity(0.3),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-
                       tabs: [
                         SegmentTab(label: 'Aceptadas'),
                         SegmentTab(label: 'Pend. (3)', color: Colors.redAccent),
                       ],
                     ),
                   ),
+                  const SizedBox(height: 20),
                   Expanded(
                     child: BlocBuilder<AdminHomeBloc, AdminHomeState>(
                       builder: (context, state) {
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 25, top: 20),
-                          child: TabBarView(
-                            children: [
-                              Center(
-                                child: _buildSectionContainer(
-                                  context,
-                                  width,
-                                  _buildList(context, state.acceptedOrders),
-                                ),
-                              ),
-                              Center(
-                                child: _buildSectionContainer(
-                                  context,
-                                  width,
-                                  _buildList(context, state.pendingOrders),
-                                ),
-                              ),
-                            ],
-                          ),
+                        return TabBarView(
+                          children: [
+                            _buildSectionContainer(
+                              context,
+                              width,
+                              _buildList(context, state.acceptedOrders),
+                            ),
+                            _buildSectionContainer(
+                              context,
+                              width,
+                              _buildList(context, state.pendingOrders),
+                            ),
+                          ],
                         );
                       },
                     ),
@@ -115,10 +127,14 @@ class MyAdminOrdersView extends StatelessWidget {
     );
   }
 
-  Widget _buildTitleRow(BuildContext context, double width) {
-    final inverse = Theme.of(context).colorScheme.inverseSurface;
+  Widget _buildTitleRow(
+    BuildContext context,
+    double width,
+    void Function(int index) callBack,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
-      margin: const EdgeInsets.only(top: 12, bottom: 8),
       width: width * 0.83,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -129,21 +145,22 @@ class MyAdminOrdersView extends StatelessWidget {
                 "Órdenes",
                 style: TextStyle(
                   fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: inverse,
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.inverseSurface,
                 ),
               ),
               const SizedBox(width: 8),
-              const Icon(Icons.arrow_drop_down, size: 25),
+              Icon(
+                Icons.arrow_drop_down,
+                size: 25,
+                color: colorScheme.inverseSurface,
+              ),
             ],
           ),
-
           StatusPill(
-            isOnline: true, 
-            onTap: () {
-            },
+            isOnline: true,
+            onTap: () => callBack.call(3),
           ),
-
         ],
       ),
     );
@@ -154,38 +171,36 @@ class MyAdminOrdersView extends StatelessWidget {
     double width,
     Widget content,
   ) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade300, width: 2),
-          color: Colors.grey.shade200,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        width: width * 0.83,
-        child: content,
+    return Container(
+      width: width * 0.83,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade300),
       ),
+      child: content,
     );
   }
 
   Widget _buildList(BuildContext context, List<AorderEntity> orders) {
-    final primary = Theme.of(context).colorScheme.primary;
-    final inverse = Theme.of(context).colorScheme.inverseSurface;
+    final colorScheme = Theme.of(context).colorScheme;
     final adminHomeBloc = context.read<AdminHomeBloc>();
+
     return ListView.separated(
-      padding: const EdgeInsets.only(top: 0, bottom: 8),
+      padding: const EdgeInsets.all(16),
       physics: const BouncingScrollPhysics(),
       itemCount: orders.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 20),
+      separatorBuilder: (_, __) => const SizedBox(height: 16),
       itemBuilder: (context, index) {
-        
         final item = orders[index];
         final formatYmd = formatDateToYMD(item.initDate);
         final formatAmPm = formatTimeToAmPm(item.initDate);
-        final String date = "$formatYmd , $formatAmPm ";
+        final String date = "$formatYmd , $formatAmPm";
 
-        void selectOrder(){
-          adminHomeBloc.add(AdminHomeUpdateSelectedOrderEvent(selectedOrder: orders[index]));
+        void selectOrder() {
+          adminHomeBloc.add(
+            AdminHomeUpdateSelectedOrderEvent(selectedOrder: orders[index]),
+          );
           context.push(Routes.adminOrderView);
         }
 
@@ -194,87 +209,126 @@ class MyAdminOrdersView extends StatelessWidget {
             // fecha banner
             Container(
               alignment: Alignment.center,
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade600),
-                color: primary,
-                borderRadius: BorderRadius.circular(10),
+                color: colorScheme.primary,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: colorScheme.primary.withOpacity(0.2),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               width: double.infinity,
               child: Text(
                 date,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
                 ),
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
 
             // tarjeta de orden
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade400),
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+                border: Border.all(color: Colors.grey.shade300),
               ),
-              width: double.infinity,
-              height: 95,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          SizedBox(
-                            width: 80,
-                            child: Text(
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.receipt_long,
+                              size: 18,
+                              color: colorScheme.inverseSurface,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
                               "Ord #${item.orderCode}",
                               style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: inverse,
-                                overflow: TextOverflow.ellipsis,
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.inverseSurface,
+                                fontSize: 15,
                               ),
                             ),
-                          ),
-                          SizedBox(width: 2.5),
-                          Icon(Icons.receipt_long, color: inverse, size: 18),
-                        ],
-                      ),
-
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.person_2_sharp,
+                              size: 18,
+                              color: colorScheme.inverseSurface.withOpacity(
+                                0.8,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              item.userRegistration,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                                color: colorScheme.inverseSurface.withOpacity(
+                                  0.8,
+                                ),
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
                       Text(
-                        item.userRegistration,
+                        "${item.price}\$",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: inverse,
+                          color: colorScheme.inverseSurface,
+                          fontSize: 16,
                         ),
                       ),
+                      const SizedBox(height: 8),
+                      ElevatedButton(
+                        onPressed: selectOrder,
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: colorScheme.primary,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          elevation: 2,
+                          shadowColor: colorScheme.primary.withOpacity(0.3),
+                        ),
+                        child: const Icon(Icons.remove_red_eye, size: 20),
+                      ),
                     ],
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 1.7),
-                    child: Text(
-                      "${item.price}\$",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: inverse,
-                      ),
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: selectOrder,
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: primary,
-                      shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(15)),
-                      ),
-                    ),
-                    child: const Icon(Icons.remove_red_eye),
                   ),
                 ],
               ),
@@ -286,21 +340,16 @@ class MyAdminOrdersView extends StatelessWidget {
   }
 }
 
-
 class StatusPill extends StatelessWidget {
-  const StatusPill({
-    super.key,
-    required this.isOnline,
-    this.onTap,
-  });
+  const StatusPill({super.key, required this.isOnline, this.onTap});
 
   final bool isOnline;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final Color onlineColor = Colors.greenAccent.shade700;
-    final Color pausedColor = Colors.orangeAccent.shade700;
+    final Color onlineColor = Colors.green;
+    final Color pausedColor = Colors.orange;
     final Color bg = isOnline ? onlineColor : pausedColor;
     final String label = isOnline ? 'Disponible' : 'Pausada';
     final IconData icon = isOnline ? Icons.check_circle : Icons.pause_circle;
@@ -310,26 +359,24 @@ class StatusPill extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
-        splashColor: Colors.white24,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 240),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: bg.withOpacity(0.05),
+            color: bg.withOpacity(0.1),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: bg.withOpacity(0.23), width: 1.2)
+            border: Border.all(color: bg.withOpacity(0.3), width: 1.5),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 14, color: bg),
+              Icon(icon, size: 16, color: bg),
               const SizedBox(width: 8),
               Text(
                 label,
                 style: TextStyle(
                   color: bg,
                   fontWeight: FontWeight.w600,
-                  fontSize: 13,
+                  fontSize: 14,
                 ),
               ),
             ],

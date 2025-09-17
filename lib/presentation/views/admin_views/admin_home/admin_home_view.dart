@@ -21,70 +21,111 @@ class MyAdminHomeView extends StatelessWidget {
     // final onPrimary = Theme.of(context).colorScheme.onPrimary;
     // final width = MediaQuery.of(context).size.width;
 
-    final List<Widget> pages = const [MyAdminOrdersView(), MyAdminOrdersHistoryView(), MyAdminReportsView(),MyAdminSettingsView()];
     final PageController pageController = PageController(initialPage: 0);
+    final adminHomeBloc = context.read<AdminHomeBloc>();
 
-    void onTapBottomNav(int index, AdminHomeBloc adminHomeBloc) {
+    void onTapBottomNav(int index) {
       // Animación programática (funciona aún con swipe desactivado)
       pageController.animateToPage(
         index,
         duration: const Duration(milliseconds: 380),
         curve: Curves.fastLinearToSlowEaseIn,
       );
-      adminHomeBloc.add(AdminHomeChangeIndexBottomNavigationBarEvent(currentIndex: index));
+      adminHomeBloc.add(
+        AdminHomeChangeIndexBottomNavigationBarEvent(currentIndex: index),
+      );
     }
+
+    final List<Widget> pages =  [
+      MyAdminOrdersView(callBack: onTapBottomNav,),
+      MyAdminOrdersHistoryView(),
+      MyAdminReportsView(),
+      MyAdminSettingsView(),
+    ];
 
     return Stack(
       children: [
         Align(
           alignment: Alignment.center,
-          child: _myBody(primary, context, pageController, pages, onTapBottomNav),
+          child: _myBody(
+            primary,
+            context,
+            pageController,
+            pages,
+            onTapBottomNav,
+          ),
         ),
         MyDateRangeBottomSheet(),
-        MyMessageErrorWarning(voidCallback: () => messageErrorWarningBloc.add(ShowMessageErrorWarningEvent(showMessageErrorWarning: false),),),
+        MyMessageErrorWarning(
+          voidCallback: () => messageErrorWarningBloc.add(
+            ShowMessageErrorWarningEvent(showMessageErrorWarning: false),
+          ),
+        ),
       ],
     );
   }
 
-  Scaffold _myBody(Color primary, BuildContext context, PageController pageController, List<Widget> pages, void Function(int index, AdminHomeBloc adminHomeBloc) onTapBottomNav) {
+  Scaffold _myBody(
+    Color primary,
+    BuildContext context,
+    PageController pageController,
+    List<Widget> pages,
+    void Function(int index) onTapBottomNav,
+  ) {
     return Scaffold(
-    backgroundColor: primary,
-    appBar: MyAppBarWidget(
-      title: "PrintFast",
-      imagePath: "assets/images/printfast_logo.png",
-      imageSize: 18,
-      actionIcon: Icons.notifications,
-      actionIconSize: 25,
-      onAction: () => context.push(Routes.adminNotifications),
-    ),
-    body: BlocBuilder<AdminHomeBloc, AdminHomeState>(
-      builder: (context, state) {
-        return PageView(
-          controller: pageController,
-          physics: NeverScrollableScrollPhysics(),
-          children: pages,
-        );
-      },
-    ), //MySettingsaView
-    bottomNavigationBar: _myBottomNavigationBar(context, onTapBottomNav),
-  );
+      backgroundColor: primary,
+      appBar: MyAppBarWidget(
+        title: "PrintFast",
+        imagePath: "assets/images/printfast_logo.png",
+        imageSize: 18,
+        actionIcon: Icons.notifications,
+        actionIconSize: 25,
+        onAction: () => context.push(Routes.adminNotifications),
+      ),
+      body: BlocBuilder<AdminHomeBloc, AdminHomeState>(
+        builder: (context, state) {
+          return PageView(
+            controller: pageController,
+            physics: NeverScrollableScrollPhysics(),
+            children: pages,
+          );
+        },
+      ), //MySettingsaView
+      bottomNavigationBar: _myBottomNavigationBar(context, onTapBottomNav),
+    );
   }
 
-  BlocBuilder _myBottomNavigationBar(BuildContext context, void Function(int index, AdminHomeBloc homeBloc) onTapBottomNav,) {
+  BlocBuilder _myBottomNavigationBar(
+    BuildContext context,
+    void Function(int index) onTapBottomNav,
+  ) {
     return BlocBuilder<AdminHomeBloc, AdminHomeState>(
       builder: (context, state) {
         return BottomNavigationBar(
           type: BottomNavigationBarType.fixed,
           currentIndex: state.currentIndex,
-          onTap: (value) => onTapBottomNav(value, context.read<AdminHomeBloc>()),
+          onTap: (value) =>
+              onTapBottomNav(value),
           backgroundColor: Theme.of(context).colorScheme.primary,
           selectedItemColor: Colors.white,
           unselectedItemColor: Theme.of(context).colorScheme.onSurfaceVariant,
           items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.receipt_long),label: "Órdenes",),
-            BottomNavigationBarItem(icon: Icon(Icons.history),label: "Historial",),
-            BottomNavigationBarItem( icon: Icon(Icons.bar_chart), label: "Reportes", ),
-            BottomNavigationBarItem( icon: Icon(Icons.settings), label: "Ajustes", ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.receipt_long),
+              label: "Órdenes",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.history),
+              label: "Historial",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.bar_chart),
+              label: "Reportes",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.settings),
+              label: "Ajustes",
+            ),
           ],
         );
       },

@@ -6,15 +6,18 @@ import 'package:printfast_rebuild/presentation/blocs/admin_blocs/admin_order_cha
 class MyTimePickerBottomSheet extends StatelessWidget {
   const MyTimePickerBottomSheet({super.key, required this.deliveryTime});
   final DateTime deliveryTime;
+  
   @override
   Widget build(BuildContext context) {
     final adminOrderChangeDeliveryTimeBloc = context.read<AdminOrderChangeDeliveryTimeBloc>();
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return BlocBuilder<AdminOrderChangeDeliveryTimeBloc, AdminOrderChangeDeliveryTimeState>(
       builder: (context, state) {
         final showDeliveryTimeBottomSheet = state.showDeliveryTimeBottomSheet;
         return PopScope(
           onPopInvokedWithResult: (didPop, result) {
-                adminOrderChangeDeliveryTimeBloc.add(
+            adminOrderChangeDeliveryTimeBloc.add(
               AdminOrderShowChangeDeliveryTimeEvent(showDeliveryTimeBottomSheet: false),
             );
           },
@@ -30,49 +33,127 @@ class MyTimePickerBottomSheet extends StatelessWidget {
                     duration: const Duration(milliseconds: 275),
                     child: Container(
                       color: showDeliveryTimeBottomSheet
-                          ? Theme.of(
-                              context,
-                            ).colorScheme.inverseSurface.withOpacity(0.4)
+                          ? colorScheme.inverseSurface.withOpacity(0.4)
                           : Colors.transparent,
                     ),
                   ),
                 ),
               ),
-              // Panel de error
+              // Panel del selector de tiempo
               AnimatedPositioned(
                 bottom: showDeliveryTimeBottomSheet
                     ? 0
-                    : -MediaQuery.of(context).size.height * 0.35,
+                    : -MediaQuery.of(context).size.height * 0.335,
                 left: 0,
                 right: 0,
-                top: showDeliveryTimeBottomSheet
-                    ? MediaQuery.of(context).size.height * 0.65
-                    : MediaQuery.of(context).size.height,
+                top: showDeliveryTimeBottomSheet ? MediaQuery.of(context).size.height * (1 - 0.335) : MediaQuery.of(context).size.height ,
+                duration: const Duration(milliseconds:1000),
                 curve: Curves.fastLinearToSlowEaseIn,
-                duration: const Duration(milliseconds: 900),
-                child: Container(
-                  alignment: Alignment.center,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 15,
+                child: Material(
+                  color: colorScheme.surface,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(20),
                   ),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(25),
+                  elevation: 8,
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Header con título y botón de cerrar
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.access_time_rounded,
+                                  color: colorScheme.primary,
+                                  size: 22,
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  "Entrega estimada",
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w600,
+                                    color: colorScheme.onSurface,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            IconButton(
+                              onPressed: () => adminOrderChangeDeliveryTimeBloc.add(
+                                AdminOrderShowChangeDeliveryTimeEvent(showDeliveryTimeBottomSheet: false),
+                              ),
+                              icon: Icon(
+                                Icons.close_rounded,
+                                color: colorScheme.onSurface.withOpacity(0.7),
+                                size: 22,
+                              ),
+                              style: IconButton.styleFrom(
+                                minimumSize: const Size(44, 44),
+                                padding: EdgeInsets.zero,
+                              ),
+                            ),
+                          ],
+                        ),
+                        
+                        const SizedBox(height: 6),
+                        
+                        // Selector de tiempo Cupertino (sin fondo)
+                        SizedBox(
+                          height: 120, // Más compacto
+                          child: CupertinoTheme(
+                            data: CupertinoThemeData(
+                              textTheme: CupertinoTextThemeData(
+                                dateTimePickerTextStyle: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w500,
+                                  color: colorScheme.onSurface,
+                                ),
+                              ),
+                            ),
+                            child: CupertinoDatePicker(
+                              mode: CupertinoDatePickerMode.time,
+                              minimumDate: DateTime.now(),
+                              initialDateTime: deliveryTime,
+                              onDateTimeChanged: (DateTime value) {
+                                // Lógica para cambiar la hora
+                              },
+                            ),
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 24),
+                        
+                        // Botón de aceptar
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () => adminOrderChangeDeliveryTimeBloc.add(
+                              AdminOrderShowChangeDeliveryTimeEvent(showDeliveryTimeBottomSheet: false),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: colorScheme.primary,
+                              foregroundColor: colorScheme.onPrimary,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              elevation: 2,
+                            ),
+                            child: const Text(
+                              'Aceptar',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Título y icono de cierre
-                      _myBottomSheetTop(context, adminOrderChangeDeliveryTimeBloc),
-                      // Cambisr la hora de de entrega estimada
-                      // DateRangePickerDialog(firstDate: DateTime.now(), lastDate: DateTime.now().add(Duration(minutes: 50))),
-                      _myTimeBottomSheet(deliveryTime),
-                      // Botón aceptar
-                      _myButtonWarning(context, adminOrderChangeDeliveryTimeBloc),
-                    ],
                   ),
                 ),
               ),
@@ -82,89 +163,4 @@ class MyTimePickerBottomSheet extends StatelessWidget {
       },
     );
   }
-Widget _myTimeBottomSheet(DateTime initialDateTime) {
-  return Padding(
-    padding: const EdgeInsets.only(bottom: 15),
-    child: SizedBox(
-      height: 100,
-      child: CupertinoTheme(
-        
-        data: const CupertinoThemeData(
-          // Ajusta el tamaño del texto para modificar la curva percibida
-          textTheme: CupertinoTextThemeData(
-            dateTimePickerTextStyle: TextStyle(
-              fontSize: 22, // 👈 Más grande = efecto 3D más notorio
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-        ),
-        child: CupertinoDatePicker(
-          mode: CupertinoDatePickerMode.time,
-          minimumDate: DateTime.now(),
-          initialDateTime: initialDateTime,
-          onDateTimeChanged: (DateTime value) {},
-        ),
-      ),
-    ),
-  );
 }
-
-  Row _myBottomSheetTop(
-    BuildContext context,
-    AdminOrderChangeDeliveryTimeBloc adminOrderChangeDeliveryTimeBloc
-  ) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            Text(
-              "Entrega estimada",
-              style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Icon(
-              Icons.access_time_filled_rounded,
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-            ),
-          ],
-        ),
-        IconButton(
-          onPressed: () => adminOrderChangeDeliveryTimeBloc.add(AdminOrderShowChangeDeliveryTimeEvent(showDeliveryTimeBottomSheet: false),
-          ),
-          icon: Icon(Icons.close, color: Theme.of(context).colorScheme.primary),
-        ),
-      ],
-    );
-  }
-
-  Widget _myButtonWarning(
-    BuildContext context, AdminOrderChangeDeliveryTimeBloc adminOrderChangeDeliveryTimeBloc
-  ) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: TextButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(22.5),
-          ),
-          fixedSize: Size(MediaQuery.of(context).size.width, 65),
-        ),
-        onPressed: () => adminOrderChangeDeliveryTimeBloc.add(AdminOrderShowChangeDeliveryTimeEvent(showDeliveryTimeBottomSheet: false)),
-        child: Text(
-          'Aceptar',
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSecondary,
-            fontSize: 18,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ),
-    );
-  }
-}
-

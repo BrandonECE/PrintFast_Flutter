@@ -18,14 +18,14 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       emit(state.copyWith(userEntity: event.userEntity));
     });
 
-    on<HomeUpdateSelectedOrderEvent >((event, emit) {
+    on<HomeUpdateSelectedOrderEvent>((event, emit) {
       emit(state.copyWith(selectedOrder: event.selectedOrder));
     });
 
-    on<HomeUpdateHomeStatusEvent>((event, emit) {
+    on<HomeUpdateHomeLogOutStatusEvent>((event, emit) {
       emit(
         state.copyWith(
-          homeStatus: event.homeStatus,
+          homeLogOutStatus: event.homeLogOutStatus,
           messageError: event.messageError,
         ),
       );
@@ -34,24 +34,25 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
   Future<void> signOut() async {
     add(
-      HomeUpdateHomeStatusEvent(
-        homeStatus: HomeStatus.loading,
+      HomeUpdateHomeLogOutStatusEvent(
+        homeLogOutStatus: HomeLogOutStatus.loading,
         messageError: null,
       ),
     );
+    await Future.delayed(Duration(milliseconds: 1000));
     try {
       await authRepository.signOut();
       add(
-        HomeUpdateHomeStatusEvent(
-          homeStatus: HomeStatus.success,
+        HomeUpdateHomeLogOutStatusEvent(
+          homeLogOutStatus: HomeLogOutStatus.success,
           messageError: null,
         ),
       );
       add(HomeChangeIndexBottomNavigationBarEvent(currentIndex: 0));
     } catch (e) {
       add(
-        HomeUpdateHomeStatusEvent(
-          homeStatus: HomeStatus.failure,
+        HomeUpdateHomeLogOutStatusEvent(
+          homeLogOutStatus: HomeLogOutStatus.failure,
           messageError: e.toString(),
         ),
       );

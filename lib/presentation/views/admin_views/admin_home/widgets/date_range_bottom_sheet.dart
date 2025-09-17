@@ -1,22 +1,20 @@
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:printfast_rebuild/presentation/blocs/admin_blocs/admin_change_report_date_range_bloc/admin_change_report_date_range_bloc.dart';
 
 class MyDateRangeBottomSheet extends StatelessWidget {
   const MyDateRangeBottomSheet({super.key});
+  
   @override
   Widget build(BuildContext context) {
-    final adminChangeReportDateRangeBloc = context
-        .read<AdminChangeReportDateRangeBloc>();
-    return BlocBuilder<
-      AdminChangeReportDateRangeBloc,
-      AdminChangeReportDateRangeState
-    >(
+    final adminChangeReportDateRangeBloc = context.read<AdminChangeReportDateRangeBloc>();
+    final colorScheme = Theme.of(context).colorScheme;
+    final screenHeight = MediaQuery.of(context).size.height;
+    
+    return BlocBuilder<AdminChangeReportDateRangeBloc, AdminChangeReportDateRangeState>(
       builder: (context, state) {
-        final showChangeReportDateRangeBottomSheet =
-            state.showChangeReportDateRangeBottomSheet;
+        final showChangeReportDateRangeBottomSheet = state.showChangeReportDateRangeBottomSheet;
         return PopScope(
           onPopInvokedWithResult: (didPop, result) {
             adminChangeReportDateRangeBloc.add(
@@ -37,56 +35,113 @@ class MyDateRangeBottomSheet extends StatelessWidget {
                     duration: const Duration(milliseconds: 275),
                     child: Container(
                       color: showChangeReportDateRangeBottomSheet
-                          ? Theme.of(
-                              context,
-                            ).colorScheme.inverseSurface.withOpacity(0.4)
+                          ? colorScheme.inverseSurface.withOpacity(0.4)
                           : Colors.transparent,
                     ),
                   ),
                 ),
               ),
-              // Panel de error
+              // Panel del selector de fechas
               AnimatedPositioned(
-                bottom: showChangeReportDateRangeBottomSheet
-                    ? 0
-                    : -MediaQuery.of(context).size.height * 0.58,
+                bottom: showChangeReportDateRangeBottomSheet ? 0 : -screenHeight * (1-0.48),
                 left: 0,
                 right: 0,
-                top: showChangeReportDateRangeBottomSheet
-                    ? MediaQuery.of(context).size.height * 0.42
-                    : MediaQuery.of(context).size.height,
+                top: showChangeReportDateRangeBottomSheet ? screenHeight * 0.48 : screenHeight,
+                duration: const Duration(milliseconds: 1100),
                 curve: Curves.fastLinearToSlowEaseIn,
-                duration: const Duration(milliseconds: 900),
-                child: Container(
-                  alignment: Alignment.center,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 15,
+                child: Material(
+                  color: colorScheme.surface,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(20),
                   ),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(25),
+                  elevation: 8,
+                  child: Container(
+                    constraints: BoxConstraints(
+                      maxHeight: screenHeight * 0.7, // Máximo 70% de la pantalla
                     ),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Título y icono de cierre
-                      Column(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                    child: SingleChildScrollView( // Permite scroll si es necesario
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          _myBottomSheetTop(
-                            context,
-                            adminChangeReportDateRangeBloc,
+                          // Header con título y botón de cerrar
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.calendar_month_rounded,
+                                    color: colorScheme.primary,
+                                    size: 22,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    "Rango de fechas",
+                                    style: TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w600,
+                                      color: colorScheme.onSurface,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              IconButton(
+                                onPressed: () => adminChangeReportDateRangeBloc.add(
+                                  AdminShowChangeReportDateRangeEvent(
+                                    showChangeReportDateRangeBottomSheet: false,
+                                  ),
+                                ),
+                                icon: Icon(
+                                  Icons.close_rounded,
+                                  color: colorScheme.onSurface.withOpacity(0.7),
+                                  size: 22,
+                                ),
+                                style: IconButton.styleFrom(
+                                  minimumSize: const Size(44, 44),
+                                  padding: EdgeInsets.zero,
+                                ),
+                              ),
+                            ],
                           ),
-                          // Cambisr la hora de de entrega estimada
-                          // DateRangePickerDialog(firstDate: DateTime.now(), lastDate: DateTime.now().add(Duration(minutes: 50))),
+                          
+                          const SizedBox(height: 12),
+                          
+                          // Selector de rango de fechas (más compacto)
                           _myDateRangeBottomSheet(context),
+                          
+                          const SizedBox(height: 16),
+                          
+                          // Botón de aceptar
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () => adminChangeReportDateRangeBloc.add(
+                                AdminShowChangeReportDateRangeEvent(
+                                  showChangeReportDateRangeBottomSheet: false,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: colorScheme.primary,
+                                foregroundColor: colorScheme.onPrimary,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                elevation: 2,
+                              ),
+                              child: const Text(
+                                'Aceptar',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
-                      // Botón aceptar
-                      _myButtonWarning(context, adminChangeReportDateRangeBloc),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -102,101 +157,48 @@ class MyDateRangeBottomSheet extends StatelessWidget {
     final today = DateTime.now();
     final minDate = DateTime(2025, 1, 1);
     final maxDate = DateTime(today.year, today.month, today.day);
-    return Material(
-      child: Padding(
-        padding: const EdgeInsets.only(top: 6),
-        child: SizedBox(
-          height: 330,
-          child: CalendarDatePicker2(
-            config: CalendarDatePicker2Config(
-              
-              calendarType: CalendarDatePicker2Type.range, // 👈 Rango de fechas
-              firstDate: minDate, // 👈 No deja ir antes del 1 enero 2025
-              lastDate: maxDate, // 👈 No deja ir más allá de hoy
-              selectedDayHighlightColor: primaryColor, // Color de selección
-              weekdayLabels: const ["L", "M", "M", "J", "V", "S", "D"],
-              dayTextStyle: const TextStyle(fontSize: 16),
-              daySplashColor: Colors.transparent,
-              selectedDayTextStyle: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-              controlsTextStyle: TextStyle(
-                color: primaryColor,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-            value: [],
-            onValueChanged: (dates) {},
-          ),
-        ),
+    
+    return Container(
+      height: 280, // Reducido de 300 a 280
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
       ),
-    );
-  }
-
-  Row _myBottomSheetTop(
-    BuildContext context,
-    AdminChangeReportDateRangeBloc adminChangeReportDateRangeBloc,
-  ) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            Text(
-              "Rango de fechas",
-              style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Icon(
-              Icons.calendar_month,
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-            ),
-          ],
-        ),
-        IconButton(
-          onPressed: () => adminChangeReportDateRangeBloc.add(
-            AdminShowChangeReportDateRangeEvent(
-              showChangeReportDateRangeBottomSheet: false,
-            ),
+      child: CalendarDatePicker2(
+        config: CalendarDatePicker2Config(
+          calendarType: CalendarDatePicker2Type.range,
+          firstDate: minDate,
+          lastDate: maxDate,
+          selectedDayHighlightColor: primaryColor,
+          weekdayLabels: const ["L", "M", "M", "J", "V", "S", "D"],
+          weekdayLabelTextStyle: TextStyle(
+            fontSize: 12, // Reducido de 12 a 11
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
           ),
-          icon: Icon(Icons.close, color: Theme.of(context).colorScheme.primary),
-        ),
-      ],
-    );
-  }
-
-  Widget _myButtonWarning(
-    BuildContext context,
-    AdminChangeReportDateRangeBloc adminChangeReportDateRangeBloc,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: TextButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(22.5),
+          dayTextStyle: TextStyle(
+            fontSize: 14, // Reducido de 14 a 13
+            color: Theme.of(context).colorScheme.onSurface,
           ),
-          fixedSize: Size(MediaQuery.of(context).size.width, 65),
-        ),
-        onPressed: () => adminChangeReportDateRangeBloc.add(
-          AdminShowChangeReportDateRangeEvent(
-            showChangeReportDateRangeBottomSheet: false,
+          daySplashColor: Colors.transparent,
+          selectedDayTextStyle: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 14, // Reducido de 14 a 13
+          ),
+          controlsTextStyle: TextStyle(
+            color: primaryColor,
+            fontWeight: FontWeight.w600,
+            fontSize: 14, // Reducido de 14 a 13
+          ),
+          centerAlignModePicker: true,
+          customModePickerIcon: const SizedBox(),
+          yearTextStyle: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontSize: 14, // Reducido de 14 a 13
           ),
         ),
-        child: Text(
-          'Aceptar',
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSecondary,
-            fontSize: 18,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        value: [],
+        onValueChanged: (dates) {},
       ),
     );
   }

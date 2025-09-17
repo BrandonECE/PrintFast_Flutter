@@ -1,3 +1,4 @@
+export 'package:printfast_rebuild/domain/entities/copyshop_entity.dart';
 export 'package:printfast_rebuild/domain/entities/aorder_entity.dart';
 export 'package:printfast_rebuild/domain/entities/horder_entity.dart';
 export 'package:printfast_rebuild/domain/entities/user_entity.dart';

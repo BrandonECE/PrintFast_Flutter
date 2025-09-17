@@ -16,30 +16,29 @@ class MyAdminOrderView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
-    final primary = Theme.of(context).colorScheme.primary;
+    final colorScheme = Theme.of(context).colorScheme;
 
     final cloudStoragePdfViewBloc = context.read<CloudStoragePdfBloc>();
     final messageErrorWarningBloc = context.read<MessageErrorWarningBloc>();
 
-      void handleErrorToPrint(MessageErrorWarningBloc messageErrorWarningBloc, CloudStoragePdfBloc cloudStoragePdfViewBloc) {
+    void handleErrorToPrint(MessageErrorWarningBloc messageErrorWarningBloc, CloudStoragePdfBloc cloudStoragePdfViewBloc) {
       messageErrorWarningBloc.updateMessageErrorWarning(
-      "Error de impresión",
-      "No se pudo cargar el documento.",
-    );
-    messageErrorWarningBloc.add(
-      ShowMessageErrorWarningEvent(showMessageErrorWarning: true),
-    );
-    cloudStoragePdfViewBloc.add(
-      ChangeStatusPdfFileFromCloudStorageToPrintEvent(
-        cloudStoragePrintPdfStatus: CloudStoragePrintPdfStatus.initial,
-      ),
-    );
-  }
+        "Error de impresión",
+        "No se pudo cargar el documento.",
+      );
+      messageErrorWarningBloc.add(
+        ShowMessageErrorWarningEvent(showMessageErrorWarning: true),
+      );
+      cloudStoragePdfViewBloc.add(
+        ChangeStatusPdfFileFromCloudStorageToPrintEvent(
+          cloudStoragePrintPdfStatus: CloudStoragePrintPdfStatus.initial,
+        ),
+      );
+    }
 
     return BlocListener<CloudStoragePdfBloc, CloudStoragePdfState>(
       listener: (context, state) {
-         if (state.cloudStoragePrintPdfStatus ==
-            CloudStoragePrintPdfStatus.failure) {
+        if (state.cloudStoragePrintPdfStatus == CloudStoragePrintPdfStatus.failure) {
           handleErrorToPrint(messageErrorWarningBloc, cloudStoragePdfViewBloc);
         }
       },
@@ -65,7 +64,6 @@ class MyAdminOrderView extends StatelessWidget {
               Align(
                 alignment: Alignment.center,
                 child: _myBody(
-                  primary,
                   context,
                   width,
                   state,
@@ -89,20 +87,21 @@ class MyAdminOrderView extends StatelessWidget {
   }
 
   Scaffold _myBody(
-    Color primary,
     BuildContext context,
     double width,
     AdminHomeState state,
     void Function() viewThePdf,
     void Function() printPdf,
   ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Scaffold(
-      backgroundColor: primary,
+      backgroundColor: colorScheme.primary,
       appBar: MyAppBarWidget(
         title: 'Detalle de orden',
-        leadingIcon: Icons.receipt_long,
+        leadingIcon: Icons.receipt_long_rounded,
         leadingIconSize: 24,
-        actionIcon: Icons.close_sharp,
+        actionIcon: Icons.close_rounded,
         actionIconSize: 22,
         onAction: () => context.canPop() ? context.pop() : null,
       ),
@@ -112,9 +111,9 @@ class MyAdminOrderView extends StatelessWidget {
           child: Column(
             children: [
               _topCard(context, width, state),
-              SizedBox(height: width * 0.03),
+              const SizedBox(height: 12),
               _datesCard(context, width, state),
-              SizedBox(height: width * 0.03),
+              const SizedBox(height: 12),
               Expanded(
                 child: _previewCard(
                   context,
@@ -132,19 +131,22 @@ class MyAdminOrderView extends StatelessWidget {
   }
 
   // ---------- Top card: lugar, usuario, archivo, estado y precio ----------
-  Widget _topCard(
-    BuildContext context,
-    double width,
-    AdminHomeState adminHomeState,
-  ) {
-    final inverse = Theme.of(context).colorScheme.inverseSurface;
-
+  Widget _topCard(BuildContext context, double width, AdminHomeState adminHomeState) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Container(
       width: width * 0.95,
       padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.all(Radius.circular(16)),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,39 +160,19 @@ class MyAdminOrderView extends StatelessWidget {
                   "Orden #${adminHomeState.selectedOrder.orderCode}",
                   style: TextStyle(
                     fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: inverse,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.inverseSurface,
                   ),
                 ),
-                Row(
-                  children: [
-                    Icon(Icons.person_2, size: 18, color: Colors.grey.shade600),
-                    const SizedBox(width: 6),
-                    Text(
-                      adminHomeState.selectedOrder.userName,
-                      style: TextStyle(
-                        color: Colors.grey.shade700,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: 10),
+                _infoRow(context,
+                  icon: Icons.person_2_rounded,
+                  text: adminHomeState.selectedOrder.userName,
                 ),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.badge_outlined,
-                      size: 18,
-                      color: Colors.grey.shade600,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      adminHomeState.selectedOrder.userRegistration,
-                      style: TextStyle(
-                        color: Colors.grey.shade700,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: 4),
+                _infoRow(context,
+                  icon: Icons.badge_rounded,
+                  text: adminHomeState.selectedOrder.userRegistration,
                 ),
               ],
             ),
@@ -201,13 +183,13 @@ class MyAdminOrderView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               _statusChip(adminHomeState.selectedOrder.hasItBeenAccepted),
-              const SizedBox(height: 8.5),
+              const SizedBox(height: 8),
               Text(
-                '\$ ${adminHomeState.selectedOrder.price.toStringAsFixed(2)}',
+                '\$${adminHomeState.selectedOrder.price.toStringAsFixed(2)}',
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.inverseSurface,
+                  color: colorScheme.inverseSurface,
                   fontWeight: FontWeight.bold,
-                  fontSize: 19,
+                  fontSize: 18,
                 ),
               ),
             ],
@@ -217,110 +199,124 @@ class MyAdminOrderView extends StatelessWidget {
     );
   }
 
-  // ---------- Card de fechas y detalles ----------
-  Widget _datesCard(
-    BuildContext context,
-    double width,
-    AdminHomeState adminHomeState,
-  ) {
-    final adminOrderChangeDeliveryTimeBloc = context
-        .read<AdminOrderChangeDeliveryTimeBloc>();
-
-    final borderAndShadow = const BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.all(Radius.circular(16)),
+  Widget _infoRow(BuildContext context, {required IconData icon, required String text}) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: colorScheme.inverseSurface.withOpacity(0.7)),
+        const SizedBox(width: 6),
+        Text(
+          text,
+          style: TextStyle(
+            color: colorScheme.inverseSurface.withOpacity(0.8),
+            fontWeight: FontWeight.w500,
+            fontSize: 13,
+          ),
+        ),
+      ],
     );
+  }
+
+  // ---------- Card de fechas y detalles ----------
+  Widget _datesCard(BuildContext context, double width, AdminHomeState adminHomeState) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final adminOrderChangeDeliveryTimeBloc = context.read<AdminOrderChangeDeliveryTimeBloc>();
 
     return Container(
       width: width * 0.95,
       padding: const EdgeInsets.all(16),
-      decoration: borderAndShadow,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _sectionLabel(context, 'ORDENADO'),
-          const SizedBox(height: 8),
-          _dateRow(
-            context,
-            Icons.calendar_month,
-            formatDateToYMD(adminHomeState.selectedOrder.initDate),
-            Icons.access_time_outlined,
-            formatTimeToAmPm(
-              adminHomeState.selectedOrder.initDate,
-              uppercaseSuffix: false,
-            ),
+          const SizedBox(height: 6),
+          // Fecha y hora más juntas
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              _dateItem(context, Icons.calendar_month_rounded, formatDateToYMD(adminHomeState.selectedOrder.initDate)),
+              const SizedBox(width: 7), // Espacio reducido entre fecha y hora
+              _dateItem(context, Icons.access_time_rounded, formatTimeToAmPm(adminHomeState.selectedOrder.initDate, uppercaseSuffix: false)),
+            ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           _sectionLabel(context, 'ENTREGA ESTIMADA'),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Row(
             children: [
               Expanded(
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.calendar_month,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(width: 8),
+                    Icon(Icons.calendar_month_rounded, color: colorScheme.primary, size: 18),
+                    const SizedBox(width: 6),
                     Text(
                       adminHomeState.selectedOrder.estimatedDeliveryTime != null
                           ? '${formatDateToYMD(adminHomeState.selectedOrder.estimatedDeliveryTime!)} • ${formatTimeToAmPm(adminHomeState.selectedOrder.estimatedDeliveryTime!, uppercaseSuffix: false)}'
                           : '-- • --',
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.bold,
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
                       ),
                     ),
                   ],
                 ),
               ),
-
-              // <-- Botón "Cambiar" VISIBLE siempre (editable tanto si está aceptada como si no)
-              TextButton.icon(
-                onPressed: () => adminOrderChangeDeliveryTimeBloc.add(
-                  AdminOrderShowChangeDeliveryTimeEvent(
-                    showDeliveryTimeBottomSheet: true,
-                  ),
-                ),
-                icon: const Icon(Icons.edit_calendar_outlined),
-                label: const Text('Cambiar'),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  backgroundColor: Theme.of(
-                    context,
-                  ).colorScheme.primary.withOpacity(0.08),
-                  foregroundColor: Theme.of(context).colorScheme.primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  textStyle: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
+              _changeTimeButton(context, adminOrderChangeDeliveryTimeBloc),
             ],
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 12),
           _sectionLabel(context, 'DETALLES'),
-          const SizedBox(height: 10),
+          const SizedBox(height: 6),
           Row(
             children: [
-              _detailChip(context, label: adminHomeState.selectedOrder.format),
-              const SizedBox(width: 10),
-              _detailChip(
-                context,
-                label: adminHomeState.selectedOrder.isColor ? 'Color' : 'B/N',
+              // Chips de la izquierda (formato, color, páginas)
+              Expanded(
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    _detailChip(context, label: adminHomeState.selectedOrder.format),
+                    _detailChip(context, label: adminHomeState.selectedOrder.isColor ? 'Color' : 'B/N'),
+                    _detailChip(context, label: '${adminHomeState.selectedOrder.pages} pág'),
+                  ],
+                ),
               ),
-              const SizedBox(width: 10),
-              _detailChip(
-                context,
-                label: '${adminHomeState.selectedOrder.pages} pág',
-              ),
+              // Chip de método de pago a la derecha
+              _paymentMethodChip(context, isCardPayment: true),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _changeTimeButton(BuildContext context, AdminOrderChangeDeliveryTimeBloc bloc) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return TextButton.icon(
+      onPressed: () => bloc.add(
+        AdminOrderShowChangeDeliveryTimeEvent(showDeliveryTimeBottomSheet: true),
+      ),
+      icon: Icon(Icons.edit_calendar_rounded, size: 16),
+      label: const Text('Cambiar', style: TextStyle(fontSize: 12)),
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        backgroundColor: colorScheme.primary.withOpacity(0.1),
+        foregroundColor: colorScheme.primary,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
@@ -333,14 +329,21 @@ class MyAdminOrderView extends StatelessWidget {
     VoidCallback viewThePdf,
     VoidCallback printPdf,
   ) {
-    final inverse = Theme.of(context).colorScheme.inverseSurface;
-
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Container(
       width: width * 0.95,
       padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.all(Radius.circular(16)),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -349,9 +352,9 @@ class MyAdminOrderView extends StatelessWidget {
             child: Text(
               'Previsualización',
               style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: inverse,
-                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.inverseSurface,
+                fontSize: 15,
               ),
             ),
           ),
@@ -359,78 +362,59 @@ class MyAdminOrderView extends StatelessWidget {
           Expanded(
             child: Container(
               width: double.infinity,
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade300),
               ),
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.picture_as_pdf,
-                      size: 56,
-                      color: Colors.redAccent,
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      alignment: Alignment.center,
-                      width: MediaQuery.of(context).size.width * 0.7,
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Text(
-                          textAlign: TextAlign.center,
-                          adminHomeState.selectedOrder.pdfName,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.picture_as_pdf_rounded, size: 48, color: Colors.redAccent),
+                  const SizedBox(height: 8),
+                  Container(
+                    constraints: BoxConstraints(maxWidth: width * 0.6),
+                    child: Text(
+                      adminHomeState.selectedOrder.pdfName,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.inverseSurface,
+                        fontSize: 13,
+                        overflow: TextOverflow.ellipsis,
                       ),
+                      maxLines: 2,
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '${adminHomeState.selectedOrder.pages} páginas',
-                      style: TextStyle(color: Colors.grey.shade700),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${adminHomeState.selectedOrder.pages} páginas',
+                    style: TextStyle(
+                      color: colorScheme.inverseSurface.withOpacity(0.7),
+                      fontSize: 12,
                     ),
-                    const SizedBox(height: 12),
-                    ElevatedButton(
-                      onPressed: viewThePdf,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 12,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: const [
-                          Icon(Icons.visibility, color: Colors.white),
-                          SizedBox(width: 8),
-                          Text(
-                            'Visualizar',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: viewThePdf,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      elevation: 2,
                     ),
-                  ],
-                ),
+                    child: const Text('Visualizar PDF', style: TextStyle(fontSize: 13)),
+                  ),
+                ],
               ),
             ),
           ),
-
-          const SizedBox(height: 15),
-
-          // si NO está aceptada: botones Aceptar / Rechazar
-          if (!adminHomeState.selectedOrder.hasItBeenAccepted)
-            _actionButtons(context)
-          else
-            _printButton(context, printPdf),
+          const SizedBox(height: 16),
+          !adminHomeState.selectedOrder.hasItBeenAccepted
+              ? _actionButtons(context)
+              : _deliveryAndPrintButtons(context, printPdf),
         ],
       ),
     );
@@ -442,57 +426,41 @@ class MyAdminOrderView extends StatelessWidget {
       children: [
         Expanded(
           child: ElevatedButton(
-            onPressed: () {
-              // TODO: acción aceptar (ej. update en Firestore)
-            },
+            onPressed: () {},
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.greenAccent.shade400,
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              elevation: 2,
             ),
-            child: Row(
+            child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Icon(Icons.check, size: 19, color: Colors.white),
-                SizedBox(width: 8),
-                Text(
-                  "Aceptar",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
+              children: [
+                Icon(Icons.check_rounded, size: 18),
+                SizedBox(width: 6),
+                Text("Aceptar", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
               ],
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         Expanded(
           child: ElevatedButton(
-            onPressed: () {
-              // TODO: acción rechazar/cancelar
-            },
+            onPressed: () {},
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              elevation: 2,
             ),
-            child: Row(
+            child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Icon(Icons.close, size: 19, color: Colors.white),
-                SizedBox(width: 8),
-                Text(
-                  "Rechazar",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
+              children: [
+                Icon(Icons.close_rounded, size: 18),
+                SizedBox(width: 6),
+                Text("Rechazar", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
               ],
             ),
           ),
@@ -501,181 +469,177 @@ class MyAdminOrderView extends StatelessWidget {
     );
   }
 
- // ---------- Botón grande "Imprimir" que reemplaza a Aceptar/Rechazar ----------
-Widget _printButton(BuildContext context, VoidCallback printPdf) {
-  final primaryColor = Theme.of(context).colorScheme.primary;
-  final cloudStoragePdfState = context.watch<CloudStoragePdfBloc>().state;
-  final isLoading = cloudStoragePdfState.cloudStoragePrintPdfStatus == CloudStoragePrintPdfStatus.loading;
+  // ---------- Botones Entregar e Imprimir (cuando la orden está aceptada) ----------
+  Widget _deliveryAndPrintButtons(BuildContext context, VoidCallback printPdf) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final cloudStoragePdfState = context.watch<CloudStoragePdfBloc>().state;
+    final isLoading = cloudStoragePdfState.cloudStoragePrintPdfStatus == CloudStoragePrintPdfStatus.loading;
 
-  return Row(
-    children: [
-      Expanded(
-        child: ElevatedButton(
-          onPressed: isLoading ? (){} : printPdf,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: primaryColor,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+    return Row(
+      children: [
+        // Botón Entregar
+
+        // Botón Imprimir
+        Expanded(
+          child: ElevatedButton(
+            onPressed: isLoading ? null : printPdf,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorScheme.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              elevation: 2,
             ),
-            // Altura fija para mantener el tamaño constante
-          ),
-          child: _animatedSwitcherButton(context, primaryColor, isLoading),
-        ),
-      ),
-    ],
-  );
-}
-
-AnimatedSwitcher _animatedSwitcherButton(
-  BuildContext context,
-  Color primaryColor,
-  bool isLoading,
-) {
-  return AnimatedSwitcher(
-    duration: const Duration(milliseconds: 180),
-    switchInCurve: Curves.easeOut,
-    switchOutCurve: Curves.easeIn,
-    layoutBuilder: (currentChild, previousChildren) {
-      return Stack(
-        alignment: Alignment.center,
-        children: <Widget>[
-          ...previousChildren,
-          if (currentChild != null) currentChild,
-        ],
-      );
-    },
-    transitionBuilder: (child, animation) {
-      final fade = FadeTransition(opacity: animation, child: child);
-      final scale = ScaleTransition(
-        scale: Tween<double>(
-          begin: 0.97,
-          end: 1.0,
-        ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut)),
-        child: fade,
-      );
-      return scale;
-    },
-    child: isLoading
-        ? MyLoadingIndicator(
-          key: ValueKey('print_loader'),
-          color: Colors.white,
-          size: 54, // Tamaño consistente
-        )
-        : Padding(
-           padding: const EdgeInsets.symmetric(vertical: 14),
-          key: const ValueKey('print_text'),
-          child: Row(
-              key: const ValueKey('print_text'),
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.print, color: Colors.white, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  'Imprimir',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+            child: isLoading
+                ? MyLoadingIndicator(color: Colors.white, size: 24)
+                : const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.print_rounded, size: 18),
+                      SizedBox(width: 6),
+                      Text("Imprimir", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                    ],
                   ),
-                ),
+          ),
+        ),
+         const SizedBox(width: 10),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () => context.push(Routes.adminCodeValidationView),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              elevation: 2,
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.outbox, size: 18),
+                SizedBox(width: 6),
+                Text("Entregar", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
               ],
             ),
+          ),
         ),
-  );
-}
+      
+      ],
+    );
+  }
 
   Widget _sectionLabel(BuildContext context, String title) {
-    return Row(
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.inverseSurface,
-          ),
-        ),
-        const SizedBox(width: 6),
-        const Icon(Icons.arrow_drop_down, size: 20),
-      ],
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return Text(
+      title,
+      style: TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: colorScheme.inverseSurface.withOpacity(0.8),
+      ),
     );
   }
 
-  // Método reutilizable para mostrar fecha + hora (izq/derecha)
-  Widget _dateRow(
-    BuildContext context,
-    IconData leftIcon,
-    String leftText,
-    IconData rightIcon,
-    String rightText,
-  ) {
-    final inverse = Theme.of(context).colorScheme.inverseSurface;
+  Widget _dateItem(BuildContext context, IconData icon, String text) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Row(
       children: [
-        Row(
-          children: [
-            Icon(leftIcon),
-            const SizedBox(width: 8),
-            Text(
-              leftText,
-              style: TextStyle(color: inverse, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        const SizedBox(width: 18),
-        Row(
-          children: [
-            Icon(rightIcon),
-            const SizedBox(width: 8),
-            Text(
-              rightText,
-              style: TextStyle(color: inverse, fontWeight: FontWeight.bold),
-            ),
-          ],
+        Icon(icon, color: colorScheme.inverseSurface.withOpacity(0.7), size: 16),
+        const SizedBox(width: 6),
+        Text(
+          text,
+          style: TextStyle(
+            color: colorScheme.inverseSurface,
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+          ),
         ),
       ],
     );
   }
 
   Widget _detailChip(BuildContext context, {required String label}) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(12),
+        color: colorScheme.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: colorScheme.primary.withOpacity(0.2)),
       ),
       child: Text(
         label,
         style: TextStyle(
-          color: Colors.grey.shade800,
-          fontWeight: FontWeight.bold,
+          color: colorScheme.primary,
+          fontWeight: FontWeight.w600,
+          fontSize: 11,
         ),
+      ),
+    );
+  }
+
+  Widget _paymentMethodChip(BuildContext context, {required bool isCardPayment}) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final paymentMethod = isCardPayment ? 'Tarjeta' : 'Efectivo';
+    final icon = isCardPayment ? Icons.credit_card_rounded : Icons.money_rounded;
+    final backgroundColor = isCardPayment ? Colors.blue : Colors.green;
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: backgroundColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: backgroundColor.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: backgroundColor),
+          const SizedBox(width: 4),
+          Text(
+            paymentMethod,
+            style: TextStyle(
+              color: backgroundColor,
+              fontWeight: FontWeight.w600,
+              fontSize: 11,
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _statusChip(bool accepted) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: accepted
-            ? Colors.greenAccent.shade400
-            : Colors.orangeAccent.shade400,
-        borderRadius: BorderRadius.circular(20),
+        color: accepted ? Colors.green : Colors.orange,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: accepted ? Colors.green.withOpacity(0.3) : Colors.orange.withOpacity(0.3),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Icon(
-            accepted ? Icons.check_circle : Icons.hourglass_bottom,
-            size: 16,
+            accepted ? Icons.check_circle_rounded : Icons.access_time_rounded,
+            size: 12,
             color: Colors.white,
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 4),
           Text(
             accepted ? 'Aceptada' : 'Pendiente',
             style: const TextStyle(
               color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              fontSize: 11,
             ),
           ),
         ],

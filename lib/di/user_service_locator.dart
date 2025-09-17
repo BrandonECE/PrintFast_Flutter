@@ -1,6 +1,6 @@
 
 
-import 'package:printfast_rebuild/di/service.locator.dart';
+import 'package:printfast_rebuild/di/service_locator.dart';
 import 'package:printfast_rebuild/domain/repositories/user_repository.dart';
 import 'package:printfast_rebuild/domain/services/user_service.dart';
 import 'package:printfast_rebuild/infraestructure/repositories/user_repository_impl.dart';

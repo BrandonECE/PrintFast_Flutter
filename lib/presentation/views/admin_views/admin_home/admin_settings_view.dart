@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:printfast_rebuild/config/routes/routes.dart';
 import 'package:printfast_rebuild/presentation/blocs/admin_blocs/admin_home_bloc/admin_home_bloc.dart';
 import 'package:printfast_rebuild/presentation/blocs/shared_blocs/message_error_warning_bloc/message_error_warning_bloc.dart';
 import 'package:printfast_rebuild/presentation/widgets/widgets.dart';
@@ -10,9 +12,63 @@ class MyAdminSettingsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
-    // final messageErrorWarningBloc = context.read<MessageErrorWarningBloc>();
+    final messageErrorWarningBloc = context.read<MessageErrorWarningBloc>();
     final adminHomeBloc = context.read<AdminHomeBloc>();
-    return _mySettingsScreen(width, context, adminHomeBloc.state, () {});
+
+    // función para disparar signOut en el bloc (evita múltiples llamadas)
+    void signOut() async {
+      if (adminHomeBloc.state.adminHomeLogOutStatus != AdminHomeLogOutStatus.loading &&
+          adminHomeBloc.state.adminHomeLogOutStatus != AdminHomeLogOutStatus.success) {
+        await adminHomeBloc.signOut();
+      }
+    }
+
+    void thereWasAnError(
+      MessageErrorWarningBloc messageErrorWarningBloc,
+      AdminHomeState state,
+      AdminHomeBloc adminHomeBloc,
+    ) {
+      messageErrorWarningBloc.updateMessageErrorWarning(
+        "¡Error inesperado!",
+        state.messageError ?? "",
+      );
+      messageErrorWarningBloc.add(
+        ShowMessageErrorWarningEvent(showMessageErrorWarning: true),
+      );
+      adminHomeBloc.add(
+        AdminHomeUpdateHomeLogOutStatusEvent(
+          adminHomeLogOutStatus: AdminHomeLogOutStatus.initial,
+          messageError: null,
+        ),
+      );
+    }
+
+    void comeBackToLoginScreen(AdminHomeBloc adminHomeBloc, BuildContext context) {
+      // navegamos a login y reseteamos el estado de logout
+      context.go(Routes.login);
+      adminHomeBloc.add(
+        AdminHomeUpdateHomeLogOutStatusEvent(
+          adminHomeLogOutStatus: AdminHomeLogOutStatus.initial,
+          messageError: null,
+        ),
+      );
+    }
+
+    return BlocListener<AdminHomeBloc, AdminHomeState>(
+      listener: (context, state) {
+        if (state.adminHomeLogOutStatus == AdminHomeLogOutStatus.success) {
+          comeBackToLoginScreen(adminHomeBloc, context);
+        }
+        if (state.adminHomeLogOutStatus == AdminHomeLogOutStatus.failure) {
+          thereWasAnError(messageErrorWarningBloc, state, adminHomeBloc);
+        }
+      },
+      child: BlocBuilder<AdminHomeBloc, AdminHomeState>(
+        builder: (context, state) {
+          return _mySettingsScreen(width, context, state, signOut);
+        },
+      ),
+    );
   }
 
   SafeArea _mySettingsScreen(
@@ -21,31 +77,36 @@ class MyAdminSettingsView extends StatelessWidget {
     AdminHomeState state,
     VoidCallback callBack,
   ) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return SafeArea(
       child: Center(
         child: Container(
-          height: double.infinity,
-          alignment: Alignment.center,
           width: width * 0.95,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.all(Radius.circular(20)),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          child: Container(
-            margin: const EdgeInsets.only(top: 20, bottom: 20),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 // Top: profile header + details
                 Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.only(top: 10),
-                    child: Column(
-                      children: [
-                        _profileBox(context, state),
-                        Expanded(child: _detailsCard(context, state)),
-                      ],
-                    ),
+                  child: Column(
+                    children: [
+                      _profileBox(context, state),
+                      const SizedBox(height: 20),
+                      _detailsCard(context, state),
+                    ],
                   ),
                 ),
 
@@ -59,66 +120,63 @@ class MyAdminSettingsView extends StatelessWidget {
     );
   }
 
-  // ---------- Métodos internos (reciben BuildContext) ----------
-
   Widget _profileBox(BuildContext context, AdminHomeState adminHomeState) {
+    final colorScheme = Theme.of(context).colorScheme;
     final width = MediaQuery.of(context).size.width;
-    final primary = Theme.of(context).colorScheme.primary;
-    final inverse = Theme.of(context).colorScheme.inverseSurface;
 
     return Container(
-      padding: const EdgeInsets.all(20),
       width: width * 0.83,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.5),
-            spreadRadius: 1,
-            blurRadius: 1,
-            offset: const Offset(0, 0),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
-        color: Colors.white,
-        borderRadius: const BorderRadius.all(Radius.circular(20)),
+        border: Border.all(color: colorScheme.primary.withOpacity(0.1)),
       ),
       child: Row(
         children: [
           Container(
-            height: 50,
-            width: 50,
+            width: 60,
+            height: 60,
             decoration: BoxDecoration(
-              border: Border.all(color: primary, width: 4),
-              color: Colors.white,
-              borderRadius: const BorderRadius.all(Radius.circular(100)),
+              color: colorScheme.primary.withOpacity(0.1),
+              shape: BoxShape.circle,
+              border: Border.all(color: colorScheme.primary, width: 2),
             ),
-            child: Icon(Icons.local_print_shop_sharp, color: primary, size: 25),
+            child: Icon(Icons.local_print_shop_sharp, color: colorScheme.primary, size: 28),
           ),
-          Padding(
-            padding: const EdgeInsets.only(left: 20),
+          const SizedBox(width: 16),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(
-                  width: 227,
+                  width: double.infinity,
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Text(
-                      // homeState.userEntity.name,
                       "FIME | x | FARQ",
                       style: TextStyle(
-                        color: inverse,
+                        color: colorScheme.inverseSurface,
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
                       ),
                     ),
                   ),
                 ),
+                const SizedBox(height: 4),
                 Text(
                   "1974238",
                   style: TextStyle(
-                    color: inverse,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 17,
+                    color: colorScheme.inverseSurface.withOpacity(0.7),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
                   ),
                 ),
               ],
@@ -130,61 +188,51 @@ class MyAdminSettingsView extends StatelessWidget {
   }
 
   Widget _detailRow(BuildContext context, String title, String value) {
+    final colorScheme = Theme.of(context).colorScheme;
     final width = MediaQuery.of(context).size.width;
-    final primary = Theme.of(context).colorScheme.primary;
-    final inverse = Theme.of(context).colorScheme.inverseSurface;
 
     return Container(
-      margin: const EdgeInsets.only(top: 15),
+      margin: const EdgeInsets.only(top: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // left: title + value
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  color: inverse,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: colorScheme.inverseSurface,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
                 ),
-              ),
-              SizedBox(
-                width: width * 0.45,
-                child: Text(
+                const SizedBox(height: 4),
+                Text(
                   value,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: Colors.grey.shade600,
-                    fontWeight: FontWeight.bold,
                     fontSize: 14,
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          // right: edit button (visual)
-          Padding(
-            padding: const EdgeInsets.only(right: 5),
-            child: ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 15,
-                  vertical: 10,
-                ),
-              ),
-              child: const Text(
-                "Editar",
-                style: TextStyle(color: Colors.white, fontSize: 12),
+          const SizedBox(width: 12),
+          ElevatedButton(
+            onPressed: () {},
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorScheme.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
               ),
             ),
+            child: const Text("Editar"),
           ),
         ],
       ),
@@ -192,80 +240,56 @@ class MyAdminSettingsView extends StatelessWidget {
   }
 
   Widget _detailsCard(BuildContext context, AdminHomeState adminHomeState) {
+    final colorScheme = Theme.of(context).colorScheme;
     final width = MediaQuery.of(context).size.width;
-    final inverse = Theme.of(context).colorScheme.inverseSurface;
     final messageErrorWarningBloc = context.read<MessageErrorWarningBloc>();
 
     return Container(
-      padding: const EdgeInsets.all(20),
-      margin: const EdgeInsets.only(top: 20, bottom: 30),
       width: width * 0.83,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.5),
-            spreadRadius: 1,
-            blurRadius: 1,
-            offset: const Offset(0, 0),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
-        color: Colors.white,
-        borderRadius: const BorderRadius.all(Radius.circular(20)),
+        border: Border.all(color: colorScheme.primary.withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Title row
-          Column(
+          Row(
             children: [
-              Container(
-                margin: const EdgeInsets.only(bottom: 10, top: 5),
-                child: Row(
-                  children: [
-                    Text(
-                      "Detalles",
-                      style: TextStyle(
-                        color: inverse,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 19,
-                      ),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.only(left: 2),
-                      child: Icon(Icons.arrow_drop_down),
-                    ),
-                  ],
+              Icon(Icons.info_outline_rounded, color: colorScheme.primary, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                "Detalles",
+                style: TextStyle(
+                  color: colorScheme.inverseSurface,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 18,
                 ),
               ),
-              // Detail rows
-              _detailRow(context, "Email", "fimexfarq@gmail.com"),
-              _detailRow(context, "Telefono", "+52 8123445566"),
             ],
           ),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 15.25),
-            child: _pauseReception(
-              isChecked: false,
-              onChanged: (value) {
-                final String title = value!
-                    ? "Pausar Recepción"
-                    : "Reanudar Recepción";
-                final String message = value
-                    ? "¿Seguro quieres pausar?"
-                    : "¿Seguro quieres reanudar?";
-                messageErrorWarningBloc.updateMessageErrorWarning(
-                  title,
-                  message,
-                );
-                messageErrorWarningBloc.add(
-                  ShowMessageErrorWarningEvent(showMessageErrorWarning: true),
-                );
-              },
-            ),
+          const SizedBox(height: 16),
+          _detailRow(context, "Email", "fimexfarq@gmail.com"),
+          _detailRow(context, "Teléfono", "+52 8123445566"),
+          const SizedBox(height: 20),
+          _pauseReception(
+            context: context,
+            isChecked: false,
+            onChanged: (value) {
+              final String title = value! ? "Pausar Recepción" : "Reanudar Recepción";
+              final String message = value ? "¿Seguro quieres pausar?" : "¿Seguro quieres reanudar?";
+              messageErrorWarningBloc.updateMessageErrorWarning(title, message);
+              messageErrorWarningBloc.add(ShowMessageErrorWarningEvent(showMessageErrorWarning: true));
+            },
           ),
-          // _detailRow(context, "E-mail", homeState.userEntity.email),
-          // _detailRow(context, "Telefono", homeState.userEntity.phone),
         ],
       ),
     );
@@ -277,49 +301,51 @@ class MyAdminSettingsView extends StatelessWidget {
     VoidCallback callBack,
   ) {
     final width = MediaQuery.of(context).size.width;
+    final colorScheme = Theme.of(context).colorScheme;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 5),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 20),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.all(Radius.circular(20)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.5),
-                    spreadRadius: 1,
-                    blurRadius: 1,
-                    offset: const Offset(0, 0),
-                  ),
-                ],
+    return Column(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
               ),
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  elevation: 0,
-                  fixedSize: Size(width * 0.8, 60),
-                  backgroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20.0),
-                  ),
-                ),
-                onPressed: callBack,
-                child: _animatedSwitcherButton(adminHomeState),
+            ],
+          ),
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.red,
+              elevation: 0,
+              fixedSize: Size(width * 0.8, 60),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: Colors.red.withOpacity(0.2), width: 1.5),
               ),
             ),
+            onPressed: callBack,
+            child: _animatedSwitcherButton(adminHomeState),
           ),
-          Text(
-            "Universidad Autónoma de Nuevo León",
-            style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          "Universidad Autónoma de Nuevo León",
+          style: TextStyle(
+            color: Colors.grey.shade500,
+            fontSize: 12,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   AnimatedSwitcher _animatedSwitcherButton(AdminHomeState adminHomeState) {
+    final isLoading = adminHomeState.adminHomeLogOutStatus == AdminHomeLogOutStatus.loading;
+
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 180),
       switchInCurve: Curves.easeOut,
@@ -334,69 +360,85 @@ class MyAdminSettingsView extends StatelessWidget {
         );
       },
       transitionBuilder: (child, animation) {
-        // Fade + tiny scale for a snappy feeling
         final fade = FadeTransition(opacity: animation, child: child);
         final scale = ScaleTransition(
-          scale: Tween<double>(
-            begin: 0.97,
-            end: 1.0,
-          ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut)),
+          scale: Tween<double>(begin: 0.97, end: 1.0).animate(
+            CurvedAnimation(parent: animation, curve: Curves.easeOut),
+          ),
           child: fade,
         );
         return scale;
       },
-      child: true
+      child: !isLoading
           ? Row(
-              key: const ValueKey('sign_out_text'),
+              key: const ValueKey('admin_sign_out_text'),
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   "Cerrar sesión",
                   style: TextStyle(
-                    color: Colors.redAccent,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
+                    color: Colors.red,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
                   ),
                 ),
-                Padding(
-                  padding: EdgeInsets.only(left: 8),
-                  child: Icon(Icons.logout, color: Colors.redAccent, size: 22),
-                ),
+                const SizedBox(width: 8),
+                Icon(Icons.logout, color: Colors.red, size: 20),
               ],
             )
           : MyLoadingIndicator(
-              size: 65,
-              color: Colors.redAccent,
-              key: ValueKey('register_loader'),
+              size: 27,
+              color: Colors.red,
+              key: const ValueKey('register_loader'),
             ),
     );
   }
 
   Widget _pauseReception({
     required bool isChecked,
+    required BuildContext context,
     required ValueChanged<bool?> onChanged,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Pausar recepción',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Pausar recepción',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.inverseSurface,
+                ),
+              ),
+              Switch(
+                value: isChecked,
+                onChanged: onChanged,
+                activeColor: colorScheme.primary,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Los pedidos en curso continuarán, pero no se aceptarán nuevos hasta reactivar la opción. ✅',
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey.shade700,
             ),
-            Padding(
-              padding: const EdgeInsets.only(right: 4, bottom: 1.75),
-              child: Switch(value: isChecked, onChanged: onChanged),
-            ),
-          ],
-        ),
-        Text(
-          'Los pedidos en curso continuarán, pero no se aceptarán nuevos hasta reactivar la opción. ✅',
-          style: TextStyle(fontSize: 13, color: Colors.grey[700]),
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 }

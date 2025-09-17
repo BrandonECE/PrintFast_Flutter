@@ -27,13 +27,7 @@ class UserServiceImpl extends UserService {
           .doc(userEntity.registration);
 
       // 1) Documento principal del usuario
-      await userDocRef.set({
-        'email': userEntity.email,
-        'name': userEntity.name,
-        'phone': userEntity.phone,
-        'registration': userEntity.registration,
-        'isAdmin': userEntity.isAdmin,
-      }, SetOptions(merge: true));
+      await userDocRef.set(userEntity.toMap(), SetOptions(merge: true));
 
       // 2) notifications -> information { items: [] }
       final notificationsRef = userDocRef

@@ -5,6 +5,7 @@ class UserEntity {
   final String registration;
   final String password;
   final bool isAdmin;
+  final String adminLocationByEmail;
 
   UserEntity({
     required this.email,
@@ -13,15 +14,15 @@ class UserEntity {
     required this.registration,
     this.password = "", //En caso de algun uso
     this.isAdmin = false,
+    this.adminLocationByEmail = ""
   });
 
-
   static final UserEntity defaultValues = UserEntity(
-      email: "userTest@gmail.com",
-      name: "User Test",
-      phone: "8134562345",
-      registration: "1974238",
-    );
+    email: "userTest@gmail.com",
+    name: "User Test",
+    phone: "8134562345",
+    registration: "1974238",
+  );
 
   // Convertir un objeto UserEntity a un mapa (para Firebase)
   Map<String, dynamic> toMap() {
@@ -30,7 +31,8 @@ class UserEntity {
       'name': name,
       'phone': phone,
       'registration': registration,
-      'isAdmin': isAdmin
+      'isAdmin': isAdmin,
+      'adminLocationByEmail': adminLocationByEmail
       // 'password': password,
     };
   }
@@ -42,7 +44,8 @@ class UserEntity {
       name: map['name'] ?? '',
       phone: map['phone'] ?? '',
       registration: map['registration'] ?? '',
-      isAdmin: map['isAdmin'] ?? false
+      isAdmin: map['isAdmin'] ?? false,
+      adminLocationByEmail: map['adminLocationByEmail'] ?? ''
       // password: map['password'] ?? '',
     );
   }

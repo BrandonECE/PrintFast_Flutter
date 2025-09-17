@@ -17,9 +17,12 @@ class Routes {
   static final String shopping = "/shopping";
   static final String history = "/history";
   static final String activeOrder = "/activeOrder";
+  static final String codeView = "/codeView";
   static final String historyOrder = "/historyOrder";
   static final String shoppingPdfView = "/shoppingPdfView";
   static final String locationPicker = "/locationPicker";
+  static final String payMethodView = "/payMethodView";
+  static final String addCard = "/addCard";
   static final String liveTracking = "/liveTracking";
 
   //Admin
@@ -29,13 +32,15 @@ class Routes {
   static final String adminOrderView = "/adminOrderView";
   static final String adminOrderHistoryView = "/adminOrderHistoryView";
   static final String adminMonthOrdersHistorySelectedView = "/adminMonthOrdersHistorySelectedView";
+  static final String adminCodeValidationView = "/adminCodeValidationView";
 
   //Shared
   static final String cloudStoragePdfView = "/cloudStoragePdfView";
+  static final String roleSelectionView = "/roleSelectionView";
 
   Routes._internal() {
     routes = GoRouter(
-      initialLocation: adminHome, // Inicio en "/login"
+      initialLocation: login, // Inicio en "/login"
       routes: <GoRoute>[
         //User
         _myLogin(),
@@ -45,21 +50,28 @@ class Routes {
         _myShopping(),
         _myHistory(),
         _myActiveOrder(),
+        _myCodeView(),
         _myHistoryOrder(),
         _myShoppingPdfView(),
         _myLocationPicker(),
+        _myPayMethodView(),
+        _myAddCard(),
         _myLiveTracking(),
         //Admin
         _myAdminHome(),
         _myAdminNotifications(),
         _myAdminOrderView(),
+        _myAdminCodeValidationView(),
         _myAdminOrderHistoryView(),
-         _myAdminMonthOrdersHistorySelectedView(),
+        _myAdminMonthOrdersHistorySelectedView(),
         //Shared
         _myCloudStoragePdfView(),
+        _myRoleSelectionView()
       ],
     );
   }
+
+  //User
 
   GoRoute _myLogin() {
     return GoRoute(
@@ -246,6 +258,31 @@ class Routes {
     );
   }
 
+    GoRoute _myCodeView() {
+    return GoRoute(
+      path: codeView,
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: const MyCodeView(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final curvedAnimation = CurvedAnimation(
+            parent: animation,
+            curve: Curves.fastEaseInToSlowEaseOut,
+          );
+
+          // Deslizar hacia abajo + Fade
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0.0, 1.0), // Desde arriba
+              end: Offset.zero, // A su posición normal
+            ).animate(curvedAnimation),
+            child: child,
+          );
+        },
+      ),
+    );
+  }
+
   GoRoute _myHistoryOrder() {
     return GoRoute(
       path: historyOrder,
@@ -322,6 +359,57 @@ class Routes {
     );
   }
 
+  GoRoute _myPayMethodView() {
+    return GoRoute(
+      path: payMethodView,
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: const MyPayMethodView(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final curvedAnimation = CurvedAnimation(
+            parent: animation,
+            curve: Curves.fastEaseInToSlowEaseOut,
+          );
+
+          // Deslizar hacia abajo + Fade
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0.0, 1.0), // Desde arriba
+              end: Offset.zero, // A su posición normal
+            ).animate(curvedAnimation),
+            child: child,
+          );
+        },
+      ),
+    );
+  }
+
+  GoRoute _myAddCard() {
+    return GoRoute(
+      path: addCard,
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: const AddCardView(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          // CurvedAnimation para suavizar la transición
+          final curvedAnimation = CurvedAnimation(
+            parent: animation,
+            curve: Curves.fastEaseInToSlowEaseOut, // Aplica una curva suave
+          );
+
+          // Fade + SlideTransition: Deslizar desde la izquierda y desvanecer
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1.0, 0.0), // Desde la izquierda
+              end: Offset.zero, // A su posición normal
+            ).animate(curvedAnimation),
+            child: child,
+          );
+        },
+      ),
+    );
+  }
+
   GoRoute _myLiveTracking() {
     return GoRoute(
       path: liveTracking,
@@ -346,6 +434,8 @@ class Routes {
       ),
     );
   }
+
+  //Admin
 
   GoRoute _myAdminHome() {
     return GoRoute(
@@ -424,6 +514,31 @@ class Routes {
     );
   }
 
+  GoRoute _myAdminCodeValidationView() {
+    return GoRoute(
+      path: adminCodeValidationView,
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: const MyAdminCodeValidationView(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final curvedAnimation = CurvedAnimation(
+            parent: animation,
+            curve: Curves.fastEaseInToSlowEaseOut,
+          );
+
+          // Deslizar hacia abajo + Fade
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0.0, 1.0), // Desde arriba
+              end: Offset.zero, // A su posición normal
+            ).animate(curvedAnimation),
+            child: child,
+          );
+        },
+      ),
+    );
+  }
+
   GoRoute _myAdminOrderHistoryView() {
     return GoRoute(
       path: adminOrderHistoryView,
@@ -441,31 +556,6 @@ class Routes {
           return SlideTransition(
             position: Tween<Offset>(
               begin: const Offset(1.0, 0.0), // Desde la izquierda
-              end: Offset.zero, // A su posición normal
-            ).animate(curvedAnimation),
-            child: child,
-          );
-        },
-      ),
-    );
-  }
-
-  GoRoute _myCloudStoragePdfView() {
-    return GoRoute(
-      path: cloudStoragePdfView,
-      pageBuilder: (context, state) => CustomTransitionPage(
-        key: state.pageKey,
-        child: const MyCloudStoragePdfView(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          final curvedAnimation = CurvedAnimation(
-            parent: animation,
-            curve: Curves.fastEaseInToSlowEaseOut,
-          );
-
-          // Deslizar hacia abajo + Fade
-          return SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0.0, 1.0), // Desde arriba
               end: Offset.zero, // A su posición normal
             ).animate(curvedAnimation),
             child: child,
@@ -501,4 +591,57 @@ class Routes {
     );
   }
 
+
+  //Shared
+
+  GoRoute _myCloudStoragePdfView() {
+    return GoRoute(
+      path: cloudStoragePdfView,
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: const MyCloudStoragePdfView(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final curvedAnimation = CurvedAnimation(
+            parent: animation,
+            curve: Curves.fastEaseInToSlowEaseOut,
+          );
+
+          // Deslizar hacia abajo + Fade
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0.0, 1.0), // Desde arriba
+              end: Offset.zero, // A su posición normal
+            ).animate(curvedAnimation),
+            child: child,
+          );
+        },
+      ),
+    );
+  }
+
+  GoRoute _myRoleSelectionView() {
+    return GoRoute(
+      path: roleSelectionView,
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: const MyRoleSelectionView(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final curvedAnimation = CurvedAnimation(
+            parent: animation,
+            curve: Curves.fastEaseInToSlowEaseOut,
+          );
+
+          // Deslizar hacia abajo + Fade
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0.0, 1.0), // Desde arriba
+              end: Offset.zero, // A su posición normal
+            ).animate(curvedAnimation),
+            child: child,
+          );
+        },
+      ),
+    );
+  }
 }
+

@@ -7,25 +7,8 @@ import 'package:pdf_render_plus/pdf_render_widgets.dart';
 import 'package:printfast_rebuild/presentation/blocs/shared_blocs/cloud_storage_pdf_bloc.dart/cloud_storage_pdf_bloc.dart';
 import 'package:printfast_rebuild/presentation/widgets/widgets.dart';
 
-class MyCloudStoragePdfView extends StatefulWidget {
+class MyCloudStoragePdfView extends StatelessWidget {
   const MyCloudStoragePdfView({super.key});
-
-  @override
-  State<MyCloudStoragePdfView> createState() => _MyCloudStoragePdfViewState();
-}
-
-class _MyCloudStoragePdfViewState extends State<MyCloudStoragePdfView> {
-  @override
-  void initState() {
-    print("Entrando");
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    print("Saliendo");
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {

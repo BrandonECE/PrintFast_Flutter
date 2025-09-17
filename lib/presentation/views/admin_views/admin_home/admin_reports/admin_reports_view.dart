@@ -15,10 +15,10 @@ class MyAdminReportsView extends StatelessWidget {
         child: Container(
           alignment: Alignment.topCenter,
           width: width * 0.95,
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: const BorderRadius.all(Radius.circular(20)),
+            borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.05),
@@ -36,15 +36,15 @@ class MyAdminReportsView extends StatelessWidget {
                 _buildGrid(
                   context,
                   items: [
-                    _GridItem(title: "Ganancias", value: "\$1,250", icon: Icons.attach_money, color: Colors.green),
-                    _GridItem(title: "Órdenes Totales", value: "128", icon: Icons.receipt_long, color: colorScheme.primary),
-                    _GridItem(title: "Órdenes Completadas", value: "95", icon: Icons.check_circle, color: Colors.green),
-                    _GridItem(title: "Órdenes Canceladas", value: "15", icon: Icons.cancel, color: Colors.redAccent),
-                    _GridItem(title: "Hojas Usadas", value: "2,430", icon: Icons.description, color: colorScheme.primary),
-                    _GridItem(title: "Tiempo Prom.", value: "7 min", icon: Icons.access_time, color: Colors.orange),
+                    _GridItem(title: "Ganancias", value: "\$1,250", icon: Icons.attach_money_rounded, color: Colors.green),
+                    _GridItem(title: "Órdenes Totales", value: "128", icon: Icons.receipt_long_rounded, color: colorScheme.primary),
+                    _GridItem(title: "Órdenes Completadas", value: "95", icon: Icons.check_circle_rounded, color: Colors.green),
+                    _GridItem(title: "Órdenes Canceladas", value: "15", icon: Icons.cancel_rounded, color: Colors.redAccent),
+                    _GridItem(title: "Hojas Usadas", value: "2,430", icon: Icons.description_rounded, color: colorScheme.primary),
+                    _GridItem(title: "Tiempo Prom.", value: "7 min", icon: Icons.access_time_rounded, color: Colors.orange),
                   ],
                   crossAxisCount: 2,
-                  spacing: 12,
+                  spacing: 14,
                 ),
                 const SizedBox(height: 20),
                 _buildSimpleChartPlaceholder(context),
@@ -56,86 +56,104 @@ class MyAdminReportsView extends StatelessWidget {
     );
   }
 
- Widget _buildTitleRow(BuildContext context, double width, ColorScheme colorScheme) {
-  const demoRange = "01/09 - 07/09";
-  final adminChangeReportDateRangeBloc = context.read<AdminChangeReportDateRangeBloc>();
+  Widget _buildTitleRow(BuildContext context, double width, ColorScheme colorScheme) {
+    const demoRange = "01/09 - 07/09";
+    final adminChangeReportDateRangeBloc = context.read<AdminChangeReportDateRangeBloc>();
 
-  return Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(children: [
-        Text(
-          "Reportes",
-          style: TextStyle(
-            color: colorScheme.inverseSurface,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // Título
+        Row(
+          children: [
+            Text(
+              "Reportes",
+              style: TextStyle(
+                color: colorScheme.inverseSurface,
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(Icons.arrow_drop_down, size: 24, color: colorScheme.inverseSurface),
+          ],
         ),
-        const SizedBox(width: 8),
-        Icon(Icons.arrow_drop_down, size: 25, color: colorScheme.inverseSurface),
-      ]),
-      GestureDetector(
-        onTap: () => adminChangeReportDateRangeBloc.add(
-          AdminShowChangeReportDateRangeEvent(showChangeReportDateRangeBottomSheet: true)
-        ),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: colorScheme.primary.withOpacity(0.065),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: colorScheme.primary.withOpacity(0.7), width: 1.2), // Borde un poco más oscuro y grueso
-            boxShadow: [
-           
-            ],
+        
+        // Selector de fecha optimizado
+        GestureDetector(
+          onTap: () => adminChangeReportDateRangeBloc.add(
+            AdminShowChangeReportDateRangeEvent(showChangeReportDateRangeBottomSheet: true)
           ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: colorScheme.primary,
-                  borderRadius: BorderRadius.circular(8),
-               
+          child: Container(
+            constraints: BoxConstraints(maxWidth: width * 0.46),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12.5),
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: colorScheme.primary.withOpacity(0.25), width: 1.2),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: colorScheme.primary.withOpacity(0.2),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                  child: Icon(Icons.calendar_month_rounded, size: 16, color: Colors.white),
                 ),
-                child: Icon(Icons.calendar_month, size: 16, color: Colors.white),
-              ),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Última semana',
-                    style: TextStyle(
-                      color: colorScheme.inverseSurface,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Última semana',
+                        style: TextStyle(
+                          color: colorScheme.inverseSurface,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        maxLines: 1,
+                      ),
+                      Text(
+                        demoRange,
+                        style: TextStyle(
+                          color: colorScheme.inverseSurface.withOpacity(0.7),
+                          fontSize: 11,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        maxLines: 1,
+                      ),
+                    ],
                   ),
-                  Text(
-                    demoRange,
-                    style: TextStyle(
-                      color: colorScheme.inverseSurface.withOpacity(0.7),
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 6),
-              Icon(Icons.arrow_drop_down, size: 20, color: colorScheme.primary),
-            ],
+                ),
+                const SizedBox(width: 4),
+                Icon(Icons.arrow_drop_down, size: 18, color: colorScheme.primary),
+              ],
+            ),
           ),
-        ),
-      )
-    ],
-  );
-}
+        )
+      ],
+    );
+  }
+
   Widget _buildGrid(
     BuildContext context, {
     required List<_GridItem> items,
     int crossAxisCount = 2,
-    double spacing = 12,
+    double spacing = 14,
   }) {
     return LayoutBuilder(builder: (context, constraints) {
       final totalSpacing = spacing * (crossAxisCount - 1);
@@ -157,50 +175,57 @@ class MyAdminReportsView extends StatelessWidget {
   Widget _gridCard(BuildContext context, _GridItem item) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    final bg = item.color.withOpacity(0.11);
-    final borderColor = item.color.withOpacity(0.425);
+    final bg = item.color.withOpacity(0.09);
+    final borderColor = item.color.withOpacity(0.25);
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: borderColor, width: 1.2),
         boxShadow: [
-          // BoxShadow(
-          //   color: item.color.withOpacity(0.04),
-          //   blurRadius: 8,
-          //   offset: const Offset(0, 4),
-          // ),
+          BoxShadow(
+            color: item.color.withOpacity(0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(9.5),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: item.color.withOpacity(1),
+              color: item.color,
               borderRadius: BorderRadius.circular(10),
+              boxShadow: [
+                BoxShadow(
+                  color: item.color.withOpacity(0.25),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
+                ),
+              ],
             ),
-            child: Icon(item.icon, color: Colors.white, size: 24),
+            child: Icon(item.icon, color: Colors.white, size: 22),
           ),
           const SizedBox(height: 12),
           Text(
             item.title,
             style: TextStyle(
-              color: colorScheme.inverseSurface.withOpacity(0.75),
+              color: colorScheme.inverseSurface.withOpacity(0.8),
               fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             item.value,
             style: TextStyle(
               color: item.color,
               fontWeight: FontWeight.bold,
-              fontSize: 18,
+              fontSize: 16,
             ),
           ),
         ],
@@ -212,21 +237,42 @@ class MyAdminReportsView extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     
     return Container(
-      height: 200,
+      height: 180,
       width: double.infinity,
       decoration: BoxDecoration(
-        color: colorScheme.primary.withOpacity(0.11),
-        borderRadius: BorderRadius.circular(16),
+        color: colorScheme.primary.withOpacity(0.07),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: colorScheme.primary.withOpacity(0.425),
+          color: colorScheme.primary.withOpacity(0.18),
           width: 1.2,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Center(
-        child: Icon(
-          Icons.stacked_bar_chart,
-          size: 125,
-          color: colorScheme.primary.withOpacity(1),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.stacked_bar_chart_rounded,
+              size: 50,
+              color: colorScheme.primary.withOpacity(0.6),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              "Gráfica de rendimiento",
+              style: TextStyle(
+                color: colorScheme.inverseSurface.withOpacity(0.6),
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -4,7 +4,7 @@ sealed class AdminHomeEvent extends Equatable {
   const AdminHomeEvent();
 
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
 
@@ -38,6 +38,19 @@ final class AdminMonthOrderHistoryElementSelectedEvent extends AdminHomeEvent {
 
   @override
   List<Object> get props => [monthOrderHistoryElementSelected];
+}
+
+
+final class AdminHomeUpdateHomeLogOutStatusEvent extends AdminHomeEvent  {
+  const AdminHomeUpdateHomeLogOutStatusEvent({
+    required this.adminHomeLogOutStatus,
+    required this.messageError,
+  });
+  final AdminHomeLogOutStatus adminHomeLogOutStatus;
+  final String? messageError;
+
+  @override
+  List<Object?> get props => [adminHomeLogOutStatus, messageError];
 }
 
 

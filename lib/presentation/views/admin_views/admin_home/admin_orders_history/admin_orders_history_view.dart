@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -13,6 +12,7 @@ class MyAdminOrdersHistoryView extends StatelessWidget {
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     final adminHomeBloc = context.read<AdminHomeBloc>();
+    
     void monthOrderHistoryElementSelect(
       String month,
       List<AorderEntity> monthOrders,
@@ -28,9 +28,16 @@ class MyAdminOrdersHistoryView extends StatelessWidget {
     return Center(
       child: Container(
         width: width * 0.95,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.all(Radius.circular(20)),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: _buildBody(context, width, monthOrderHistoryElementSelect),
       ),
@@ -42,18 +49,22 @@ class MyAdminOrdersHistoryView extends StatelessWidget {
     double width,
     void Function(String, List<AorderEntity>) callBack,
   ) {
-    return Column(
-      children: [
-        _buildTitleRow(context, width),
-        Expanded(child: _buildSectionContainer(context, width, callBack)),
-      ],
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          _buildTitleRow(context, width),
+          const SizedBox(height: 16),
+          Expanded(child: _buildSectionContainer(context, width, callBack)),
+        ],
+      ),
     );
   }
 
   Widget _buildTitleRow(BuildContext context, double width) {
-    final inverse = Theme.of(context).colorScheme.inverseSurface;
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Container(
-      margin: const EdgeInsets.only(top: 12, bottom: 8),
       width: width * 0.83,
       child: Row(
         children: [
@@ -61,12 +72,14 @@ class MyAdminOrdersHistoryView extends StatelessWidget {
             "Historial",
             style: TextStyle(
               fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: inverse,
+              fontWeight: FontWeight.w600,
+              color: colorScheme.inverseSurface,
             ),
           ),
           const SizedBox(width: 8),
-          const Icon(Icons.arrow_drop_down, size: 25),
+          Icon(Icons.arrow_drop_down, 
+               size: 25, 
+               color: colorScheme.inverseSurface),
         ],
       ),
     );
@@ -77,7 +90,7 @@ class MyAdminOrdersHistoryView extends StatelessWidget {
     double width,
     void Function(String, List<AorderEntity>) callBack,
   ) {
-    final primary = Theme.of(context).colorScheme.primary;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return BlocBuilder<AdminHomeBloc, AdminHomeState>(
       builder: (context, state) {
@@ -85,31 +98,43 @@ class MyAdminOrdersHistoryView extends StatelessWidget {
 
         if (monthMap.isEmpty) {
           return Center(
-            child: Icon(
-              Icons.hide_source,
-              color: Colors.grey.shade300,
-              size: 100,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.history_rounded,
+                  color: Colors.grey.shade300,
+                  size: 80,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  "No hay historial disponible",
+                  style: TextStyle(
+                    color: Colors.grey.shade500,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
             ),
           );
         }
 
         return Container(
-          padding: const EdgeInsets.all(20),
-          margin: const EdgeInsets.only(bottom: 25),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300, width: 2),
-            color: Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(20),
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade300),
           ),
           width: width * 0.83,
           child: ListView.separated(
             itemCount: monthMap.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 20),
+            separatorBuilder: (_, __) => const SizedBox(height: 16),
             itemBuilder: (context, index) {
               final entry = monthMap.entries.elementAt(index);
               return _buildMonthSummary(
                 context,
-                primary,
+                colorScheme,
                 entry.key,
                 entry.value,
                 callBack,
@@ -121,16 +146,13 @@ class MyAdminOrdersHistoryView extends StatelessWidget {
     );
   }
 
-  /// Tarjeta por MES: incluye el título + resumen + botón
   Widget _buildMonthSummary(
     BuildContext context,
-    Color primary,
+    ColorScheme colorScheme,
     String monthTitle,
     List<AorderEntity> orders,
     void Function(String, List<AorderEntity>) callBack,
   ) {
-    final inverse = Theme.of(context).colorScheme.inverseSurface;
-
     // Calcular datos básicos
     final total = orders.length;
     final completed = orders
@@ -144,98 +166,121 @@ class MyAdminOrdersHistoryView extends StatelessWidget {
         // Banner con el nombre del mes
         Container(
           alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade600),
-            color: primary,
-            borderRadius: BorderRadius.circular(10),
+            color: colorScheme.primary,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: colorScheme.primary.withOpacity(0.2),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           width: double.infinity,
           child: Text(
             monthTitle,
             style: const TextStyle(
               color: Colors.white,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
             ),
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
 
         // Tarjeta con resumen de órdenes
         Container(
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
-            border: Border.all(color: Colors.grey.shade400),
             borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+            border: Border.all(color: Colors.grey.shade300),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // Columna con info de órdenes
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        "Ord. tot. ($total)",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: inverse,
-                          fontSize: 14,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Total de órdenes
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.receipt_long_rounded,
+                          size: 18,
+                          color: colorScheme.inverseSurface,
                         ),
-                      ),
-                      const SizedBox(width: 6),
-                      Icon(Icons.receipt_long, color: inverse, size: 18),
-                    ],
-                  ),
-                  const SizedBox(height: 7),
+                        const SizedBox(width: 8),
+                        Text(
+                          "Total: $total órdenes",
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.inverseSurface,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
 
-                  // Completadas / Canceladas
-                  Row(
-                    children: [
-                      Text(
-                            "Est:",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: inverse,
-                              fontSize: 13,
+                    // Estadísticas: Completadas y Canceladas
+                    Row(
+                      children: [
+                        // Completadas
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.check_circle_rounded,
+                              size: 18,
+                              color: Colors.green,
                             ),
-                          ),
-                      const SizedBox(width: 17),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.check_circle,
-                            size: 20,
-                            color: Colors.greenAccent.shade400,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            "$completed",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: inverse,
-                              fontSize: 13,
+                            const SizedBox(width: 6),
+                            Text(
+                              "$completed",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.inverseSurface,
+                                fontSize: 14,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 22),
-                          Icon(Icons.cancel, size: 20, color: Colors.redAccent),
-                          const SizedBox(width: 6),
-                          Text(
-                            "$canceled",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: inverse,
-                              fontSize: 13,
+                          ],
+                        ),
+                        const SizedBox(width: 20),
+                        
+                        // Canceladas
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.cancel_rounded,
+                              size: 18,
+                              color: Colors.red,
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
+                            const SizedBox(width: 6),
+                            Text(
+                              "$canceled",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.inverseSurface,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
 
               // Botón de "ver"
@@ -243,16 +288,18 @@ class MyAdminOrdersHistoryView extends StatelessWidget {
                 onPressed: () => callBack.call(monthTitle, orders),
                 style: ElevatedButton.styleFrom(
                   foregroundColor: Colors.white,
-                  backgroundColor: primary,
+                  backgroundColor: colorScheme.primary,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
+                    horizontal: 16,
+                    vertical: 12,
                   ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
+                  elevation: 2,
+                  shadowColor: colorScheme.primary.withOpacity(0.3),
                 ),
-                child: const Icon(Icons.remove_red_eye),
+                child: const Icon(Icons.remove_red_eye, size: 20),
               ),
             ],
           ),
