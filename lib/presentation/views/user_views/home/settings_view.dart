@@ -7,6 +7,8 @@ import 'package:printfast_rebuild/presentation/blocs/user_blocs/home_bloc/home_b
 import 'package:printfast_rebuild/presentation/blocs/shared_blocs/message_error_warning_bloc/message_error_warning_bloc.dart';
 import 'package:printfast_rebuild/presentation/widgets/widgets.dart';
 
+import '../../../../utils/utils.dart';
+
 class MySettingsView extends StatelessWidget {
   const MySettingsView({super.key});
 
@@ -28,13 +30,7 @@ class MySettingsView extends StatelessWidget {
       HomeState state,
       HomeBloc homeBloc,
     ) {
-      messageErrorWarningBloc.updateMessageErrorWarning(
-        "¡Error inesperado!",
-        state.messageError ?? "",
-      );
-      messageErrorWarningBloc.add(
-        ShowMessageErrorWarningEvent(showMessageErrorWarning: true),
-      );
+      showSnackBar(context: context, title: "¡Error inesperado!", text: state.messageError ?? "",);
       homeBloc.add(
         HomeUpdateHomeLogOutStatusEvent(
           homeLogOutStatus: HomeLogOutStatus.initial,
@@ -79,7 +75,7 @@ class MySettingsView extends StatelessWidget {
     HomeState state,
     VoidCallback callBack,
   ) {
-    final colorScheme = Theme.of(context).colorScheme;
+    // final colorScheme = Theme.of(context).colorScheme;
 
     return SafeArea(
       child: Center(
@@ -188,7 +184,7 @@ class MySettingsView extends StatelessWidget {
 
   Widget _detailRow(BuildContext context, String title, String value) {
     final colorScheme = Theme.of(context).colorScheme;
-    final width = MediaQuery.of(context).size.width;
+    // final width = MediaQuery.of(context).size.width;
 
     return Container(
       margin: const EdgeInsets.only(top: 16),
@@ -294,7 +290,7 @@ class MySettingsView extends StatelessWidget {
     VoidCallback callBack,
   ) {
     final width = MediaQuery.of(context).size.width;
-    final colorScheme = Theme.of(context).colorScheme;
+    // final colorScheme = Theme.of(context).colorScheme;
 
     return Column(
       children: [

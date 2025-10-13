@@ -16,16 +16,14 @@ class MyAdminOrderView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
+    // ignore: unused_local_variable
     final colorScheme = Theme.of(context).colorScheme;
 
     final cloudStoragePdfViewBloc = context.read<CloudStoragePdfBloc>();
     final messageErrorWarningBloc = context.read<MessageErrorWarningBloc>();
 
     void handleErrorToPrint(MessageErrorWarningBloc messageErrorWarningBloc, CloudStoragePdfBloc cloudStoragePdfViewBloc) {
-      messageErrorWarningBloc.updateMessageErrorWarning(
-        "Error de impresión",
-        "No se pudo cargar el documento.",
-      );
+     showSnackBar(context: context, title: "¡Error de impresión!", text: "No se pudo cargar el documento",);
       messageErrorWarningBloc.add(
         ShowMessageErrorWarningEvent(showMessageErrorWarning: true),
       );
@@ -45,18 +43,12 @@ class MyAdminOrderView extends StatelessWidget {
       child: BlocBuilder<AdminHomeBloc, AdminHomeState>(
         builder: (context, state) {
           void viewThePdf() {
-            cloudStoragePdfViewBloc.fileFromCloudStorage(
-              "1974238",
-              "ModeloMatematicoCom.pdf",
-            );
+            cloudStoragePdfViewBloc.fileFromCloudStorage(state.selectedOrder.url);
             context.push(Routes.cloudStoragePdfView);
           }
 
           void printPdf() {
-            cloudStoragePdfViewBloc.printPdf(
-              "1974238",
-              "ModeloMatematicoCom.pdf",
-            );
+            cloudStoragePdfViewBloc.printPdf(state.selectedOrder.url);
           }
 
           return Stack(
@@ -182,7 +174,7 @@ class MyAdminOrderView extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              _statusChip(adminHomeState.selectedOrder.hasItBeenAccepted),
+              _statusChip(adminHomeState.selectedOrder.hasItBeenAccepted ?? false),
               const SizedBox(height: 8),
               Text(
                 '\$${adminHomeState.selectedOrder.price.toStringAsFixed(2)}',
@@ -412,7 +404,7 @@ class MyAdminOrderView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          !adminHomeState.selectedOrder.hasItBeenAccepted
+          adminHomeState.selectedOrder.hasItBeenAccepted == false || adminHomeState.selectedOrder.hasItBeenAccepted == null
               ? _actionButtons(context)
               : _deliveryAndPrintButtons(context, printPdf),
         ],
@@ -582,6 +574,7 @@ class MyAdminOrderView extends StatelessWidget {
   }
 
   Widget _paymentMethodChip(BuildContext context, {required bool isCardPayment}) {
+    // ignore: unused_local_variable
     final colorScheme = Theme.of(context).colorScheme;
     final paymentMethod = isCardPayment ? 'Tarjeta' : 'Efectivo';
     final icon = isCardPayment ? Icons.credit_card_rounded : Icons.money_rounded;

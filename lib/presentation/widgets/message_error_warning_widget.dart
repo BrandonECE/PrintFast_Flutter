@@ -8,79 +8,102 @@ class MyMessageErrorWarning extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final messageErrorWarningBloc = context.read<MessageErrorWarningBloc>();
-    final colorScheme = Theme.of(context).colorScheme;
-    
     return BlocBuilder<MessageErrorWarningBloc, MessageErrorWarningState>(
       builder: (context, state) {
+        final messageErrorWarningBloc = context.read<MessageErrorWarningBloc>();
+        final colorScheme = Theme.of(context).colorScheme;
+        final title = state.title.toLowerCase();
+
+        final IconData snackBarIcon = switch (title) {
+          String s when s.contains("error") => Icons.error,
+          String s when s.contains("cambiar") => Icons.swap_horiz_rounded,
+          String s when s.contains("guardar") => Icons.save_rounded,
+          String s when s.contains("cancelar") => Icons.cancel_rounded,
+          String s when s.contains("confirmar") => Icons.check_circle,
+          _ => Icons.circle_outlined,
+        };
+
         return PopScope(
           onPopInvokedWithResult: (didPop, result) {
-            messageErrorWarningBloc.add(
-              ShowMessageErrorWarningEvent(showMessageErrorWarning: false),
-            );
+            if (state.showMessageErrorWarning) {
+              messageErrorWarningBloc.add(
+                ShowMessageErrorWarningEvent(showMessageErrorWarning: false),
+              );
+            }
           },
           child: Stack(
             children: [
               // Fondo semi-transparente
-              Align(
-                alignment: Alignment.center,
-                child: IgnorePointer(
-                  ignoring: !state.showMessageErrorWarning,
-                  child: AnimatedOpacity(
-                    opacity: state.showMessageErrorWarning ? 1.0 : 0.0,
-                    duration: const Duration(milliseconds: 275),
-                    child: Container(
-                      color: state.showMessageErrorWarning
-                          ? colorScheme.inverseSurface.withOpacity(0.4)
-                          : Colors.transparent,
-                    ),
+              IgnorePointer(
+                ignoring: !state.showMessageErrorWarning,
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 225),
+                  opacity: state.showMessageErrorWarning ? 1.0 : 0.0,
+                  child: Container(
+                    color: colorScheme.inverseSurface.withOpacity(0.4),
                   ),
                 ),
               ),
-              // Panel de advertencia
+
+              // Panel que aparece desde arriba
               AnimatedPositioned(
+                curve: Curves.fastLinearToSlowEaseIn,
+                duration: const Duration(milliseconds: 850),
                 bottom: state.showMessageErrorWarning
                     ? 0
-                    : -MediaQuery.of(context).size.height * 0.29,
+                    : -MediaQuery.of(context).size.height * 0.278,
                 left: 0,
                 right: 0,
                 top: state.showMessageErrorWarning
-                    ? MediaQuery.of(context).size.height * 0.71
+                    ? MediaQuery.of(context).size.height * (1 - 0.278)
                     : MediaQuery.of(context).size.height,
-                curve: Curves.fastLinearToSlowEaseIn,
-                duration: const Duration(milliseconds: 900),
+
                 child: Material(
-                  color: colorScheme.surface,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(25),
-                  ),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
                   elevation: 8,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 20,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Título y icono de cierre
+                        // Header con icono y título
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Row(
                               children: [
-                                Icon(
-                                  Icons.info_rounded,
-                                  color: colorScheme.primary,
-                                  size: 24,
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.primary.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(
+                                    snackBarIcon,
+                                    color: colorScheme.primary,
+                                    size: 22,
+                                  ),
                                 ),
                                 const SizedBox(width: 12),
                                 Text(
-                                  messageErrorWarningBloc.title,
+                                  state.title,
                                   style: TextStyle(
-                                    fontSize: 18,
+                                    fontSize: 16,
                                     fontWeight: FontWeight.w600,
-                                    color: colorScheme.onSurface,
+                                    color: colorScheme.inverseSurface,
                                   ),
                                 ),
                               ],
@@ -93,55 +116,66 @@ class MyMessageErrorWarning extends StatelessWidget {
                               ),
                               icon: Icon(
                                 Icons.close_rounded,
-                                color: colorScheme.onSurface.withOpacity(0.7),
-                                size: 24,
+                                color: colorScheme.inverseSurface.withOpacity(
+                                  0.6,
+                                ),
+                                size: 22,
                               ),
-                              style: IconButton.styleFrom(
-                                minimumSize: const Size(48, 48),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(
+                                minWidth: 40,
+                                minHeight: 40,
                               ),
                             ),
                           ],
                         ),
+
                         const SizedBox(height: 16),
-                        // Mensaje de advertencia
+
+                        // Mensaje de contenido
                         Container(
+                          width: double.infinity,
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: colorScheme.primary.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(16),
+                            color: colorScheme.primary.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: colorScheme.primary.withOpacity(0.3),
-                              width: 1,
+                              color: colorScheme.primary.withOpacity(0.15),
+                              width: 1.2,
                             ),
                           ),
                           child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Icon(
                                 Icons.warning_amber_rounded,
                                 color: colorScheme.primary,
-                                size: 24,
+                                size: 20,
                               ),
-                              const SizedBox(width: 16),
+                              const SizedBox(width: 12),
                               Expanded(
                                 child: SingleChildScrollView(
                                   scrollDirection: Axis.horizontal,
                                   child: Text(
-                                    messageErrorWarningBloc.message,
+                                    state.text,
                                     style: TextStyle(
-                                      fontSize: 14,
-                                      color: colorScheme.onSurface,
+                                      fontSize: 13,
+                                      color: colorScheme.inverseSurface
+                                          .withOpacity(0.8),
                                       fontWeight: FontWeight.w500,
+                                      height: 1.4,
                                     ),
-                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ),
                             ],
                           ),
                         ),
+
                         const SizedBox(height: 20),
-                        // Botón aceptar
-                        _myButtonWarning(context, voidCallback),
+
+                        // Botones de acción
+                        _myActionButtons(context, voidCallback, state),
                       ],
                     ),
                   ),
@@ -154,30 +188,73 @@ class MyMessageErrorWarning extends StatelessWidget {
     );
   }
 
-  Widget _myButtonWarning(BuildContext context, VoidCallback voidCallBack) {
+  Widget _myActionButtons(BuildContext context, VoidCallback voidCallBack, MessageErrorWarningState state) {
     final colorScheme = Theme.of(context).colorScheme;
-    
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: voidCallBack,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: colorScheme.primary,
-          foregroundColor: colorScheme.onPrimary,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+
+    return Row(
+      children: [
+        
+        
+        // Botón Aceptar
+        Expanded(
+          child: ElevatedButton(
+            onPressed: voidCallBack,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 2,
+            ),
+            child: const Text(
+              'Aceptar',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
-          elevation: 2,
         ),
-        child: const Text(
-          'Aceptar',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
+
+        if(state.showCancelButton)
+        Expanded(
+          child: Row(
+            children: [
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {
+                    context.read<MessageErrorWarningBloc>().add(
+                      ShowMessageErrorWarningEvent(showMessageErrorWarning: false),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: colorScheme.inverseSurface.withOpacity(0.7),
+                    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    side: BorderSide(
+                      color: colorScheme.inverseSurface.withOpacity(0.2),
+                      width: 1.2,
+                    ),
+                  ),
+                  child: const Text(
+                    'Cancelar',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-      ),
+        
+      ],
     );
   }
 }

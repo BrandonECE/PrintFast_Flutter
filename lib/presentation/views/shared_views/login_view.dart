@@ -7,6 +7,7 @@ import 'package:printfast_rebuild/presentation/blocs/user_blocs/home_bloc/home_b
 import 'package:printfast_rebuild/presentation/blocs/shared_blocs/login_bloc/login_bloc.dart';
 import 'package:printfast_rebuild/presentation/blocs/shared_blocs/message_error_warning_bloc/message_error_warning_bloc.dart';
 import 'package:printfast_rebuild/presentation/widgets/widgets.dart';
+import 'package:printfast_rebuild/utils/utils.dart';
 
 class MyLoginView extends StatelessWidget {
   const MyLoginView({super.key});
@@ -73,13 +74,8 @@ class MyLoginView extends StatelessWidget {
       MessageErrorWarningBloc messageErrorWarningBloc,
       LoginState state,
     ) {
-      messageErrorWarningBloc.updateMessageErrorWarning(
-        "¡Error inesperado!",
-        state.messageError ?? "",
-      );
-      messageErrorWarningBloc.add(
-        ShowMessageErrorWarningEvent(showMessageErrorWarning: true),
-      );
+      showSnackBar(context: context, title: "¡Error inesperado!", text: state.messageError ?? "",);
+
       loginBloc.add(
         LoginChangeLoginStatusEvent(
           loginStatus: LoginStatus.initial,

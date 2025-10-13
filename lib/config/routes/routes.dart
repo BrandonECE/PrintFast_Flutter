@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:printfast_rebuild/presentation/blocs/user_blocs/history_bloc/history_bloc.dart';
+import 'package:printfast_rebuild/presentation/blocs/user_blocs/payment_blocs/change_payment_method_bloc/change_payment_method_bloc.dart';
+import 'package:printfast_rebuild/presentation/blocs/user_blocs/payment_blocs/shopping_pay_method_bloc/shopping_pay_method_bloc.dart';
+import 'package:printfast_rebuild/presentation/blocs/user_blocs/shopping_blocs/shopping_location_picker_bloc/shopping_location_picker_bloc.dart';
+import 'package:printfast_rebuild/presentation/views/user_views/home/history/payment/payment_method_history_view.dart';
 import 'package:printfast_rebuild/presentation/views/views.dart';
 
 class Routes {
@@ -19,9 +25,12 @@ class Routes {
   static final String activeOrder = "/activeOrder";
   static final String codeView = "/codeView";
   static final String historyOrder = "/historyOrder";
+  static final String paymentMethodHistory = "/paymentMethodHistory";
   static final String shoppingPdfView = "/shoppingPdfView";
   static final String locationPicker = "/locationPicker";
+  static final String changePaymentMethod = "/changePaymentMethod";
   static final String payMethodView = "/payMethodView";
+  static final String manageCards = "/manageCards";
   static final String addCard = "/addCard";
   static final String liveTracking = "/liveTracking";
 
@@ -52,9 +61,12 @@ class Routes {
         _myActiveOrder(),
         _myCodeView(),
         _myHistoryOrder(),
+        _myPaymentMethodHistory(),
         _myShoppingPdfView(),
         _myLocationPicker(),
+        _changePaymentMethod(),
         _myPayMethodView(),
+        _myManageCards(),
         _myAddCard(),
         _myLiveTracking(),
         //Admin
@@ -66,7 +78,7 @@ class Routes {
         _myAdminMonthOrdersHistorySelectedView(),
         //Shared
         _myCloudStoragePdfView(),
-        _myRoleSelectionView()
+        _myRoleSelectionView(),
       ],
     );
   }
@@ -258,7 +270,7 @@ class Routes {
     );
   }
 
-    GoRoute _myCodeView() {
+  GoRoute _myCodeView() {
     return GoRoute(
       path: codeView,
       pageBuilder: (context, state) => CustomTransitionPage(
@@ -286,28 +298,70 @@ class Routes {
   GoRoute _myHistoryOrder() {
     return GoRoute(
       path: historyOrder,
-      pageBuilder: (context, state) => CustomTransitionPage(
-        key: state.pageKey,
-        child: const MyOrderHistoryView(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          // CurvedAnimation para suavizar la transición
-          final curvedAnimation = CurvedAnimation(
-            parent: animation,
-            curve: Curves.fastEaseInToSlowEaseOut, // Aplica una curva suave
-          );
+      pageBuilder: (context, state) {
+        final passedBloc = state.extra as HistoryBloc?; // o MiBloc?
+        Widget child = const MyOrderHistoryView();
 
-          // Fade + SlideTransition: Deslizar desde la izquierda y desvanecer
-          return SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(1.0, 0.0), // Desde la izquierda
-              end: Offset.zero, // A su posición normal
-            ).animate(curvedAnimation),
-            child: child,
-          );
-        },
-      ),
+        if (passedBloc != null) {
+          // Reusamos la instancia existente sin crear ni cerrar desde aquí
+          child = BlocProvider.value(value: passedBloc, child: child);
+        }
+
+        return CustomTransitionPage(
+          key: state.pageKey,
+          child: child,
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            // CurvedAnimation para suavizar la transición
+            final curvedAnimation = CurvedAnimation(
+              parent: animation,
+              curve: Curves.fastEaseInToSlowEaseOut, // Aplica una curva suave
+            );
+
+            // Fade + SlideTransition: Deslizar desde la izquierda y desvanecer
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1.0, 0.0), // Desde la izquierda
+                end: Offset.zero, // A su posición normal
+              ).animate(curvedAnimation),
+              child: child,
+            );
+          },
+        );
+      },
     );
   }
+
+
+
+  GoRoute _myPaymentMethodHistory() {
+    return GoRoute(
+      path: paymentMethodHistory,
+      pageBuilder: (context, state) {
+        Widget child = MyPaymentMethodHistoryView(paymentMethod: state.extra);
+        return CustomTransitionPage(
+          key: state.pageKey,
+          child: child,
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            // CurvedAnimation para suavizar la transición
+            final curvedAnimation = CurvedAnimation(
+              parent: animation,
+              curve: Curves.fastEaseInToSlowEaseOut, // Aplica una curva suave
+            );
+
+            // Fade + SlideTransition: Deslizar desde la izquierda y desvanecer
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1.0, 0.0), // Desde la izquierda
+                end: Offset.zero, // A su posición normal
+              ).animate(curvedAnimation),
+              child: child,
+            );
+          },
+        );
+      },
+    );
+  }
+
 
   GoRoute _myShoppingPdfView() {
     return GoRoute(
@@ -339,7 +393,7 @@ class Routes {
       path: locationPicker,
       pageBuilder: (context, state) => CustomTransitionPage(
         key: state.pageKey,
-        child: const MyLocationPickerView(),
+        child: const MyShoppingLocationPickerView(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           final curvedAnimation = CurvedAnimation(
             parent: animation,
@@ -356,57 +410,165 @@ class Routes {
           );
         },
       ),
+    );
+  }
+
+  GoRoute _changePaymentMethod() {
+    return GoRoute(
+      path: changePaymentMethod,
+      pageBuilder: (context, state) {
+        // final passedBloc = state.extra as ShoppingPayMethodBloc?; // o MiBloc?
+        // print("_myManageCards: ${passedBloc is ShoppingPayMethodBloc}");
+        Widget child = const MyChangePaymentMethodView();
+
+        // if (passedBloc != null) {
+        //   // Reusamos la instancia existente sin crear ni cerrar desde aquí
+        //   child = BlocProvider.value(value: passedBloc, child: child);
+        // }
+
+        return CustomTransitionPage(
+          key: state.pageKey,
+          child: child,
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            // CurvedAnimation para suavizar la transición
+            final curvedAnimation = CurvedAnimation(
+              parent: animation,
+              curve: Curves.fastEaseInToSlowEaseOut, // Aplica una curva suave
+            );
+
+            // Fade + SlideTransition: Deslizar desde la izquierda y desvanecer
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1.0, 0.0), // Desde la izquierda
+                end: Offset.zero, // A su posición normal
+              ).animate(curvedAnimation),
+              child: child,
+            );
+          },
+        );
+      },
     );
   }
 
   GoRoute _myPayMethodView() {
     return GoRoute(
       path: payMethodView,
-      pageBuilder: (context, state) => CustomTransitionPage(
-        key: state.pageKey,
-        child: const MyPayMethodView(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          final curvedAnimation = CurvedAnimation(
-            parent: animation,
-            curve: Curves.fastEaseInToSlowEaseOut,
-          );
+      pageBuilder: (context, state) {
+        final passedBloc =
+            state.extra as ShoppingLocationPickerBloc?; // o MiBloc?
+        Widget child = const MyPayMethodView();
 
-          // Deslizar hacia abajo + Fade
-          return SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0.0, 1.0), // Desde arriba
-              end: Offset.zero, // A su posición normal
-            ).animate(curvedAnimation),
-            child: child,
-          );
-        },
-      ),
+        if (passedBloc != null) {
+          // Reusamos la instancia existente sin crear ni cerrar desde aquí
+          child = BlocProvider.value(value: passedBloc, child: child);
+        }
+
+        return CustomTransitionPage(
+          key: state.pageKey,
+          child: child,
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            final curvedAnimation = CurvedAnimation(
+              parent: animation,
+              curve: Curves.fastEaseInToSlowEaseOut,
+            );
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0.0, 1.0),
+                end: Offset.zero,
+              ).animate(curvedAnimation),
+              child: child,
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // import necesario
+  // import 'package:flutter_bloc/flutter_bloc.dart';
+
+  GoRoute _myManageCards() {
+    return GoRoute(
+      path: manageCards,
+      pageBuilder: (context, state) {
+        // puede venir cualquier cosa en extra: ShoppingPayMethodBloc o ChangePaymentMethodBloc
+        final passedBloc = state.extra;
+        Widget child = MyManageCardsView(extra: passedBloc);
+
+        // reusar si es alguno de los blocs que esperamos
+        if (passedBloc is ShoppingPayMethodBloc) {
+          child = BlocProvider.value(value: passedBloc, child: child);
+        } else if (passedBloc is ChangePaymentMethodBloc) {
+          child = BlocProvider.value(value: passedBloc, child: child);
+        }
+
+        return CustomTransitionPage(
+          key: state.pageKey,
+          child: child,
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            final curvedAnimation = CurvedAnimation(
+              parent: animation,
+              curve: Curves.fastEaseInToSlowEaseOut,
+            );
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1.0, 0.0),
+                end: Offset.zero,
+              ).animate(curvedAnimation),
+              child: child,
+            );
+          },
+        );
+      },
     );
   }
 
   GoRoute _myAddCard() {
     return GoRoute(
       path: addCard,
-      pageBuilder: (context, state) => CustomTransitionPage(
-        key: state.pageKey,
-        child: const AddCardView(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          // CurvedAnimation para suavizar la transición
-          final curvedAnimation = CurvedAnimation(
-            parent: animation,
-            curve: Curves.fastEaseInToSlowEaseOut, // Aplica una curva suave
-          );
+      pageBuilder: (context, state) {
 
-          // Fade + SlideTransition: Deslizar desde la izquierda y desvanecer
-          return SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(1.0, 0.0), // Desde la izquierda
-              end: Offset.zero, // A su posición normal
-            ).animate(curvedAnimation),
-            child: child,
-          );
-        },
-      ),
+        // final dynamicBloc = extras?['dynamicBloc'] as Object?;
+        // final manageBloc = extras?['manageBloc'] as ManageCardsBloc?;
+
+        Widget child = MyAddCardView(extra: state.extra);
+
+        // final List<BlocProvider> providers = [];
+
+        // if (dynamicBloc is ShoppingPayMethodBloc) {
+        //   print("is ShoppingPayMethodBloc");
+        //   providers.add(BlocProvider.value(value: dynamicBloc));
+        // } else if (dynamicBloc is ChangePaymentMethodBloc) {
+        //   print("is ChangePaymentMethodBloc");
+        //   providers.add(BlocProvider.value(value: dynamicBloc));
+        // }
+
+        // if (manageBloc != null) {
+        //   providers.add(BlocProvider.value(value: manageBloc));
+        // }
+
+        // if (providers.isNotEmpty) {
+        //   child = MultiBlocProvider(providers: providers, child: child);
+        // }
+
+        return CustomTransitionPage(
+          key: state.pageKey,
+          child: child,
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            final curvedAnimation = CurvedAnimation(
+              parent: animation,
+              curve: Curves.fastEaseInToSlowEaseOut,
+            );
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1.0, 0.0),
+                end: Offset.zero,
+              ).animate(curvedAnimation),
+              child: child,
+            );
+          },
+        );
+      },
     );
   }
 
@@ -591,7 +753,6 @@ class Routes {
     );
   }
 
-
   //Shared
 
   GoRoute _myCloudStoragePdfView() {
@@ -644,4 +805,3 @@ class Routes {
     );
   }
 }
-

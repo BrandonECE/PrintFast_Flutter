@@ -1,5 +1,5 @@
 
-import 'package:printfast_rebuild/domain/entities/user_entity.dart';
+import 'package:printfast_rebuild/domain/entities/all_entities/user_entity.dart';
 import 'package:printfast_rebuild/domain/repositories/auth_repository.dart';
 import 'package:printfast_rebuild/domain/services/auth_service.dart';
 

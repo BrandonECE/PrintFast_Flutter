@@ -5,6 +5,7 @@ import 'package:printfast_rebuild/config/routes/routes.dart';
 import 'package:printfast_rebuild/presentation/blocs/shared_blocs/message_error_warning_bloc/message_error_warning_bloc.dart';
 import 'package:printfast_rebuild/presentation/blocs/shared_blocs/register_bloc/register_bloc.dart';
 import 'package:printfast_rebuild/presentation/widgets/widgets.dart';
+import 'package:printfast_rebuild/utils/utils.dart';
 
 class MyRegisterView extends StatelessWidget {
   const MyRegisterView({super.key});
@@ -46,13 +47,7 @@ class MyRegisterView extends StatelessWidget {
       RegisterState state,
       RegisterBloc registerBloc,
     ) {
-      messageErrorWarningBloc.updateMessageErrorWarning(
-        "¡Error inesperado!",
-        state.messageError ?? "",
-      );
-      messageErrorWarningBloc.add(
-        ShowMessageErrorWarningEvent(showMessageErrorWarning: true),
-      );
+       showSnackBar(context: context, title: "¡Error inesperado!", text: state.messageError ?? "",);
       registerBloc.add(
         RegisterChangeRegisterStatusEvent(
           registerStatus: RegisterStatus.initial,

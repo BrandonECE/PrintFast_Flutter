@@ -278,6 +278,7 @@ class _MyAdminCodeValidationViewState extends State<MyAdminCodeValidationView> {
   }
 
   Widget _actionButton(BuildContext context) {
+    // ignore: unused_local_variable
     final colorScheme = Theme.of(context).colorScheme;
     final isEnabled = _enteredPin.length == 5;
 

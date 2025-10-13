@@ -5,7 +5,6 @@ import 'package:printfast_rebuild/domain/repositories/storage_repository.dart';
 import 'package:printfast_rebuild/domain/services/storage_service.dart';
 
 class StorageRepositoryImpl extends StorageRepository {
-  final FirebaseStorage _storage = FirebaseStorage.instance;
   final StorageService storageService;
   StorageRepositoryImpl({required this.storageService});
 
@@ -16,6 +15,33 @@ class StorageRepositoryImpl extends StorageRepository {
     try {
       return await storageService.getPdfFileFromCloudStorage(fileUrl);
     } on FirebaseException catch (e) {
+      return Future.error(e);
+    }
+  }
+  
+
+  @override
+  Future<String> uploadPdfBytes({
+    required Uint8List bytes,
+    required String userRegistration,
+    required String pdfName,
+  }) async {
+    try {
+      return await storageService.uploadPdfBytes(
+        bytes: bytes,
+        userRegistration: userRegistration,
+        pdfName: pdfName,
+      );
+    } catch (e) {
+      return Future.error(e);
+    }
+  }
+
+  @override
+  Future<void> deleteFileByPath(String path) async {
+    try {
+      return await storageService.deleteFileByPath(path);
+    } catch (e) {
       return Future.error(e);
     }
   }

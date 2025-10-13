@@ -1,9 +1,9 @@
-import 'package:printfast_rebuild/domain/entities/copyshop_entity.dart';
+import 'package:printfast_rebuild/domain/entities/all_entities/copyshop_entity.dart';
 import 'package:printfast_rebuild/domain/repositories/copyshop_repository.dart';
-import 'package:printfast_rebuild/domain/services/copyshop_services.dart';
+import 'package:printfast_rebuild/domain/services/copyshop_service.dart';
 
 class CopyshopRepositoryImpl extends CopyshopRepository {
-  final CopyshopServices copyshopServices;
+  final CopyshopService copyshopServices;
   CopyshopRepositoryImpl({required this.copyshopServices});
 
   @override

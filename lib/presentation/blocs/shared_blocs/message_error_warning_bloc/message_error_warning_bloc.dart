@@ -6,19 +6,21 @@ part 'message_error_warning_state.dart';
 
 class MessageErrorWarningBloc
     extends Bloc<MessageErrorWarningEvent, MessageErrorWarningState> {
-  String title = "¡Error inesperado!";
-  String message = "Aquí va tu mensaje de error";
-
   MessageErrorWarningBloc() : super(MessageErrorWarningInitial()) {
     on<ShowMessageErrorWarningEvent>((event, emit) {
       emit(
         state.copyWith(showMessageErrorWarning: event.showMessageErrorWarning),
       );
     });
-  }
 
-  void updateMessageErrorWarning(String newTitle, String newMessage) {
-    title = newTitle;
-    message = newMessage;
+    on<ChangeTitleTextAndButtonEvent>((event, emit) {
+      emit(
+        state.copyWith(
+          title: event.title,
+          text: event.text,
+          showCancelButton: event.showCancelButton,
+        ),
+      );
+    });
   }
 }

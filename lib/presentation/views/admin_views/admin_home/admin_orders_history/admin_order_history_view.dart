@@ -14,15 +14,13 @@ class MyAdminOrderHistoryView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
+    // ignore: unused_local_variable
     final colorScheme = Theme.of(context).colorScheme;
     final messageErrorWarningBloc = context.read<MessageErrorWarningBloc>();
     final cloudStoragePdfViewBloc = context.read<CloudStoragePdfBloc>();
 
     void handleErrorToPrint(MessageErrorWarningBloc messageErrorWarningBloc, CloudStoragePdfBloc cloudStoragePdfViewBloc) {
-      messageErrorWarningBloc.updateMessageErrorWarning(
-        "Error de impresión",
-        "No se pudo cargar el documento.",
-      );
+      showSnackBar(context: context, title: "¡Error de impresión!", text: "No se pudo cargar el documento",);
       messageErrorWarningBloc.add(
         ShowMessageErrorWarningEvent(showMessageErrorWarning: true),
       );
@@ -42,18 +40,12 @@ class MyAdminOrderHistoryView extends StatelessWidget {
       child: BlocBuilder<AdminHomeBloc, AdminHomeState>(
         builder: (context, state) {
           void viewThePdf() {
-            cloudStoragePdfViewBloc.fileFromCloudStorage(
-              "1974238",
-              "ModeloMatematicoCom.pdf",
-            );
+            cloudStoragePdfViewBloc.fileFromCloudStorage(state.selectedOrder.url);
             context.push(Routes.cloudStoragePdfView);
           }
 
           void printPdf() {
-            cloudStoragePdfViewBloc.printPdf(
-              "1974238",
-              "ModeloMatematicoCom.pdf",
-            );
+            cloudStoragePdfViewBloc.printPdf(state.selectedOrder.url );
           }
 
           return Stack(

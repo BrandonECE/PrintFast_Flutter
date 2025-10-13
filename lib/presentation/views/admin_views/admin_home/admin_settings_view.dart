@@ -5,6 +5,7 @@ import 'package:printfast_rebuild/config/routes/routes.dart';
 import 'package:printfast_rebuild/presentation/blocs/admin_blocs/admin_home_bloc/admin_home_bloc.dart';
 import 'package:printfast_rebuild/presentation/blocs/shared_blocs/message_error_warning_bloc/message_error_warning_bloc.dart';
 import 'package:printfast_rebuild/presentation/widgets/widgets.dart';
+import 'package:printfast_rebuild/utils/utils.dart';
 
 class MyAdminSettingsView extends StatelessWidget {
   const MyAdminSettingsView({super.key});
@@ -28,13 +29,7 @@ class MyAdminSettingsView extends StatelessWidget {
       AdminHomeState state,
       AdminHomeBloc adminHomeBloc,
     ) {
-      messageErrorWarningBloc.updateMessageErrorWarning(
-        "¡Error inesperado!",
-        state.messageError ?? "",
-      );
-      messageErrorWarningBloc.add(
-        ShowMessageErrorWarningEvent(showMessageErrorWarning: true),
-      );
+       showSnackBar(context: context, title: "¡Error inesperado!", text: state.messageError ?? "",);
       adminHomeBloc.add(
         AdminHomeUpdateHomeLogOutStatusEvent(
           adminHomeLogOutStatus: AdminHomeLogOutStatus.initial,
@@ -77,6 +72,7 @@ class MyAdminSettingsView extends StatelessWidget {
     AdminHomeState state,
     VoidCallback callBack,
   ) {
+    // ignore: unused_local_variable
     final colorScheme = Theme.of(context).colorScheme;
 
     return SafeArea(
@@ -189,6 +185,7 @@ class MyAdminSettingsView extends StatelessWidget {
 
   Widget _detailRow(BuildContext context, String title, String value) {
     final colorScheme = Theme.of(context).colorScheme;
+    // ignore: unused_local_variable
     final width = MediaQuery.of(context).size.width;
 
     return Container(
@@ -286,8 +283,7 @@ class MyAdminSettingsView extends StatelessWidget {
             onChanged: (value) {
               final String title = value! ? "Pausar Recepción" : "Reanudar Recepción";
               final String message = value ? "¿Seguro quieres pausar?" : "¿Seguro quieres reanudar?";
-              messageErrorWarningBloc.updateMessageErrorWarning(title, message);
-              messageErrorWarningBloc.add(ShowMessageErrorWarningEvent(showMessageErrorWarning: true));
+             showSnackBar(context: context, title: title, text: message,);
             },
           ),
         ],
@@ -301,6 +297,7 @@ class MyAdminSettingsView extends StatelessWidget {
     VoidCallback callBack,
   ) {
     final width = MediaQuery.of(context).size.width;
+    // ignore: unused_local_variable
     final colorScheme = Theme.of(context).colorScheme;
 
     return Column(

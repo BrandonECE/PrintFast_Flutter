@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:printfast_rebuild/config/routes/routes.dart';
 import 'package:printfast_rebuild/presentation/blocs/admin_blocs/admin_role_selection_bloc/admin_role_selection_bloc.dart';
 import 'package:printfast_rebuild/presentation/blocs/user_blocs/home_bloc/home_bloc.dart';
+// import 'package:printfast_rebuild/presentation/blocs/user_blocs/home_bloc/home_bloc.dart';
 import '../../widgets/widgets.dart';
 
 class MyRoleSelectionView extends StatelessWidget {
@@ -12,15 +13,17 @@ class MyRoleSelectionView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final homeBloc = context.read<HomeBloc>();
+    // final homeBloc = context.read<HomeBloc>();
     final adminRoleSelectionBloc = context.read<AdminRoleSelectionBloc>();
+    final homeBloc = context.read<HomeBloc>();
+
 
     void navigateAsAdmin() => adminRoleSelectionBloc.selectRole(AdminRoleDestination.admin);
     void navigateAsUser() => adminRoleSelectionBloc.selectRole(AdminRoleDestination.user);
     void retryLoading() => adminRoleSelectionBloc.getAdminData();
     void goToSelectedRoute(String route) {
       context.go(route);
-      adminRoleSelectionBloc.add( ChangeAdminRoleDestinationEvent(AdminRoleDestination.unknown), );
+      adminRoleSelectionBloc.add(ChangeAdminRoleResetEvent());
     }
 
     return Scaffold(
@@ -33,11 +36,10 @@ class MyRoleSelectionView extends StatelessWidget {
               child:
                   BlocConsumer<AdminRoleSelectionBloc, AdminRoleSelectionState>(
                     listener: (context, state) {
-                      if (state.adminRoleDestination ==
-                          AdminRoleDestination.admin) {
+                      if (state.adminRoleDestination == AdminRoleDestination.admin) {
                         goToSelectedRoute(Routes.adminHome);
-                      } else if (state.adminRoleDestination ==
-                          AdminRoleDestination.user) {
+                      } else if (state.adminRoleDestination == AdminRoleDestination.user) { 
+                        homeBloc.add(HomeUpdateUserEntityEvent(userEntity: state.userEntity!));
                         goToSelectedRoute(Routes.home);
                       }
                     },

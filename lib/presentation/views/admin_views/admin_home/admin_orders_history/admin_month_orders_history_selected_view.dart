@@ -67,7 +67,7 @@ class MyAdminMonthOrdersHistorySelectedView extends StatelessWidget {
       builder: (context, state) {
         final selected = state.monthOrderHistoryElementSelected;
 
-        if (selected == null || selected.isEmpty) {
+        if (selected.isEmpty) {
           return Expanded(child: _buildEmpty(context));
         }
 

@@ -156,7 +156,7 @@ class MyAdminOrdersHistoryView extends StatelessWidget {
     // Calcular datos básicos
     final total = orders.length;
     final completed = orders
-        .where((o) => o.hasItBeenAccepted && !o.hasItBeenCanceledByUser)
+        .where((o) => o.hasItBeenAccepted! && !o.hasItBeenCanceledByUser)
         .length;
     final canceled = orders.where((o) => o.hasItBeenCanceledByUser).length;
 

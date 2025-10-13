@@ -1,8 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter/material.dart';
 import 'package:printfast_rebuild/domain/entities/entities.dart';
-import 'package:printfast_rebuild/domain/entities/user_entity.dart';
+import 'package:printfast_rebuild/domain/entities/all_entities/user_entity.dart';
 import 'package:printfast_rebuild/domain/repositories/copyshop_repository.dart';
 
 part 'admin_role_selection_event.dart';
@@ -32,6 +31,11 @@ class AdminRoleSelectionBloc
     on<ChangeAdminRoleDestinationEvent>((event, emit) {
       emit(state.copyWith(adminRoleDestination: event.adminRoleDestination));
     });
+
+    on<ChangeAdminRoleResetEvent>((event, emit) {
+      emit(AdminRoleSelectionInitial());
+    });
+
   }
 
   Future<void> selectRole(AdminRoleDestination adminRoleDestination) async {

@@ -42,3 +42,11 @@ final class ChangeAdminRoleDestinationEvent extends AdminRoleSelectionEvent {
   @override
   List<Object?> get props => [adminRoleDestination];
 }
+
+final class ChangeAdminRoleResetEvent extends AdminRoleSelectionEvent {
+
+  const ChangeAdminRoleResetEvent();
+
+  @override
+  List<Object?> get props => [];
+}

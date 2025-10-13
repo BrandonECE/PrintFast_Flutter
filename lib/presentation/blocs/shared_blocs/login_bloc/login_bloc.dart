@@ -1,7 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:printfast_rebuild/domain/repositories/auth_repository.dart';
-import 'package:printfast_rebuild/presentation/blocs/shared_blocs/message_error_warning_bloc/message_error_warning_bloc.dart';
 
 import '../../../../domain/entities/entities.dart';
 
