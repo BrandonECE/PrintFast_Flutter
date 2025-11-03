@@ -25,8 +25,10 @@ class MyPayMethodView extends StatelessWidget {
   /// Creamos el BlocProvider aquí, pasando el registration desde HomeBloc
   BlocProvider<ShoppingPayMethodBloc> _myPayMethodScreen(BuildContext context) {
     final homeBlocState = context.read<HomeBloc>().state;
+    final shoppingBlocState = context.read<ShoppingBloc>().state;
     final registration = homeBlocState.userEntity.registration;
 
+  
     return BlocProvider(
       create: (context) => ShoppingPayMethodBloc(
         userRepository: getIt<UserRepository>(),
@@ -44,23 +46,25 @@ class MyPayMethodView extends StatelessWidget {
                 child: const _PayMethodViewContent(),
               ),
               MyMessageErrorWarning(
-                voidCallback: () {
-
-                  if (state.paymentStatus == ActionMethodPayStatus.idle) {
-                    context.read<ShoppingPayMethodBloc>().add(
-                      const ConfirmPayment(),
-                    );
-                  } else if (state.paymentStatus == ActionMethodPayStatus.failure) {
-                    context.read<ShoppingPayMethodBloc>().add(ChangeActionMethodPayStatusEvent(paymentStatus: ActionMethodPayStatus.idle));
+                voidCallbackByCloseIcon: () {
+                  if (state.paymentStatus == ActionMethodPayStatus.failure) {
+                    context.read<ShoppingPayMethodBloc>().add( ChangeActionMethodPayStatusEvent( paymentStatus: ActionMethodPayStatus.idle, ), );
                   }
-
-                  
-
-                  messageErrorWarningBloc.add(
-                    ShowMessageErrorWarningEvent(
-                      showMessageErrorWarning: false,
-                    ),
-                  );
+                  messageErrorWarningBloc.add( ShowMessageErrorWarningEvent( showMessageErrorWarning: false, ), );
+                },
+                voidCallback: () {
+                  if (state.paymentStatus == ActionMethodPayStatus.idle) {
+                    context.read<ShoppingPayMethodBloc>().add( ConfirmPayment( amount: shoppingBlocState.totalPrice, userRegistration: homeBlocState.userEntity.registration, ), );
+                  } else if (state.paymentStatus == ActionMethodPayStatus.failure) {
+                    context.read<ShoppingPayMethodBloc>().add( ChangeActionMethodPayStatusEvent( paymentStatus: ActionMethodPayStatus.idle, ), );
+                    if(state.outstandingCharges > 0.0){
+                      context.push(Routes.payOutstanding, extra: {
+                        "outstandingCharges": state.outstandingCharges,
+                        "shoppingPayMethodBloc": context.read<ShoppingPayMethodBloc>(),
+                      });
+                    }
+                  }
+                  messageErrorWarningBloc.add( ShowMessageErrorWarningEvent( showMessageErrorWarning: false, ), );
                 },
               ),
             ],
@@ -88,8 +92,10 @@ class _PayMethodViewContent extends StatelessWidget {
       backgroundColor: colorScheme.primary,
       appBar: _myAppBar(context),
       body: BlocListener<ShoppingPayMethodBloc, ShoppingPayMethodState>(
+        listenWhen: (prev, curr) => prev.paymentStatus != curr.paymentStatus,
         listener: (context, state) {
           // Navegar SOLO cuando el proceso de pago haya terminado con éxito
+
           if (state.paymentStatus == ActionMethodPayStatus.success) {
             shoppingBloc.processingPayment(
               homeBlocState.userEntity,
@@ -102,7 +108,13 @@ class _PayMethodViewContent extends StatelessWidget {
           // Errores de pago
           else if (state.paymentStatus == ActionMethodPayStatus.failure &&
               state.paymentError != null) {
-            thereWasAnError(state, context);
+            final String errorTitle = state.outstandingCharges > 0.0
+                ? "Pago Pendiente: \$${state.outstandingCharges.toStringAsFixed(2)}"
+                : "¡Error inesperado!";
+            final String errorMessage = state.outstandingCharges > 0.0
+                ? "Liquida el saldo pendiente por cancelación para continuar."
+                : state.paymentError ?? "";
+            thereWasAnError(errorTitle, errorMessage, context);
           }
         },
         child: _myBody(width, context),
@@ -110,12 +122,12 @@ class _PayMethodViewContent extends StatelessWidget {
     );
   }
 
-  void thereWasAnError(ShoppingPayMethodState state, BuildContext context) {
-    showSnackBar(
-      context: context,
-      title: "¡Error inesperado!",
-      text: state.paymentError ?? "",
-    );
+  void thereWasAnError(
+    String errorTitle,
+    String errorMessage,
+    BuildContext context,
+  ) {
+    showSnackBar(context: context, title: errorTitle, text: errorMessage);
   }
 
   MyAppBarWidget _myAppBar(BuildContext context) {
@@ -477,7 +489,10 @@ class _PayMethodViewContent extends StatelessWidget {
       child: InkWell(
         onTap: () => context.push(
           Routes.manageCards,
-          extra: context.read<ShoppingPayMethodBloc>(),
+          extra: {
+            'passedBloc':context.read<ShoppingPayMethodBloc>(),
+            'voidCallBack': null
+          }
         ),
         borderRadius: BorderRadius.circular(10),
         child: Container(
@@ -520,11 +535,12 @@ class _PayMethodViewContent extends StatelessWidget {
           child: ElevatedButton(
             onPressed: (isMethodSelected)
                 ? () {
-                     showSnackBar(
+                    showSnackBar(
                       context: context,
                       title: "Confirmar pedido",
-                      text: "Tu pedido se enviará y quedará pendiente de aprobación",
-                      showCancelButton: true
+                      text:
+                          "Tu pedido se enviará y quedará pendiente de aprobación",
+                      showCancelButton: true,
                     );
                   }
                 : !showLoad

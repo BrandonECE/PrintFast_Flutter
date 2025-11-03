@@ -30,7 +30,7 @@ class MyTimePickerBottomSheet extends StatelessWidget {
                   ignoring: !showDeliveryTimeBottomSheet,
                   child: AnimatedOpacity(
                     opacity: showDeliveryTimeBottomSheet ? 1.0 : 0.0,
-                    duration: const Duration(milliseconds: 275),
+                    duration: const Duration(milliseconds: 250),
                     child: Container(
                       color: showDeliveryTimeBottomSheet
                           ? colorScheme.inverseSurface.withOpacity(0.4)
@@ -47,7 +47,7 @@ class MyTimePickerBottomSheet extends StatelessWidget {
                 left: 0,
                 right: 0,
                 top: showDeliveryTimeBottomSheet ? MediaQuery.of(context).size.height * (1 - 0.335) : MediaQuery.of(context).size.height ,
-                duration: const Duration(milliseconds:1000),
+                duration: const Duration(milliseconds:875),
                 curve: Curves.fastLinearToSlowEaseIn,
                 child: Material(
                   color: colorScheme.surface,

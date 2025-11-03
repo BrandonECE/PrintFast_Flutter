@@ -74,7 +74,11 @@ class MyLoginView extends StatelessWidget {
       MessageErrorWarningBloc messageErrorWarningBloc,
       LoginState state,
     ) {
-      showSnackBar(context: context, title: "¡Error inesperado!", text: state.messageError ?? "",);
+      showSnackBar(
+        context: context,
+        title: "¡Error inesperado!",
+        text: state.messageError ?? "",
+      );
 
       loginBloc.add(
         LoginChangeLoginStatusEvent(

@@ -6,3 +6,8 @@ sealed class AdminNotificationsEvent extends Equatable {
   @override
   List<Object> get props => [];
 }
+
+class LoadAdminNotifications extends AdminNotificationsEvent {
+  const LoadAdminNotifications();
+}
+

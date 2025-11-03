@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:printfast_rebuild/config/routes/routes.dart';
 import 'package:printfast_rebuild/presentation/blocs/user_blocs/home_bloc/home_bloc.dart';
-import 'package:printfast_rebuild/presentation/blocs/shared_blocs/message_error_warning_bloc/message_error_warning_bloc.dart';
 import 'package:printfast_rebuild/presentation/widgets/widgets.dart';
 import 'package:printfast_rebuild/utils/utils.dart';
 import '../../../../domain/entities/entities.dart';
@@ -177,10 +176,10 @@ class MyMenuView extends StatelessWidget {
         BlocBuilder<HomeBloc, HomeState>(
           buildWhen: (prev, curr) =>
               prev.homeOrderStatus != curr.homeOrderStatus ||
-              prev.activeOrder != curr.activeOrder,
+              prev.activeOrder != curr.activeOrder || prev.isTheShoppingButtonBlocked != curr.isTheShoppingButtonBlocked,
           builder: (context, state) {
-            final isButtonEnable =
-                state.homeOrderStatus != HomeOrderStatus.orderActive;
+
+            final isButtonEnable = !state.isTheShoppingButtonBlocked;
 
             final targetColor = isButtonEnable
                 ? colorScheme.primary
@@ -480,10 +479,9 @@ class MyMenuView extends StatelessWidget {
       case HomeOrderStatus.orderActive:
         return Container(
           key: const ValueKey('home_order_active'),
-          child: _activeOrderCard(context),
+          child: _activeOrderCard(context, state),
         );
 
-      case HomeOrderStatus.noOrderActive:
       case HomeOrderStatus.idle:
         return Container(
           key: const ValueKey('home_order_no_active'),
@@ -606,8 +604,9 @@ class MyMenuView extends StatelessWidget {
     );
   }
 
-  Widget _activeOrderCard(BuildContext context) {
+  Widget _activeOrderCard(BuildContext context, HomeState state) {
     final colorScheme = Theme.of(context).colorScheme;
+    final homeBloc = context.read<HomeBloc>();
 
     return BlocBuilder<HomeBloc, HomeState>(
       buildWhen: (prev, curr) =>
@@ -617,18 +616,18 @@ class MyMenuView extends StatelessWidget {
           prev.activeOrderTimeLabel != curr.activeOrderTimeLabel,
       builder: (context, state) {
         final order = state.activeOrder;
-        final orderCode = order?.orderCode ?? "#A2837";
+        final orderCode = order?.orderCode ?? "#Carg...";
         final isActive =
             order != null &&
             (order.hasItBeenAccepted == true || order.hasItBeenAccepted == null
                 ? (order.hasItBeenAccepted == true)
                 : false);
         final status = isActive ? "Activa" : "En revisión";
-        final place = order?.copyShopName ?? "FIME";
+        final place = order?.copyShopName ?? "Carg...";
         final time = state.activeOrderTimeLabel.isNotEmpty
             ? state.activeOrderTimeLabel
-            : "12 min";
-        final price = order != null ? order.price.toStringAsFixed(2) : "75.00";
+            : "Carg... min";
+        final price = order != null ? order.price.toStringAsFixed(2) : "0.00";
         final progress = state.activeOrderProgress.clamp(0.0, 1.0);
 
         return Container(
@@ -750,7 +749,7 @@ class MyMenuView extends StatelessWidget {
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () => context.push(Routes.activeOrder),
+                      onPressed: !state.isCanceledByCopyShopLoading ? () => context.push(Routes.activeOrder) : (){},
                       style: ElevatedButton.styleFrom(
                         backgroundColor: colorScheme.primary,
                         foregroundColor: Colors.white,
@@ -787,6 +786,14 @@ class MyMenuView extends StatelessWidget {
                     ),
                     child: IconButton(
                       onPressed: () {
+                        if(state.isCanceledByCopyShopLoading) {
+                          return;
+                        }
+                        homeBloc.add(
+                          HomeUpdateHomeActionsEvent(
+                            homeActions: HomeActions.cancelOrder,
+                          ),
+                        );
                         showSnackBar(
                           context: context,
                           title: "¿Cancelar orden?",

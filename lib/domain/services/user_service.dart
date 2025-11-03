@@ -18,4 +18,8 @@ abstract class UserService {
   Future<void> removeCards(String registration, List<String> tokens);
   Future<void> setDefaultCard(String registration, String token);
   Future<void> markAllNotificationsAsSeen(String registration);
+  Future<void> deleteUserOrder( String copyShopEmail, String registration, AorderEntity aorder, );
+  Future<void> changeOrderPaymentMethod( String userRegistration, String copyShopEmail, String orderCode, String paymentMethod,);
+  Future<double> getOutstandingCharges(String registration);
+  Future<void> payOutstandingCharges(String registration);
 }

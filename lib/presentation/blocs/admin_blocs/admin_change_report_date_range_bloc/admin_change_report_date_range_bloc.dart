@@ -13,5 +13,13 @@ class AdminChangeReportDateRangeBloc extends Bloc<AdminChangeReportDateRangeEven
         ),
       );
     });
+    
+    on<AdminUpdateSelectedDateRangeEvent>((event, emit) {
+      emit(
+        state.copyWith(
+          selectedDateRange: event.selectedDateRange,
+        ),
+      );
+    });
   }
 }

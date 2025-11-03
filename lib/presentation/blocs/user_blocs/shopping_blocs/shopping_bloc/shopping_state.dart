@@ -1,6 +1,6 @@
 part of 'shopping_bloc.dart';
 
-enum ShoppingStatus { idle, loading, inProgress, itHasBeenCancelled, failure, failureByNoReception }
+enum ShoppingStatus { idle, loading, inProgress, failure, failureByNoReception }
 
 final class ShoppingState extends Equatable {
   const ShoppingState({

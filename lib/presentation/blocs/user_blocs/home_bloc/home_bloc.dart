@@ -2,6 +2,7 @@
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 import 'package:printfast_rebuild/domain/entities/entities.dart';
 import 'package:printfast_rebuild/domain/repositories/auth_repository.dart';
@@ -46,8 +47,22 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
     // --- Active order update (from stream)
     on<HomeUpdateActiveOrderEvent>((event, emit) async {
-      final targetStatus = event.activeOrder == null
-          ? HomeOrderStatus.noOrderActive
+
+      final aorder = event.activeOrder;
+      
+      if (aorder == null) {
+        add( HomeUpdateIsCanceledByCopyShopLoadingEvent( isCanceledByCopyShopLoading: false, ), );
+        add(HomeSetOrderWatchStatusEvent(status: HomeOrderStatus.idle));
+      }
+
+      add(HomeUpdateIsTheShoppingButtonBlockedEvent( isTheShoppingButtonBlocked: aorder != null, ), );
+
+      if (aorder != null && aorder.hasItBeenAccepted == false && state.homeOrderStatus != HomeOrderStatus.canceledByCopyShop) {
+        add( HomeSetOrderWatchStatusEvent( status: HomeOrderStatus.canceledByCopyShop, ), );
+      }
+
+      final targetStatus = aorder == null
+          ? HomeOrderStatus.idle
           : HomeOrderStatus.orderActive;
 
       // Transition animation: show loading -> wait -> set final
@@ -57,21 +72,22 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       // reset reconnect attempts on success
       _aorderReconnectAttempt = 0;
 
-      final computed = _computeProgressAndLabel(event.activeOrder);
+      final computed = _computeProgressAndLabel(aorder);
 
       emit(
         state.copyWith(
-          activeOrder: event.activeOrder,
+          activeOrder: aorder,
           homeOrderStatus: targetStatus,
           messageError: null,
           activeOrderProgress: computed.progress,
           activeOrderTimeLabel: computed.label,
+          remainingMinutes: computed.remainingMinutes,
         ),
       );
 
       // start/stop progress timer depending on accepted
-      if (event.activeOrder != null && _orderIsAccepted(event.activeOrder!)) {
-        _startProgressTimer(event.activeOrder);
+      if (aorder != null && _orderIsAccepted(aorder)) {
+        _startProgressTimer(aorder);
       } else {
         _stopProgressTimer();
       }
@@ -203,6 +219,61 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     });
 
     on<HomeMarkAllNotificationsAsSeenEvent>(_markAllAsSeen);
+
+    on<HomeUpdateHomeActionsEvent>((event, emit) async {
+      emit(state.copyWith(homeActions: event.homeActions));
+    });
+
+    on<HomeCancelOrderEvent>(_homeCancelOrderEvent);
+
+    on<HomeUpdateIsCanceledByCopyShopLoadingEvent>((event, emit) async {
+      emit(
+        state.copyWith(
+          isCanceledByCopyShopLoading: event.isCanceledByCopyShopLoading,
+        ),
+      );
+    });
+
+    on<HomeUpdateIsTheShoppingButtonBlockedEvent>((event, emit) async {
+      emit(
+        state.copyWith(
+          isTheShoppingButtonBlocked: event.isTheShoppingButtonBlocked,
+        ),
+      );
+    });
+
+    on<HomeUpdateHomeCanceledOrderStatusEvent>((event, emit) async {
+      emit(
+        state.copyWith(
+          homeCanceledOrderStatus: event.homeCanceledOrderStatus,
+        ),
+      );
+    });
+
+
+  }
+
+  Future<void> _homeCancelOrderEvent(
+    HomeCancelOrderEvent event,
+    Emitter<HomeState> emit,
+  ) async {
+    try {
+      
+      emit(state.copyWith(homeOrderStatus: HomeOrderStatus.loading, homeCanceledOrderStatus: HomeCanceledOrderStatus.loading));
+      final copyShopEmail = state.activeOrder!.copyShopEmail;
+      final registration = state.userEntity.registration;
+      final aorder = state.isCanceledByCopyShopLoading
+          ? state.activeOrder!.copyWith(hasItBeenAccepted: false)
+          : state.activeOrder;
+
+      await userRepository.deleteUserOrder( copyShopEmail, registration, aorder!, );
+      emit(state.copyWith(homeCanceledOrderStatus: HomeCanceledOrderStatus.sucessul));
+    } catch (e) {
+      emit(state.copyWith(homeActions: HomeActions.cancelOrder, homeCanceledOrderStatus: HomeCanceledOrderStatus.failure, messageError: e.toString()));
+    }
+    final reg = state.userEntity.registration;
+    print("aorder - reiniciando");
+    _startAorderListener(reg);
   }
 
   Future<void> _markAllAsSeen(
@@ -230,6 +301,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
       _aorderSubscription = stream.listen(
         (aorder) {
+  
           add(HomeUpdateActiveOrderEvent(activeOrder: aorder));
         },
         onError: (error, stack) {
@@ -416,6 +488,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         HomeUpdateProgressEvent(
           progress: computed.progress,
           label: computed.label,
+          remainingMinutes: computed.remainingMinutes,
         ),
       );
     }
@@ -469,18 +542,19 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   // Helper: calcula progreso (0..1) y label ("12 min" o "1.5 h")
   // ------------------------------------------------------------
   _ProgressLabel _computeProgressAndLabel(AorderEntity? order) {
-    if (order == null) return _ProgressLabel(progress: 0.0, label: '');
+    if (order == null)
+      return _ProgressLabel(progress: 0.0, label: '', remainingMinutes: 0.0);
 
     final DateTime? init = order.initDate;
     final DateTime? estimated = order.estimatedDeliveryTime;
     final now = DateTime.now();
 
     if (init == null || estimated == null) {
-      return _ProgressLabel(progress: 0.0, label: '');
+      return _ProgressLabel(progress: 0.0, label: '', remainingMinutes: 0.0);
     }
 
     if (estimated.isBefore(init)) {
-      return _ProgressLabel(progress: 0.0, label: '');
+      return _ProgressLabel(progress: 0.0, label: '', remainingMinutes: 0.0);
     }
 
     final total = estimated.difference(init).inSeconds;
@@ -497,23 +571,43 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     progress = progress.clamp(0.0, 1.0);
 
     final remaining = estimated.difference(now);
-    String label;
+
+    // Calcular minutos restantes como double
+    double remainingMinutes;
     if (remaining.inSeconds <= 0) {
-      label = '0 min';
-    } else if (remaining.inMinutes < 60) {
-      label = '${remaining.inMinutes} min';
+      remainingMinutes = 0.0;
     } else {
-      final double hours = remaining.inMinutes / 60.0;
+      // Convertir a minutos con decimales para mayor precisión
+      remainingMinutes = remaining.inSeconds / 60.0;
+    }
+
+    String label;
+    if (remainingMinutes <= 0) {
+      label = '0 min';
+    } else if (remainingMinutes < 60) {
+      label = '${remainingMinutes.round()} min';
+    } else {
+      final double hours = remainingMinutes / 60.0;
       final double rounded = (hours * 10).roundToDouble() / 10.0;
       label = '${rounded.toStringAsFixed((rounded % 1 == 0) ? 0 : 1)} h';
     }
 
-    return _ProgressLabel(progress: progress, label: label);
+    return _ProgressLabel(
+      progress: progress,
+      label: label,
+      remainingMinutes: remainingMinutes,
+    );
   }
 }
 
 class _ProgressLabel {
   final double progress;
   final String label;
-  _ProgressLabel({required this.progress, required this.label});
+  final double remainingMinutes;
+
+  _ProgressLabel({
+    required this.progress,
+    required this.label,
+    required this.remainingMinutes,
+  });
 }

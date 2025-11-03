@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:printfast_rebuild/config/routes/routes.dart';
-import 'package:printfast_rebuild/presentation/blocs/admin_blocs/admin_home_bloc/admin_home_bloc.dart';
+import 'package:printfast_rebuild/presentation/blocs/admin_blocs/admin_history_bloc/admin_history_bloc.dart';
 import 'package:printfast_rebuild/presentation/blocs/shared_blocs/cloud_storage_pdf_bloc.dart/cloud_storage_pdf_bloc.dart';
 import 'package:printfast_rebuild/presentation/blocs/shared_blocs/message_error_warning_bloc/message_error_warning_bloc.dart';
 import 'package:printfast_rebuild/presentation/widgets/widgets.dart';
@@ -37,7 +37,7 @@ class MyAdminOrderHistoryView extends StatelessWidget {
           handleErrorToPrint(messageErrorWarningBloc, cloudStoragePdfViewBloc);
         }
       },
-      child: BlocBuilder<AdminHomeBloc, AdminHomeState>(
+      child: BlocBuilder<AdminHistoryBloc, AdminHistoryState>(
         builder: (context, state) {
           void viewThePdf() {
             cloudStoragePdfViewBloc.fileFromCloudStorage(state.selectedOrder.url);
@@ -45,7 +45,7 @@ class MyAdminOrderHistoryView extends StatelessWidget {
           }
 
           void printPdf() {
-            cloudStoragePdfViewBloc.printPdf(state.selectedOrder.url );
+            cloudStoragePdfViewBloc.printPdf(cloudStorageURL: state.selectedOrder.url);
           }
 
           return Stack(
@@ -75,7 +75,7 @@ class MyAdminOrderHistoryView extends StatelessWidget {
   Scaffold _myBody(
     BuildContext context,
     double width,
-    AdminHomeState state,
+    AdminHistoryState state,
     void Function() viewThePdf,
     void Function() printPdf,
   ) {
@@ -117,7 +117,7 @@ class MyAdminOrderHistoryView extends StatelessWidget {
   }
 
   // ---------- Top card: lugar, usuario, archivo, estado y precio ----------
-  Widget _topCard(BuildContext context, double width, AdminHomeState adminHomeState) {
+  Widget _topCard(BuildContext context, double width, AdminHistoryState adminHistoryState) {
     final colorScheme = Theme.of(context).colorScheme;
     
     return Container(
@@ -143,7 +143,7 @@ class MyAdminOrderHistoryView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Orden #${adminHomeState.selectedOrder.orderCode}",
+                  "Orden #${adminHistoryState.selectedOrder.orderCode}",
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -153,12 +153,12 @@ class MyAdminOrderHistoryView extends StatelessWidget {
                 const SizedBox(height: 10),
                 _infoRow(context,
                   icon: Icons.person_2_rounded,
-                  text: adminHomeState.selectedOrder.userName,
+                  text: adminHistoryState.selectedOrder.userName,
                 ),
                 const SizedBox(height: 4),
                 _infoRow(context,
                   icon: Icons.badge_rounded,
-                  text: adminHomeState.selectedOrder.userRegistration,
+                  text: adminHistoryState.selectedOrder.userRegistration,
                 ),
               ],
             ),
@@ -168,10 +168,10 @@ class MyAdminOrderHistoryView extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              _statusChipHistory(adminHomeState.selectedOrder.hasItBeenCanceledByUser),
+              _statusChipHistory(adminHistoryState.selectedOrder.hasItBeenCanceled),
               const SizedBox(height: 8),
               Text(
-                '\$${adminHomeState.selectedOrder.price.toStringAsFixed(2)}',
+                '\$${adminHistoryState.selectedOrder.price.toStringAsFixed(2)}',
                 style: TextStyle(
                   color: colorScheme.inverseSurface,
                   fontWeight: FontWeight.bold,
@@ -205,8 +205,8 @@ class MyAdminOrderHistoryView extends StatelessWidget {
   }
 
   // ---------- Card de fechas y detalles (sin botón Cambiar) ----------
-  Widget _datesCard(BuildContext context, double width, AdminHomeState adminHomeState) {
-    final colorScheme = Theme.of(context).colorScheme;
+ Widget _datesCard(BuildContext context, double width, AdminHistoryState historyState) {
+    // final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
       width: width * 0.95,
@@ -227,39 +227,47 @@ class MyAdminOrderHistoryView extends StatelessWidget {
         children: [
           _sectionLabel(context, 'ORDENADO'),
           const SizedBox(height: 6),
-          // Fecha y hora más juntas
+          // Fecha y hora más juntas (color normal)
           Row(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              _dateItem(context, Icons.calendar_month_rounded, formatDateToYMD(adminHomeState.selectedOrder.initDate)),
+              _dateItem(
+                context,
+                Icons.calendar_month_rounded,
+                formatDateToYMD(historyState.selectedOrder.initDate),
+              ),
               const SizedBox(width: 7),
-              _dateItem(context, Icons.access_time_rounded, formatTimeToAmPm(adminHomeState.selectedOrder.initDate, uppercaseSuffix: false)),
+              _dateItem(
+                context,
+                Icons.access_time_rounded,
+                formatTimeToAmPm(
+                  historyState.selectedOrder.initDate,
+                  uppercaseSuffix: false,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
           _sectionLabel(context, 'ENTREGA ESTIMADA'),
           const SizedBox(height: 6),
+          // Entrega estimada también en color normal
           Row(
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Icon(Icons.calendar_month_rounded, color: colorScheme.primary, size: 18),
-                    const SizedBox(width: 6),
-                    Text(
-                      adminHomeState.selectedOrder.estimatedDeliveryTime != null
-                          ? '${formatDateToYMD(adminHomeState.selectedOrder.estimatedDeliveryTime!)} • ${formatTimeToAmPm(adminHomeState.selectedOrder.estimatedDeliveryTime!, uppercaseSuffix: false)}'
-                          : '-- • --',
-                      style: TextStyle(
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
+              _dateItem(
+                context,
+                Icons.calendar_month_rounded,
+                formatDateToYMD(historyState.selectedOrder.finalDate)
+              ),
+              const SizedBox(width: 7),
+              _dateItem(
+                context,
+                Icons.access_time_rounded,
+                formatTimeToAmPm(
+                  historyState.selectedOrder.finalDate,
+                  uppercaseSuffix: false,
                 ),
               ),
-              // Sin botón Cambiar en el historial
             ],
           ),
           const SizedBox(height: 12),
@@ -273,14 +281,20 @@ class MyAdminOrderHistoryView extends StatelessWidget {
                   spacing: 6,
                   runSpacing: 6,
                   children: [
-                    _detailChip(context, label: adminHomeState.selectedOrder.format),
-                    _detailChip(context, label: adminHomeState.selectedOrder.isColor ? 'Color' : 'B/N'),
-                    _detailChip(context, label: '${adminHomeState.selectedOrder.pages} pág'),
+                    _detailChip(context, label: historyState.selectedOrder.format),
+                    _detailChip(
+                      context,
+                      label: historyState.selectedOrder.isColor ? 'Color' : 'B/N',
+                    ),
+                    _detailChip(
+                      context,
+                      label: '${historyState.selectedOrder.pages} pág',
+                    ),
                   ],
                 ),
               ),
               // Chip de método de pago a la derecha
-              _paymentMethodChip(context, isCardPayment: true),
+              _paymentMethodChip(context, isCardPayment: (historyState.selectedOrder.paymentMethod! is! String), paymentMethodObject: historyState.selectedOrder.paymentMethod!),
             ],
           ),
         ],
@@ -292,7 +306,7 @@ class MyAdminOrderHistoryView extends StatelessWidget {
   Widget _previewCard(
     BuildContext context,
     double width,
-    AdminHomeState adminHomeState,
+    AdminHistoryState adminHistoryState,
     VoidCallback viewThePdf,
     VoidCallback printPdf,
   ) {
@@ -343,7 +357,7 @@ class MyAdminOrderHistoryView extends StatelessWidget {
                   Container(
                     constraints: BoxConstraints(maxWidth: width * 0.6),
                     child: Text(
-                      adminHomeState.selectedOrder.pdfName,
+                      adminHistoryState.selectedOrder.pdfName,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
@@ -356,7 +370,7 @@ class MyAdminOrderHistoryView extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${adminHomeState.selectedOrder.pages} páginas',
+                    '${adminHistoryState.selectedOrder.pages} páginas',
                     style: TextStyle(
                       color: colorScheme.inverseSurface.withOpacity(0.7),
                       fontSize: 12,
@@ -468,32 +482,35 @@ class MyAdminOrderHistoryView extends StatelessWidget {
     );
   }
 
-  Widget _paymentMethodChip(BuildContext context, {required bool isCardPayment}) {
+  Widget _paymentMethodChip(BuildContext context, {required bool isCardPayment, required Object? paymentMethodObject}) {
     final paymentMethod = isCardPayment ? 'Tarjeta' : 'Efectivo';
     final icon = isCardPayment ? Icons.credit_card_rounded : Icons.money_rounded;
     final backgroundColor = isCardPayment ? Colors.blue : Colors.green;
     
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: backgroundColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: backgroundColor.withOpacity(0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: backgroundColor),
-          const SizedBox(width: 4),
-          Text(
-            paymentMethod,
-            style: TextStyle(
-              color: backgroundColor,
-              fontWeight: FontWeight.w600,
-              fontSize: 11,
+    return GestureDetector(
+      onTap: () => context.push(Routes.paymentMethodHistory, extra: paymentMethodObject),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: backgroundColor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: backgroundColor.withOpacity(0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 12, color: backgroundColor),
+            const SizedBox(width: 4),
+            Text(
+              paymentMethod,
+              style: TextStyle(
+                color: backgroundColor,
+                fontWeight: FontWeight.w600,
+                fontSize: 11,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

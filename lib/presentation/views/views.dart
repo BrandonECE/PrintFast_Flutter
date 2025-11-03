@@ -1,5 +1,7 @@
 
 //User
+
+export 'package:printfast_rebuild/presentation/views/user_views/home/payment/pay_outstanding_view.dart';
 export 'package:printfast_rebuild/presentation/views/user_views/home/order_active/payment/change_payment_method_view.dart';
 export 'package:printfast_rebuild/presentation/views/user_views/home/payment/manage_cards_view.dart';
 export 'package:printfast_rebuild/presentation/views/user_views/home/order_active/live_tracking/live_tracking_view.dart';
@@ -31,6 +33,7 @@ export 'package:printfast_rebuild/presentation/views/admin_views/admin_home/admi
 export 'package:printfast_rebuild/presentation/views/admin_views/admin_home/admin_notifications_view.dart';
 export 'package:printfast_rebuild/presentation/views/admin_views/admin_home/admin_orders_history/admin_month_orders_history_selected_view.dart';
 export 'package:printfast_rebuild/presentation/views/admin_views/admin_home/admin_orders/admin_code_validation/admin_code_validation_view.dart';
+export 'package:printfast_rebuild/presentation/views/admin_views/admin_home/admin_orders/payment/admin_see_user_payment_method_view.dart';
 
 
 //Shared

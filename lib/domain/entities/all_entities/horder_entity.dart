@@ -2,27 +2,31 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:printfast_rebuild/domain/entities/entities.dart';
 
 class HorderEntity {
+
+  final String copyShopName;
+  final String userRegistration;
+  final String userName;
   final DateTime finalDate;
   final String format;
   final DateTime initDate;
   final bool isColor;
-  final String name;
   final int pages;
   final String pdfName;
   final String place;
   final double price;
   final String url;
   final String orderCode;
-  final String copyShopName;
   final Object? paymentMethod;
   final bool hasItBeenCanceled;
 
   HorderEntity({
+    required this.copyShopName,
+    required this.userRegistration,
+    required this.userName,
     required this.finalDate,
     required this.format,
     required this.initDate,
     required this.isColor,
-    required this.name,
     required this.pages,
     required this.pdfName,
     required this.place,
@@ -30,7 +34,6 @@ class HorderEntity {
     required this.url,
     required this.paymentMethod,
     required this.orderCode,
-    required this.copyShopName,
     required this.hasItBeenCanceled,
   });
 
@@ -76,18 +79,19 @@ class HorderEntity {
     }
 
     return HorderEntity(
+      copyShopName: map['copyShopName']?.toString() ?? '',
+      userName: map['userName']?.toString() ?? '',
+      userRegistration: map['userRegistration']?.toString() ?? '',
       finalDate: toDate(map['finalDate']) ?? DateTime.now(),
       format: map['format']?.toString() ?? '',
       initDate: toDate(map['initDate']) ?? DateTime.now(),
       isColor: toBool(map['isColor']),
-      name: map['name']?.toString() ?? '',
       pages: toInt(map['pages']),
       pdfName: map['pdfName']?.toString() ?? '',
       place: map['place']?.toString() ?? '',
       price: toDouble(map['price']),
       url: map['url']?.toString() ?? '',
       paymentMethod: toPaymentMethodObject(map['paymentMethod']),
-      copyShopName: map['copyShopName']?.toString() ?? '',
       orderCode: map['orderCode']?.toString() ?? '',
       hasItBeenCanceled: map['hasItBeenCanceledByUser'] ?? false,
     );
@@ -98,7 +102,6 @@ class HorderEntity {
     'format': format,
     'initDate': initDate,
     'isColor': isColor,
-    'name': name,
     'pages': pages,
     'pdfName': pdfName,
     'place': place,
@@ -112,11 +115,12 @@ class HorderEntity {
 
   static final List<HorderEntity> examples = [
     HorderEntity(
+      userName: "Brandon Cantu",
+      userRegistration: "1974238",
       finalDate: now.add(const Duration(minutes: 35)),
       format: "A4",
       initDate: now,
       isColor: true,
-      name: "Trabajo Escolar",
       pages: 12,
       pdfName: "trabajo_escolar.pdf",
       place: "CopyShop Central",
@@ -129,11 +133,12 @@ class HorderEntity {
       hasItBeenCanceled: false,
     ),
     HorderEntity(
+      userName: "Brandon Cantu",
+      userRegistration: "1974238",
       finalDate: now.subtract(const Duration(hours: 1)),
       format: "Carta",
       initDate: now.subtract(const Duration(days: 1)),
       isColor: false,
-      name: "Anexo",
       pages: 4,
       pdfName: "anexo.pdf",
       place: "CopyShop Norte",
@@ -145,11 +150,12 @@ class HorderEntity {
       hasItBeenCanceled: true,
     ),
     HorderEntity(
+      userName: "Brandon Cantu",
+      userRegistration: "1974238",
       finalDate: now.subtract(const Duration(days: 2)),
       format: "A3",
       initDate: now.subtract(const Duration(days: 3)),
       isColor: true,
-      name: "Poster Evento",
       pages: 2,
       pdfName: "poster.pdf",
       place: "CopyShop Sur",
@@ -164,11 +170,12 @@ class HorderEntity {
   ];
 
   static final HorderEntity empty = HorderEntity(
+    userName: "",
+    userRegistration: "",
     finalDate: DateTime.now(),
     format: "",
     initDate: DateTime.now(),
     isColor: false,
-    name: "",
     pages: 0,
     pdfName: "",
     place: "",

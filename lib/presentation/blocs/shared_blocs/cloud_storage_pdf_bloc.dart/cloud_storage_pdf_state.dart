@@ -8,7 +8,7 @@ final class CloudStoragePdfState extends Equatable {
   const CloudStoragePdfState({
     required this.fileFromCloudStorage,
     required this.cloudStoragePdfViewStatus,
-    required this.cloudStoragePrintPdfStatus
+    required this.cloudStoragePrintPdfStatus,
   });
   final Uint8List? fileFromCloudStorage;
   final CloudStoragePdfViewStatus cloudStoragePdfViewStatus;
@@ -17,18 +17,23 @@ final class CloudStoragePdfState extends Equatable {
   CloudStoragePdfState copyWith({
     Uint8List? fileFromCloudStorage,
     CloudStoragePdfViewStatus? cloudStoragePdfViewStatus,
-    CloudStoragePrintPdfStatus? cloudStoragePrintPdfStatus
+    CloudStoragePrintPdfStatus? cloudStoragePrintPdfStatus,
   }) {
     return CloudStoragePdfState(
       fileFromCloudStorage: fileFromCloudStorage ?? this.fileFromCloudStorage,
       cloudStoragePdfViewStatus:
           cloudStoragePdfViewStatus ?? this.cloudStoragePdfViewStatus,
-          cloudStoragePrintPdfStatus: cloudStoragePrintPdfStatus ?? this.cloudStoragePrintPdfStatus
+      cloudStoragePrintPdfStatus:
+          cloudStoragePrintPdfStatus ?? this.cloudStoragePrintPdfStatus,
     );
   }
 
   @override
-  List<Object?> get props => [fileFromCloudStorage, cloudStoragePdfViewStatus, cloudStoragePrintPdfStatus];
+  List<Object?> get props => [
+    fileFromCloudStorage,
+    cloudStoragePdfViewStatus,
+    cloudStoragePrintPdfStatus,
+  ];
 }
 
 final class CloudStoragePdfViewInitial extends CloudStoragePdfState {
@@ -36,6 +41,6 @@ final class CloudStoragePdfViewInitial extends CloudStoragePdfState {
     : super(
         fileFromCloudStorage: null,
         cloudStoragePdfViewStatus: CloudStoragePdfViewStatus.loading,
-        cloudStoragePrintPdfStatus: CloudStoragePrintPdfStatus.initial
+        cloudStoragePrintPdfStatus: CloudStoragePrintPdfStatus.initial,
       );
 }

@@ -2,6 +2,25 @@ part of 'admin_home_bloc.dart';
 
 enum AdminHomeLogOutStatus { initial, loading, success, failure }
 
+enum AdminAordersStatus { initial, loading, success, failure }
+
+enum AdminCountNotificationsStatus { idle, loading, success, failure }
+
+enum AdminReceptionStatus { initial, loading, success, requestFailure, connectionFailure, }
+enum PendingOrderDecision { none, accept, reject }
+
+enum PendingOrderStatus { idle, loading, success, failure }
+
+enum AdminHomeActions {
+  none,
+  accessPendingOrder, // Para acceder a una orden pendiente
+  togglePauseReception, // Para cambiar el valor de pauseReceptionValue
+  makePendingOrderDecision, // Para aceptar o rechazar una orden pendiente
+
+  accessAcceptedOrder, // Para acceder a una orden aceptada
+  printPDF,
+}
+
 class AdminHomeState extends Equatable {
   const AdminHomeState({
     required this.currentIndex,
@@ -10,19 +29,42 @@ class AdminHomeState extends Equatable {
     required this.adminRegistration,
     required this.acceptedOrders,
     required this.pendingOrders,
-    required this.monthOrderHistoryMap,
-    required this.monthOrderHistoryElementSelected,
     required this.selectedOrder,
+    required this.selectedPendingOrderCode,
+    required this.userEntity,
+    required this.copyShopEntity,
+    required this.adminAordersStatus,
+    required this.unseenNotificationsCount,
+    required this.notificationsStatus,
+    required this.notificationsErrorMessage,
+    required this.receptionStatus,
+    required this.receptionErrorMessage,
+    required this.pendingOrderDecision,
+    required this.pendingOrderStatus,
+    required this.pendingOrderErrorMessage,
+    required this.adminHomeActions
   });
+
   final int currentIndex;
   final AdminHomeLogOutStatus adminHomeLogOutStatus;
   final String? messageError;
   final String adminRegistration;
   final List<AorderEntity> acceptedOrders;
   final List<AorderEntity> pendingOrders;
-  final Map<String, List<AorderEntity>> monthOrderHistoryMap;
-  final Map<String, List<AorderEntity>> monthOrderHistoryElementSelected;
   final AorderEntity selectedOrder;
+  final String selectedPendingOrderCode;
+  final UserEntity userEntity;
+  final CopyShopEntity copyShopEntity;
+  final AdminAordersStatus adminAordersStatus;
+  final int unseenNotificationsCount;
+  final AdminCountNotificationsStatus notificationsStatus;
+  final String? notificationsErrorMessage;
+  final AdminReceptionStatus receptionStatus;
+  final String? receptionErrorMessage;
+  final PendingOrderDecision pendingOrderDecision;
+  final PendingOrderStatus pendingOrderStatus;
+  final String? pendingOrderErrorMessage;
+  final AdminHomeActions adminHomeActions;
 
   AdminHomeState copyWith({
     int? currentIndex,
@@ -31,22 +73,48 @@ class AdminHomeState extends Equatable {
     String? adminRegistration,
     List<AorderEntity>? acceptedOrders,
     List<AorderEntity>? pendingOrders,
-    Map<String, List<AorderEntity>>? monthOrderHistoryMap,
-    Map<String, List<AorderEntity>>? monthOrderHistoryElementSelected,
     AorderEntity? selectedOrder,
+    String? selectedPendingOrderCode,
+    UserEntity? userEntity,
+    CopyShopEntity? copyShopEntity,
+    AdminAordersStatus? adminAordersStatus,
+    int? unseenNotificationsCount,
+    AdminCountNotificationsStatus? notificationsStatus,
+    String? notificationsErrorMessage,
+    AdminReceptionStatus? receptionStatus,
+    String? receptionErrorMessage,
+    PendingOrderDecision? pendingOrderDecision,
+    PendingOrderStatus? pendingOrderStatus,
+    String? pendingOrderErrorMessage,
+    AdminHomeActions? adminHomeActions
   }) {
     return AdminHomeState(
       currentIndex: currentIndex ?? this.currentIndex,
-      adminHomeLogOutStatus: adminHomeLogOutStatus ?? this.adminHomeLogOutStatus,
+      adminHomeLogOutStatus:
+          adminHomeLogOutStatus ?? this.adminHomeLogOutStatus,
       messageError: messageError ?? this.messageError,
       adminRegistration: adminRegistration ?? this.adminRegistration,
       acceptedOrders: acceptedOrders ?? this.acceptedOrders,
       pendingOrders: pendingOrders ?? this.pendingOrders,
-      monthOrderHistoryMap: monthOrderHistoryMap ?? this.monthOrderHistoryMap,
       selectedOrder: selectedOrder ?? this.selectedOrder,
-      monthOrderHistoryElementSelected:
-          monthOrderHistoryElementSelected ??
-          this.monthOrderHistoryElementSelected,
+      selectedPendingOrderCode:
+          selectedPendingOrderCode ?? this.selectedPendingOrderCode,
+      userEntity: userEntity ?? this.userEntity,
+      copyShopEntity: copyShopEntity ?? this.copyShopEntity,
+      adminAordersStatus: adminAordersStatus ?? this.adminAordersStatus,
+      unseenNotificationsCount:
+          unseenNotificationsCount ?? this.unseenNotificationsCount,
+      notificationsStatus: notificationsStatus ?? this.notificationsStatus,
+      notificationsErrorMessage:
+          notificationsErrorMessage ?? this.notificationsErrorMessage,
+      receptionStatus: receptionStatus ?? this.receptionStatus,
+      receptionErrorMessage:
+          receptionErrorMessage ?? this.receptionErrorMessage,
+      pendingOrderDecision: pendingOrderDecision ?? this.pendingOrderDecision,
+      pendingOrderStatus: pendingOrderStatus ?? this.pendingOrderStatus,
+      pendingOrderErrorMessage:
+          pendingOrderErrorMessage ?? this.pendingOrderErrorMessage,
+      adminHomeActions: adminHomeActions ?? this.adminHomeActions
     );
   }
 
@@ -58,9 +126,20 @@ class AdminHomeState extends Equatable {
     adminRegistration,
     acceptedOrders,
     pendingOrders,
-    monthOrderHistoryMap,
     selectedOrder,
-    monthOrderHistoryElementSelected,
+    selectedPendingOrderCode,
+    userEntity,
+    copyShopEntity,
+    adminAordersStatus,
+    unseenNotificationsCount,
+    notificationsStatus,
+    notificationsErrorMessage,
+    receptionStatus,
+    receptionErrorMessage,
+    pendingOrderDecision,
+    pendingOrderStatus,
+    pendingOrderErrorMessage,
+    adminHomeActions
   ];
 }
 
@@ -73,12 +152,19 @@ final class AdminHomeInitial extends AdminHomeState {
         adminRegistration: "-------",
         acceptedOrders: AorderEntity.acceptedOrdersExample,
         pendingOrders: AorderEntity.pendingOrders,
-        monthOrderHistoryElementSelected: {'Empty': []},
-        monthOrderHistoryMap: {
-          'Enero - 2025': [AorderEntity.historyOrders[0]],
-          'Febrero - 2025': [AorderEntity.historyOrders[1]],
-          'Marzo - 2025': [AorderEntity.historyOrders[2]],
-        },
-        selectedOrder: AorderEntity.aorderEntityExample,
+        selectedOrder: AorderEntity.aorderEntityEmpty,
+        selectedPendingOrderCode: AorderEntity.aorderEntityEmpty.orderCode,
+        userEntity: UserEntity.defaultAdminValues,
+        copyShopEntity: CopyShopEntity.defaultCopyShopValues,
+        adminAordersStatus: AdminAordersStatus.initial,
+        unseenNotificationsCount: 0,
+        notificationsStatus: AdminCountNotificationsStatus.idle,
+        notificationsErrorMessage: null,
+        receptionStatus: AdminReceptionStatus.initial,
+        receptionErrorMessage: null,
+        pendingOrderDecision: PendingOrderDecision.none,
+        pendingOrderStatus: PendingOrderStatus.idle,
+        pendingOrderErrorMessage: null,
+        adminHomeActions: AdminHomeActions.none
       );
 }

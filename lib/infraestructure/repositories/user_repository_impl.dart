@@ -163,5 +163,41 @@ class UserRepositoryImpl extends UserRepository {
       return Future.error(e);
     }
   }
+  
+  @override
+  Future<void> deleteUserOrder(String copyShopEmail, String registration, AorderEntity aorder) async {
+    try {
+      return await userService.deleteUserOrder(copyShopEmail, registration, aorder);
+    } catch (e) {
+      return Future.error(e);
+    }
+  }
+  
+  @override
+  Future<void> changeOrderPaymentMethod(String userRegistration, String copyShopEmail, String orderCode, String paymentMethod) async {
+    try {
+      return await userService.changeOrderPaymentMethod(userRegistration, copyShopEmail, orderCode, paymentMethod);
+    } catch (e) {
+      return Future.error(e);
+    }
+  }
+  
+  @override
+  Future<double> getOutstandingCharges(String registration) async {
+    try {
+      return await userService.getOutstandingCharges(registration);
+    } catch (e) {
+      return Future.error(e);
+    }
+  }
+  
+  @override
+  Future<void> payOutstandingCharges(String registration) async {
+    try {
+      return await userService.payOutstandingCharges(registration);
+    } catch (e) {
+      return Future.error(e);
+    }
+  }
 
 }

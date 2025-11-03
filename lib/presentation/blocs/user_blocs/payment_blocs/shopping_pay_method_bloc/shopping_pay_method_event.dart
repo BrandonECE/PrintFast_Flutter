@@ -28,7 +28,11 @@ class SetDefaultCard extends ShoppingPayMethodEvent {
 }
 
 class ConfirmPayment extends ShoppingPayMethodEvent {
-  const ConfirmPayment();
+  final double amount;
+  final String userRegistration;
+  const ConfirmPayment({required this.amount, required this.userRegistration});
+  @override
+  List<Object?> get props => [amount, userRegistration];
 }
 
 class ChangeActionMethodPayStatusEvent extends ShoppingPayMethodEvent {

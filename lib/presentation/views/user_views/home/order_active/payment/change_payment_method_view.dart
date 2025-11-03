@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:printfast_rebuild/config/routes/routes.dart';
 import 'package:printfast_rebuild/di/service_locator.dart';
+import 'package:printfast_rebuild/domain/entities/all_entities/aorder_entity.dart';
 import 'package:printfast_rebuild/domain/entities/all_entities/card_payment_method_entity.dart';
 import 'package:printfast_rebuild/domain/repositories/user_repository.dart';
 import 'package:printfast_rebuild/presentation/blocs/shared_blocs/message_error_warning_bloc/message_error_warning_bloc.dart';
@@ -18,11 +19,12 @@ class MyChangePaymentMethodView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final homeBlocState = context.read<HomeBloc>().state;
+    final homeBlocState = context.watch<HomeBloc>().state;
     final currentPaymentMethodId = homeBlocState.activeOrder!.paymentMethod;
     final registration = homeBlocState.userEntity.registration;
 
     return _myChangePaymentMethodScreen(
+      homeBlocState.activeOrder,
       registration,
       currentPaymentMethodId,
       context,
@@ -30,6 +32,7 @@ class MyChangePaymentMethodView extends StatelessWidget {
   }
 
   BlocProvider<ChangePaymentMethodBloc> _myChangePaymentMethodScreen(
+    AorderEntity? activeOrder,
     String registration,
     String currentPaymentMethodId,
     BuildContext context,
@@ -58,9 +61,14 @@ class MyChangePaymentMethodView extends StatelessWidget {
               MyMessageErrorWarning(
                 voidCallback: () {
                   if (state.changeStatus ==
-                      ChangePaymentMethodActionStatus.idle) {
+                          ChangePaymentMethodActionStatus.idle &&
+                      activeOrder != null) {
                     context.read<ChangePaymentMethodBloc>().add(
-                      ConfirmChange(),
+                      ConfirmChange(
+                        userRegistration: activeOrder.userRegistration,
+                        copyShopEmail: activeOrder.copyShopEmail,
+                        orderCode: activeOrder.orderCode,
+                      ),
                     );
                   } else if (state.changeStatus ==
                       ChangePaymentMethodActionStatus.failure) {
@@ -220,34 +228,65 @@ class _ChangePaymentMethodViewContent extends StatelessWidget {
     return const Center(child: MyLoadingIndicator());
   }
 
-  Widget _buildErrorContent(String error, BuildContext context) {
+  Widget _buildErrorContent(String message, BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 18.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.error_outline_rounded,
-              size: 48,
-              color: Colors.red.shade400,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Error al cargar',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade700,
+            // Icono compacto
+            Container(
+              width: 66,
+              height: 66,
+              decoration: BoxDecoration(
+                color: colorScheme.primary.withOpacity(0.12),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.error_outline_rounded,
+                size: 32,
+                color: colorScheme.primary,
               ),
             ),
-            const SizedBox(height: 8),
+
+            const SizedBox(height: 12),
+
+            // Título
             Text(
-              error,
+              'Error al cargar',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+              style: TextStyle(
+                color: colorScheme.inverseSurface,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-            const SizedBox(height: 20),
+
+            const SizedBox(height: 6),
+
+            // Mensaje
+            Text(
+              message.isNotEmpty ? message : 'Revisa tu conexión',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: colorScheme.inverseSurface.withOpacity(0.78),
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+
+            const SizedBox(height: 14),
+
+            // Botón reintentar que dispara evento al bloc
             ElevatedButton(
               onPressed: () {
                 final currentMethodId = context
@@ -261,17 +300,21 @@ class _ChangePaymentMethodViewContent extends StatelessWidget {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
+                backgroundColor: colorScheme.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 20,
-                  vertical: 12,
+                  vertical: 10,
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
+                minimumSize: const Size(0, 38),
               ),
-              child: const Text('Reintentar'),
+              child: const Text(
+                'Reintentar',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+              ),
             ),
           ],
         ),
@@ -283,9 +326,6 @@ class _ChangePaymentMethodViewContent extends StatelessWidget {
     ChangePaymentMethodState state,
     BuildContext context,
   ) {
-    final currentMethodId = state.currentMethodId;
-    final currentMethodCard = state.currentMethodCard;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -351,6 +391,7 @@ class _ChangePaymentMethodViewContent extends StatelessWidget {
     ChangePaymentMethodState state,
     BuildContext context,
   ) {
+    
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -420,13 +461,16 @@ class _ChangePaymentMethodViewContent extends StatelessWidget {
     bool isCurrent, {
     VoidCallback? onTap,
   }) {
+    for (var element in state.savedCards) {
+      print("${element.brand} : isDeafult: ${element.isDefault}");
+    }
     return _buildPaymentMethod(
       id: 'cash',
       icon: Icons.money_rounded,
       title: "Efectivo",
       subtitle: "Paga al recibir tu pedido",
       color: Colors.orange,
-      isDefault: !state.savedCards.any((card) => card.isDefault,),
+      isDefault: !state.savedCards.any((card) => card.isDefault) && !state.currentMethodCard!.isDefault,
       isSelected: isSelected,
       isCurrent: isCurrent,
       onTap: onTap,
@@ -708,7 +752,11 @@ class _ChangePaymentMethodViewContent extends StatelessWidget {
       child: InkWell(
         onTap: () => context.push(
           Routes.manageCards,
-          extra: context.read<ChangePaymentMethodBloc>(),
+           extra: {
+            'passedBloc': context.read<ChangePaymentMethodBloc>(),
+            'voidCallBack': null
+          }
+        
         ),
         borderRadius: BorderRadius.circular(10),
         child: Container(
@@ -769,7 +817,7 @@ class _ChangePaymentMethodViewContent extends StatelessWidget {
                       context: context,
                       title: "¿Cambiar método de pago?",
                       text: "Cambiará el método actual.",
-                      showCancelButton: true
+                      showCancelButton: true,
                     );
                   }
                 : showLoad

@@ -1,4 +1,5 @@
 // lib/presentation/views/my_manage_cards_view.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +11,7 @@ import 'package:printfast_rebuild/presentation/blocs/shared_blocs/message_error_
 import 'package:printfast_rebuild/presentation/blocs/user_blocs/home_bloc/home_bloc.dart';
 import 'package:printfast_rebuild/presentation/blocs/user_blocs/payment_blocs/change_payment_method_bloc/change_payment_method_bloc.dart';
 import 'package:printfast_rebuild/presentation/blocs/user_blocs/payment_blocs/manage_cards_bloc/manage_cards_bloc.dart';
+import 'package:printfast_rebuild/presentation/blocs/user_blocs/payment_blocs/pay_outstanding_bloc/pay_outstanding_bloc.dart';
 import 'package:printfast_rebuild/presentation/blocs/user_blocs/payment_blocs/shopping_pay_method_bloc/shopping_pay_method_bloc.dart';
 
 import 'package:printfast_rebuild/presentation/widgets/widgets.dart';
@@ -17,15 +19,20 @@ import 'package:printfast_rebuild/presentation/widgets/widgets.dart';
 import '../../../../../utils/utils.dart';
 
 class MyManageCardsView extends StatelessWidget {
-  const MyManageCardsView({super.key, required this.extra});
-  final Object? extra;
+  const MyManageCardsView({
+    super.key,
+    required this.passedBloc,
+    required this.voidCallBack,
+  });
+  final Object? passedBloc;
+  final Object? voidCallBack;
 
   @override
   Widget build(BuildContext context) {
     final homeBlocState = context.read<HomeBloc>().state;
     final registration = homeBlocState.userEntity.registration;
 
-    return _myManageCardsView(registration, extra);
+    return _myManageCardsView(registration, passedBloc);
   }
 
   BlocProvider<ManageCardsBloc> _myManageCardsView(
@@ -46,7 +53,10 @@ class MyManageCardsView extends StatelessWidget {
             children: [
               Align(
                 alignment: Alignment.center,
-                child: _ManageCardsViewContent(extra: extra),
+                child: _ManageCardsViewContent(
+                  passedBloc: extra,
+                  voidCallBack: voidCallBack,
+                ),
               ),
               MyMessageErrorWarning(
                 voidCallback: () {
@@ -54,7 +64,11 @@ class MyManageCardsView extends StatelessWidget {
                     context.read<ManageCardsBloc>().add(const SaveChanges());
                   } else if (state.saveStatus ==
                       ActionManageCardsStatus.failure) {
-                    context.read<ManageCardsBloc>().add(ChangeActionManageCardsStatusEvent(saveStatus: ActionManageCardsStatus.idle));
+                    context.read<ManageCardsBloc>().add(
+                      ChangeActionManageCardsStatusEvent(
+                        saveStatus: ActionManageCardsStatus.idle,
+                      ),
+                    );
                   }
 
                   messageErrorWarningBloc.add(
@@ -73,8 +87,12 @@ class MyManageCardsView extends StatelessWidget {
 }
 
 class _ManageCardsViewContent extends StatelessWidget {
-  const _ManageCardsViewContent({required this.extra});
-  final Object? extra;
+  const _ManageCardsViewContent({
+    required this.passedBloc,
+    required this.voidCallBack,
+  });
+  final Object? passedBloc;
+  final Object? voidCallBack;
 
   static const Duration _animDur = Duration(milliseconds: 225);
   static const Curve _animCurve = Curves.easeOut;
@@ -98,8 +116,8 @@ class _ManageCardsViewContent extends StatelessWidget {
       body: BlocListener<ManageCardsBloc, ManageCardsState>(
         listener: (context, state) {
           if (state.saveStatus == ActionManageCardsStatus.success) {
-            final passedBloc = extra;
-            _successfulManageCardHandle(passedBloc, context);
+            final passedBloc = this.passedBloc;
+            _successfulManageCardHandle(passedBloc, context, voidCallBack as VoidCallback?);
             context.pop();
           } else if (state.saveStatus == ActionManageCardsStatus.failure &&
               state.errorMessage != null) {
@@ -154,7 +172,7 @@ class _ManageCardsViewContent extends StatelessWidget {
                       ),
 
                       // Botones de acción (siempre visibles)
-                      _buildActionButtonsSection(context),
+                      _buildActionButtonsSection(context, voidCallBack),
                     ],
                   );
                 },
@@ -166,7 +184,11 @@ class _ManageCardsViewContent extends StatelessWidget {
     );
   }
 
-  void _successfulManageCardHandle(Object? passedBloc, BuildContext context) {
+  void _successfulManageCardHandle(
+    Object? passedBloc,
+    BuildContext context,
+    VoidCallback? voidCallBack,
+  ) {
     if (passedBloc is ShoppingPayMethodBloc) {
       context.read<ShoppingPayMethodBloc>().add(const LoadSavedCards());
     } else if (passedBloc is ChangePaymentMethodBloc) {
@@ -179,10 +201,17 @@ class _ManageCardsViewContent extends StatelessWidget {
               .paymentMethod,
         ),
       );
+    } else if (passedBloc is PayOutstandingBloc) {
+      context.read<PayOutstandingBloc>().add(const LoadCardsForOutstanding());
+      voidCallBack?.call();
     }
   }
 
-  void _successfulAddCardHandle(Object? passedBloc, BuildContext context) {
+  void _successfulAddCardHandle(
+    Object? passedBloc,
+    BuildContext context,
+    VoidCallback? voidCallBack,
+  ) {
     if (passedBloc is ShoppingPayMethodBloc) {
       context.read<ShoppingPayMethodBloc>().add(const LoadSavedCards());
     } else if (passedBloc is ChangePaymentMethodBloc) {
@@ -195,6 +224,9 @@ class _ManageCardsViewContent extends StatelessWidget {
               .paymentMethod,
         ),
       );
+    } else if (passedBloc is PayOutstandingBloc) {
+      context.read<PayOutstandingBloc>().add(const LoadCardsForOutstanding());
+      voidCallBack?.call();
     }
     context.read<ManageCardsBloc>().add(const LoadUserCards());
   }
@@ -560,7 +592,9 @@ class _ManageCardsViewContent extends StatelessWidget {
                                           onTap: () => context
                                               .read<ManageCardsBloc>()
                                               .add(
-                                                SetCardAsDefault(cardId: card.token),
+                                                SetCardAsDefault(
+                                                  cardId: card.token,
+                                                ),
                                               ),
                                           borderRadius: BorderRadius.circular(
                                             6,
@@ -846,7 +880,10 @@ class _ManageCardsViewContent extends StatelessWidget {
   // ------------------------
   // Action buttons section (inline)
   // ------------------------
-  Widget _buildActionButtonsSection(BuildContext context) {
+  Widget _buildActionButtonsSection(
+    BuildContext context,
+    Object? voidCallBack,
+  ) {
     return BlocBuilder<ManageCardsBloc, ManageCardsState>(
       builder: (context, state) {
         return Container(
@@ -861,7 +898,7 @@ class _ManageCardsViewContent extends StatelessWidget {
           ),
           child: Column(
             children: [
-              _addCardButton(context, extra),
+              _addCardButton(context, passedBloc, voidCallBack),
               const SizedBox(height: 16),
               _saveButton(context, state),
             ],
@@ -871,7 +908,11 @@ class _ManageCardsViewContent extends StatelessWidget {
     );
   }
 
-  Widget _addCardButton(BuildContext context, Object? extra) {
+  Widget _addCardButton(
+    BuildContext context,
+    Object? extra,
+    Object? voidCallBack,
+  ) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -879,7 +920,7 @@ class _ManageCardsViewContent extends StatelessWidget {
           Routes.addCard,
           extra: () {
             //Sucessful Response
-            _successfulAddCardHandle(extra, context);
+            _successfulAddCardHandle(extra, context, voidCallBack as VoidCallback?);
           },
         ),
         borderRadius: BorderRadius.circular(10),

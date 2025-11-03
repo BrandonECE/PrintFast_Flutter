@@ -2,6 +2,7 @@ import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:printfast_rebuild/presentation/blocs/admin_blocs/admin_change_report_date_range_bloc/admin_change_report_date_range_bloc.dart';
+import 'package:printfast_rebuild/presentation/blocs/admin_blocs/admin_reports_bloc/admin_reports_bloc.dart';
 
 class MyDateRangeBottomSheet extends StatelessWidget {
   const MyDateRangeBottomSheet({super.key});
@@ -9,6 +10,7 @@ class MyDateRangeBottomSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final adminChangeReportDateRangeBloc = context.read<AdminChangeReportDateRangeBloc>();
+    final adminReportsBloc = context.read<AdminReportsBloc>();
     final colorScheme = Theme.of(context).colorScheme;
     final screenHeight = MediaQuery.of(context).size.height;
     
@@ -57,10 +59,10 @@ class MyDateRangeBottomSheet extends StatelessWidget {
                   elevation: 8,
                   child: Container(
                     constraints: BoxConstraints(
-                      maxHeight: screenHeight * 0.7, // Máximo 70% de la pantalla
+                      maxHeight: screenHeight * 0.7,
                     ),
                     padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-                    child: SingleChildScrollView( // Permite scroll si es necesario
+                    child: SingleChildScrollView(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -107,7 +109,7 @@ class MyDateRangeBottomSheet extends StatelessWidget {
                           
                           const SizedBox(height: 12),
                           
-                          // Selector de rango de fechas (más compacto)
+                          // Selector de rango de fechas
                           _myDateRangeBottomSheet(context),
                           
                           const SizedBox(height: 16),
@@ -116,11 +118,27 @@ class MyDateRangeBottomSheet extends StatelessWidget {
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
-                              onPressed: () => adminChangeReportDateRangeBloc.add(
-                                AdminShowChangeReportDateRangeEvent(
-                                  showChangeReportDateRangeBottomSheet: false,
-                                ),
-                              ),
+                              onPressed: () {
+                                final selectedDateRange = state.selectedDateRange;
+                                if (selectedDateRange.length == 2 && 
+                                    selectedDateRange[0] != null && 
+                                    selectedDateRange[1] != null) {
+                                  // Cargar reportes con el nuevo rango
+                                  adminReportsBloc.add(
+                                    LoadAdminReports(
+                                      startDate: selectedDateRange[0]!,
+                                      endDate: selectedDateRange[1]!,
+                                    ),
+                                  );
+                                }
+                                
+                                // Cerrar el bottom sheet
+                                adminChangeReportDateRangeBloc.add(
+                                  AdminShowChangeReportDateRangeEvent(
+                                    showChangeReportDateRangeBottomSheet: false,
+                                  ),
+                                );
+                              },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: colorScheme.primary,
                                 foregroundColor: colorScheme.onPrimary,
@@ -153,13 +171,14 @@ class MyDateRangeBottomSheet extends StatelessWidget {
   }
 
   Widget _myDateRangeBottomSheet(BuildContext context) {
+    final adminChangeReportDateRangeBloc = context.read<AdminChangeReportDateRangeBloc>();
     final primaryColor = Theme.of(context).colorScheme.primary;
     final today = DateTime.now();
     final minDate = DateTime(2025, 1, 1);
     final maxDate = DateTime(today.year, today.month, today.day);
     
     return Container(
-      height: 280, // Reducido de 300 a 280
+      height: 280,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
       ),
@@ -171,34 +190,38 @@ class MyDateRangeBottomSheet extends StatelessWidget {
           selectedDayHighlightColor: primaryColor,
           weekdayLabels: const ["L", "M", "M", "J", "V", "S", "D"],
           weekdayLabelTextStyle: TextStyle(
-            fontSize: 12, // Reducido de 12 a 11
+            fontSize: 12,
             fontWeight: FontWeight.w600,
             color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
           ),
           dayTextStyle: TextStyle(
-            fontSize: 14, // Reducido de 14 a 13
+            fontSize: 14,
             color: Theme.of(context).colorScheme.onSurface,
           ),
           daySplashColor: Colors.transparent,
           selectedDayTextStyle: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
-            fontSize: 14, // Reducido de 14 a 13
+            fontSize: 14,
           ),
           controlsTextStyle: TextStyle(
             color: primaryColor,
             fontWeight: FontWeight.w600,
-            fontSize: 14, // Reducido de 14 a 13
+            fontSize: 14,
           ),
           centerAlignModePicker: true,
           customModePickerIcon: const SizedBox(),
           yearTextStyle: TextStyle(
             color: Theme.of(context).colorScheme.onSurface,
-            fontSize: 14, // Reducido de 14 a 13
+            fontSize: 14,
           ),
         ),
-        value: [],
-        onValueChanged: (dates) {},
+        value: adminChangeReportDateRangeBloc.state.selectedDateRange,
+        onValueChanged: (dates) {
+          adminChangeReportDateRangeBloc.add(
+            AdminUpdateSelectedDateRangeEvent(selectedDateRange: dates),
+          );
+        },
       ),
     );
   }

@@ -889,7 +889,7 @@ class MyShoppingLocationPickerView extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(18),
           child: Container(
-            height: panelHeight * 0.86,
+            height: panelHeight * 0.96,
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(18),

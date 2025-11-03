@@ -238,15 +238,15 @@ class _MyAddCardViewState extends State<MyAddCardView> {
         // Paleta: naranja (opaco), gris neutro para acento, blanco/gris, texto negro
         final bg = Colors.grey.shade50; // gris muy claro
         final border = Colors.grey.shade300; // gris borde
-        final accentLeftStart = const Color(
-          0xFFF4F5F7,
-        ); // gris muy muy claro (#F4F5F7)
-        final accentLeftEnd = const Color.fromARGB(
-          202,
-          227,
-          229,
-          232,
-        ); // gris claro suave (#E0E4EA)
+        // final accentLeftStart = const Color(
+        //   0xFFF4F5F7,
+        // ); // gris muy muy claro (#F4F5F7)
+        // final accentLeftEnd = const Color.fromARGB(
+        //   202,
+        //   227,
+        //   229,
+        //   232,
+        // ); // gris claro suave (#E0E4EA)
         final chipColor = Colors.orange.withOpacity(0.10); // naranja sutil
         final chipBorder = Colors.orange.withOpacity(0.22);
         final chipIconColor = Colors.orange; // icono naranja

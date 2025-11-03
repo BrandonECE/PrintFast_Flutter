@@ -18,63 +18,130 @@ class MyAdminOrderView extends StatelessWidget {
     final width = MediaQuery.of(context).size.width;
     // ignore: unused_local_variable
     final colorScheme = Theme.of(context).colorScheme;
-
+    final adminHomeBloc = context.read<AdminHomeBloc>();
     final cloudStoragePdfViewBloc = context.read<CloudStoragePdfBloc>();
     final messageErrorWarningBloc = context.read<MessageErrorWarningBloc>();
 
-    void handleErrorToPrint(MessageErrorWarningBloc messageErrorWarningBloc, CloudStoragePdfBloc cloudStoragePdfViewBloc) {
-     showSnackBar(context: context, title: "¡Error de impresión!", text: "No se pudo cargar el documento",);
-      messageErrorWarningBloc.add(
-        ShowMessageErrorWarningEvent(showMessageErrorWarning: true),
-      );
-      cloudStoragePdfViewBloc.add(
-        ChangeStatusPdfFileFromCloudStorageToPrintEvent(
-          cloudStoragePrintPdfStatus: CloudStoragePrintPdfStatus.initial,
-        ),
+    void thereWasAnError(BuildContext context, String errorMessage) {
+      showSnackBar(
+        context: context,
+        title: "¡Error inesperado!",
+        text: errorMessage,
       );
     }
 
-    return BlocListener<CloudStoragePdfBloc, CloudStoragePdfState>(
-      listener: (context, state) {
-        if (state.cloudStoragePrintPdfStatus == CloudStoragePrintPdfStatus.failure) {
-          handleErrorToPrint(messageErrorWarningBloc, cloudStoragePdfViewBloc);
+    return BlocConsumer<AdminHomeBloc, AdminHomeState>(
+      listenWhen: (prev, curr) =>
+          prev.pendingOrderStatus != curr.pendingOrderStatus,
+      listener: (context, adminHomeState) {
+        if (adminHomeState.pendingOrderStatus != PendingOrderStatus.loading) {
+          if (adminHomeState.pendingOrderStatus == PendingOrderStatus.failure) {
+            thereWasAnError(
+              context,
+              adminHomeState.pendingOrderErrorMessage ?? "",
+            );
+          } else if (adminHomeState.pendingOrderStatus ==
+              PendingOrderStatus.success) {
+            context.pop();
+          }
+          adminHomeBloc.add(
+            AdminHomeUpdatePendingOrderDecisionEvent(
+              pendingOrderDecision: PendingOrderDecision.none,
+            ),
+          );
         }
       },
-      child: BlocBuilder<AdminHomeBloc, AdminHomeState>(
-        builder: (context, state) {
-          void viewThePdf() {
-            cloudStoragePdfViewBloc.fileFromCloudStorage(state.selectedOrder.url);
-            context.push(Routes.cloudStoragePdfView);
-          }
+      builder: (context, adminHomeState) {
+        void viewThePdf() {
+          cloudStoragePdfViewBloc.fileFromCloudStorage(
+            adminHomeState.selectedOrder.url,
+          );
+          context.push(Routes.cloudStoragePdfView);
+        }
 
-          void printPdf() {
-            cloudStoragePdfViewBloc.printPdf(state.selectedOrder.url);
-          }
+        void printPdfHandle() {
+          final selectedOrder = adminHomeState.selectedOrder;
+          final userEntity = adminHomeState.userEntity;
+          cloudStoragePdfViewBloc.printPdf(
+            cloudStorageURL: selectedOrder.url,
+            userRegistration: userEntity.registration,
+            copyShopEmail: selectedOrder.copyShopEmail,
+            orderCode: selectedOrder.orderCode,
+            printDate: selectedOrder.printDate,
+          );
+        }
 
-          return Stack(
+        void printPdf() {
+          adminHomeBloc.add(
+            AdminHomeUpdateAdminHomeActionsEvent(
+              adminHomeActions: AdminHomeActions.printPDF,
+            ),
+          );
+          if (adminHomeState.selectedOrder.printDate == null) {
+            showSnackBar(
+              context: context,
+              title: 'Confirmar Impresión',
+              text:
+                  'Al aceptar, se registrará el inicio del proceso automáticamente.',
+              showCancelButton: true,
+            );
+          } else {
+            printPdfHandle();
+          }
+        }
+
+        return PopScope(
+          child: Stack(
             children: [
               Align(
                 alignment: Alignment.center,
                 child: _myBody(
                   context,
                   width,
-                  state,
+                  adminHomeState,
                   viewThePdf,
                   printPdf,
                 ),
               ),
               MyTimePickerBottomSheet(
-                deliveryTime: state.selectedOrder.estimatedDeliveryTime!,
+                deliveryTime:
+                    adminHomeState.selectedOrder.estimatedDeliveryTime!,
               ),
-              MyMessageErrorWarning(
-                voidCallback: () => messageErrorWarningBloc.add(
-                  ShowMessageErrorWarningEvent(showMessageErrorWarning: false),
-                ),
+              BlocBuilder<CloudStoragePdfBloc, CloudStoragePdfState>(
+                buildWhen: (prev, curr) =>
+                    prev.cloudStoragePrintPdfStatus !=
+                    curr.cloudStoragePrintPdfStatus,
+                builder: (context, cloudStoragePdfState) {
+                  return MyMessageErrorWarning(
+                    voidCallback: () {
+                      if (adminHomeState.adminHomeActions ==
+                              AdminHomeActions.printPDF &&
+                          cloudStoragePdfState.cloudStoragePrintPdfStatus ==
+                              CloudStoragePrintPdfStatus.initial) {
+                        printPdfHandle();
+                      } else if (adminHomeState.adminHomeActions ==
+                              AdminHomeActions.makePendingOrderDecision &&
+                          adminHomeState.pendingOrderStatus ==
+                              PendingOrderStatus.idle &&
+                          adminHomeState.pendingOrderDecision !=
+                              PendingOrderDecision.none) {
+                        adminHomeBloc.add(
+                          AdminHomeMakePendingOrderDecisionEvent(),
+                        );
+                      }
+                      messageErrorWarningBloc.add(
+                        ShowMessageErrorWarningEvent(
+                          showMessageErrorWarning: false,
+                        ),
+                      );
+                    },
+                  );
+                },
               ),
             ],
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -86,7 +153,7 @@ class MyAdminOrderView extends StatelessWidget {
     void Function() printPdf,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Scaffold(
       backgroundColor: colorScheme.primary,
       appBar: MyAppBarWidget(
@@ -123,9 +190,13 @@ class MyAdminOrderView extends StatelessWidget {
   }
 
   // ---------- Top card: lugar, usuario, archivo, estado y precio ----------
-  Widget _topCard(BuildContext context, double width, AdminHomeState adminHomeState) {
+  Widget _topCard(
+    BuildContext context,
+    double width,
+    AdminHomeState adminHomeState,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Container(
       width: width * 0.95,
       padding: const EdgeInsets.all(16),
@@ -148,21 +219,33 @@ class MyAdminOrderView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "Orden #${adminHomeState.selectedOrder.orderCode}",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.inverseSurface,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      "Orden #${adminHomeState.selectedOrder.orderCode}",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.inverseSurface,
+                      ),
+                    ),
+                    //  const SizedBox(width: 12),
+                    //         Icon(
+                    //           Icons.local_print_shop_rounded,
+                    //           size: 24,
+                    //           color: colorScheme.primary,
+                    //         ),
+                  ],
                 ),
                 const SizedBox(height: 10),
-                _infoRow(context,
+                _infoRow(
+                  context,
                   icon: Icons.person_2_rounded,
                   text: adminHomeState.selectedOrder.userName,
                 ),
                 const SizedBox(height: 4),
-                _infoRow(context,
+                _infoRow(
+                  context,
                   icon: Icons.badge_rounded,
                   text: adminHomeState.selectedOrder.userRegistration,
                 ),
@@ -170,11 +253,14 @@ class MyAdminOrderView extends StatelessWidget {
             ),
           ),
 
-          // Estado (aceptada / pendiente) + precio
+          // Estado (aceptada / pendiente / cancelada) + precio
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              _statusChip(adminHomeState.selectedOrder.hasItBeenAccepted ?? false),
+              _statusChip(
+                adminHomeState.selectedOrder.hasItBeenAccepted ?? false,
+                adminHomeState.selectedOrder.hasItBeenCanceledByUser,
+              ),
               const SizedBox(height: 8),
               Text(
                 '\$${adminHomeState.selectedOrder.price.toStringAsFixed(2)}',
@@ -184,6 +270,24 @@ class MyAdminOrderView extends StatelessWidget {
                   fontSize: 18,
                 ),
               ),
+              //    Row(
+              //      children: [
+              //       Text(
+              //   'Imp.',
+              //   style: TextStyle(
+              //     color: colorScheme.inverseSurface,
+              //     fontWeight: FontWeight.bold,
+              //     fontSize: 12,
+              //   ),
+              // ),
+              //        const SizedBox(width: 8),
+              //                   Icon(
+              //                     Icons.local_print_shop_rounded,
+              //                     size: 22,
+              //                     color: colorScheme.primary,
+              //                   ),
+              //      ],
+              //    ),
             ],
           ),
         ],
@@ -191,12 +295,20 @@ class MyAdminOrderView extends StatelessWidget {
     );
   }
 
-  Widget _infoRow(BuildContext context, {required IconData icon, required String text}) {
+  Widget _infoRow(
+    BuildContext context, {
+    required IconData icon,
+    required String text,
+  }) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Row(
       children: [
-        Icon(icon, size: 16, color: colorScheme.inverseSurface.withOpacity(0.7)),
+        Icon(
+          icon,
+          size: 16,
+          color: colorScheme.inverseSurface.withOpacity(0.7),
+        ),
         const SizedBox(width: 6),
         Text(
           text,
@@ -211,9 +323,14 @@ class MyAdminOrderView extends StatelessWidget {
   }
 
   // ---------- Card de fechas y detalles ----------
-  Widget _datesCard(BuildContext context, double width, AdminHomeState adminHomeState) {
+  Widget _datesCard(
+    BuildContext context,
+    double width,
+    AdminHomeState adminHomeState,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
-    final adminOrderChangeDeliveryTimeBloc = context.read<AdminOrderChangeDeliveryTimeBloc>();
+    final adminOrderChangeDeliveryTimeBloc = context
+        .read<AdminOrderChangeDeliveryTimeBloc>();
 
     return Container(
       width: width * 0.95,
@@ -238,9 +355,20 @@ class MyAdminOrderView extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              _dateItem(context, Icons.calendar_month_rounded, formatDateToYMD(adminHomeState.selectedOrder.initDate)),
+              _dateItem(
+                context,
+                Icons.calendar_month_rounded,
+                formatDateToYMD(adminHomeState.selectedOrder.initDate),
+              ),
               const SizedBox(width: 7), // Espacio reducido entre fecha y hora
-              _dateItem(context, Icons.access_time_rounded, formatTimeToAmPm(adminHomeState.selectedOrder.initDate, uppercaseSuffix: false)),
+              _dateItem(
+                context,
+                Icons.access_time_rounded,
+                formatTimeToAmPm(
+                  adminHomeState.selectedOrder.initDate,
+                  uppercaseSuffix: false,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -251,7 +379,11 @@ class MyAdminOrderView extends StatelessWidget {
               Expanded(
                 child: Row(
                   children: [
-                    Icon(Icons.calendar_month_rounded, color: colorScheme.primary, size: 18),
+                    Icon(
+                      Icons.calendar_month_rounded,
+                      color: colorScheme.primary,
+                      size: 18,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       adminHomeState.selectedOrder.estimatedDeliveryTime != null
@@ -280,14 +412,29 @@ class MyAdminOrderView extends StatelessWidget {
                   spacing: 6,
                   runSpacing: 6,
                   children: [
-                    _detailChip(context, label: adminHomeState.selectedOrder.format),
-                    _detailChip(context, label: adminHomeState.selectedOrder.isColor ? 'Color' : 'B/N'),
-                    _detailChip(context, label: '${adminHomeState.selectedOrder.pages} pág'),
+                    _detailChip(
+                      context,
+                      label: adminHomeState.selectedOrder.format,
+                    ),
+                    _detailChip(
+                      context,
+                      label: adminHomeState.selectedOrder.isColor
+                          ? 'Color'
+                          : 'B/N',
+                    ),
+                    _detailChip(
+                      context,
+                      label: '${adminHomeState.selectedOrder.pages} pág',
+                    ),
                   ],
                 ),
               ),
               // Chip de método de pago a la derecha
-              _paymentMethodChip(context, isCardPayment: true),
+              _paymentMethodChip(
+                context,
+                isCardPayment: !adminHomeState.selectedOrder.paymentMethod
+                    .contains('cash'),
+              ),
             ],
           ),
         ],
@@ -295,12 +442,17 @@ class MyAdminOrderView extends StatelessWidget {
     );
   }
 
-  Widget _changeTimeButton(BuildContext context, AdminOrderChangeDeliveryTimeBloc bloc) {
+  Widget _changeTimeButton(
+    BuildContext context,
+    AdminOrderChangeDeliveryTimeBloc bloc,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return TextButton.icon(
       onPressed: () => bloc.add(
-        AdminOrderShowChangeDeliveryTimeEvent(showDeliveryTimeBottomSheet: true),
+        AdminOrderShowChangeDeliveryTimeEvent(
+          showDeliveryTimeBottomSheet: true,
+        ),
       ),
       icon: Icon(Icons.edit_calendar_rounded, size: 16),
       label: const Text('Cambiar', style: TextStyle(fontSize: 12)),
@@ -322,7 +474,7 @@ class MyAdminOrderView extends StatelessWidget {
     VoidCallback printPdf,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Container(
       width: width * 0.95,
       padding: const EdgeInsets.all(16),
@@ -339,16 +491,54 @@ class MyAdminOrderView extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'Previsualización',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: colorScheme.inverseSurface,
-                fontSize: 15,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Previsualización',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.inverseSurface,
+                    fontSize: 15,
+                  ),
+                ),
               ),
-            ),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 1000),
+                switchInCurve: Curves.fastLinearToSlowEaseIn,
+                switchOutCurve: Curves.fastEaseInToSlowEaseOut,
+                transitionBuilder: (child, animation) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
+                child: adminHomeState.selectedOrder.printDate != null
+                    ? Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            key: ValueKey(
+                              "printDate ${adminHomeState.selectedOrder.printDate}",
+                            ),
+                            'Imp.',
+                            style: TextStyle(
+                              color: colorScheme.inverseSurface,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.local_print_shop_rounded,
+                            size: 18, // 18 en lugar de 20 para mejor proporción
+                            color: colorScheme.primary,
+                          ),
+                        ],
+                      )
+                    : SizedBox.shrink(key: ValueKey("empty")),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           Expanded(
@@ -363,7 +553,11 @@ class MyAdminOrderView extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.picture_as_pdf_rounded, size: 48, color: Colors.redAccent),
+                  Icon(
+                    Icons.picture_as_pdf_rounded,
+                    size: 48,
+                    color: Colors.redAccent,
+                  ),
                   const SizedBox(height: 8),
                   Container(
                     constraints: BoxConstraints(maxWidth: width * 0.6),
@@ -393,67 +587,131 @@ class MyAdminOrderView extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colorScheme.primary,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                       elevation: 2,
                     ),
-                    child: const Text('Visualizar PDF', style: TextStyle(fontSize: 13)),
+                    child: const Text(
+                      'Visualizar PDF',
+                      style: TextStyle(fontSize: 13),
+                    ),
                   ),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 16),
-          adminHomeState.selectedOrder.hasItBeenAccepted == false || adminHomeState.selectedOrder.hasItBeenAccepted == null
-              ? _actionButtons(context)
+          adminHomeState.selectedOrder.hasItBeenAccepted == false ||
+                  adminHomeState.selectedOrder.hasItBeenAccepted == null
+              ? _actionButtons(context, adminHomeState)
               : _deliveryAndPrintButtons(context, printPdf),
         ],
       ),
     );
   }
 
+  void _decisionButtonHandle({
+    required BuildContext context,
+    required PendingOrderDecision pendingOrderDecision,
+    required String title,
+    required String message,
+  }) {
+    final adminHomeBloc = context.read<AdminHomeBloc>();
+    adminHomeBloc.add(
+      AdminHomeUpdateAdminHomeActionsEvent(
+        adminHomeActions: AdminHomeActions.makePendingOrderDecision,
+      ),
+    );
+    adminHomeBloc.add(
+      AdminHomeUpdatePendingOrderDecisionEvent(
+        pendingOrderDecision: pendingOrderDecision,
+      ),
+    );
+    showSnackBar(
+      context: context,
+      title: title,
+      text: message,
+      showCancelButton: true,
+    );
+  }
+
   // ---------- Botones Aceptar / Rechazar ----------
-  Widget _actionButtons(BuildContext context) {
+  Widget _actionButtons(BuildContext context, AdminHomeState adminHomeState) {
     return Row(
       children: [
         Expanded(
           child: ElevatedButton(
-            onPressed: () {},
+            onPressed:
+                adminHomeState.pendingOrderStatus == PendingOrderStatus.loading
+                ? () {}
+                : () => _decisionButtonHandle(
+                    context: context,
+                    pendingOrderDecision: PendingOrderDecision.accept,
+                    title: "Aceptar orden",
+                    message: "¿Quieres aceptar esta orden?",
+                  ),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
               elevation: 2,
             ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.check_rounded, size: 18),
-                SizedBox(width: 6),
-                Text("Aceptar", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-              ],
+            child: MyAnimatedContentSwitcherButton(
+              showLoad:
+                  adminHomeState.pendingOrderStatus ==
+                      PendingOrderStatus.loading &&
+                  adminHomeState.pendingOrderDecision ==
+                      PendingOrderDecision.accept,
+              text: "Aceptar",
+              textSize: 13,
+              icon: Icons.check_rounded,
+              iconSize: 18,
+              loadingIndicatorSize: 24,
             ),
           ),
         ),
         const SizedBox(width: 10),
         Expanded(
           child: ElevatedButton(
-            onPressed: () {},
+            onPressed:
+                adminHomeState.pendingOrderStatus == PendingOrderStatus.loading
+                ? () {}
+                : () => _decisionButtonHandle(
+                    context: context,
+                    pendingOrderDecision: PendingOrderDecision.reject,
+                    title: "Rechazar orden",
+                    message: "¿Quieres rechazar esta orden?",
+                  ),
+
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
               elevation: 2,
             ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.close_rounded, size: 18),
-                SizedBox(width: 6),
-                Text("Rechazar", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-              ],
+
+            child: MyAnimatedContentSwitcherButton(
+              showLoad:
+                  adminHomeState.pendingOrderStatus ==
+                      PendingOrderStatus.loading &&
+                  adminHomeState.pendingOrderDecision ==
+                      PendingOrderDecision.reject,
+              text: "Rechazar",
+              textSize: 13,
+              icon: Icons.close_rounded,
+              iconSize: 18,
+              loadingIndicatorSize: 24,
             ),
           ),
         ),
@@ -465,7 +723,9 @@ class MyAdminOrderView extends StatelessWidget {
   Widget _deliveryAndPrintButtons(BuildContext context, VoidCallback printPdf) {
     final colorScheme = Theme.of(context).colorScheme;
     final cloudStoragePdfState = context.watch<CloudStoragePdfBloc>().state;
-    final isLoading = cloudStoragePdfState.cloudStoragePrintPdfStatus == CloudStoragePrintPdfStatus.loading;
+    final isLoading =
+        cloudStoragePdfState.cloudStoragePrintPdfStatus ==
+        CloudStoragePrintPdfStatus.loading;
 
     return Row(
       children: [
@@ -474,12 +734,14 @@ class MyAdminOrderView extends StatelessWidget {
         // Botón Imprimir
         Expanded(
           child: ElevatedButton(
-            onPressed: isLoading ? null : printPdf,
+            onPressed: isLoading ? () {} : printPdf,
             style: ElevatedButton.styleFrom(
               backgroundColor: colorScheme.primary,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
               elevation: 2,
             ),
             child: isLoading
@@ -489,12 +751,18 @@ class MyAdminOrderView extends StatelessWidget {
                     children: [
                       Icon(Icons.print_rounded, size: 18),
                       SizedBox(width: 6),
-                      Text("Imprimir", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                      Text(
+                        "Imprimir",
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
                     ],
                   ),
           ),
         ),
-         const SizedBox(width: 10),
+        const SizedBox(width: 10),
         Expanded(
           child: ElevatedButton(
             onPressed: () => context.push(Routes.adminCodeValidationView),
@@ -502,7 +770,9 @@ class MyAdminOrderView extends StatelessWidget {
               backgroundColor: Colors.green,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
               elevation: 2,
             ),
             child: const Row(
@@ -510,19 +780,21 @@ class MyAdminOrderView extends StatelessWidget {
               children: [
                 Icon(Icons.outbox, size: 18),
                 SizedBox(width: 6),
-                Text("Entregar", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                Text(
+                  "Entregar",
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                ),
               ],
             ),
           ),
         ),
-      
       ],
     );
   }
 
   Widget _sectionLabel(BuildContext context, String title) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Text(
       title,
       style: TextStyle(
@@ -535,10 +807,14 @@ class MyAdminOrderView extends StatelessWidget {
 
   Widget _dateItem(BuildContext context, IconData icon, String text) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Row(
       children: [
-        Icon(icon, color: colorScheme.inverseSurface.withOpacity(0.7), size: 16),
+        Icon(
+          icon,
+          color: colorScheme.inverseSurface.withOpacity(0.7),
+          size: 16,
+        ),
         const SizedBox(width: 6),
         Text(
           text,
@@ -554,7 +830,7 @@ class MyAdminOrderView extends StatelessWidget {
 
   Widget _detailChip(BuildContext context, {required String label}) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
@@ -573,70 +849,155 @@ class MyAdminOrderView extends StatelessWidget {
     );
   }
 
-  Widget _paymentMethodChip(BuildContext context, {required bool isCardPayment}) {
-    // ignore: unused_local_variable
-    final colorScheme = Theme.of(context).colorScheme;
-    final paymentMethod = isCardPayment ? 'Tarjeta' : 'Efectivo';
-    final icon = isCardPayment ? Icons.credit_card_rounded : Icons.money_rounded;
-    final backgroundColor = isCardPayment ? Colors.blue : Colors.green;
-    
-    return Container(
+  Widget _paymentMethodChip(
+  BuildContext context, {
+  required bool isCardPayment,
+}) {
+  final paymentMethod = isCardPayment ? 'Tarjeta' : 'Efectivo';
+  final icon = isCardPayment
+      ? Icons.credit_card_rounded
+      : Icons.money_rounded;
+  final backgroundColor = isCardPayment ? Colors.blue : Colors.orange;
+
+  return GestureDetector(
+    onTap: () => context.push(Routes.adminSeeUserPaymentMethod),
+    child: Container(
+
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: backgroundColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: backgroundColor.withOpacity(0.3)),
       ),
+      child: AnimatedSize(
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+        alignment: Alignment.centerLeft,
+        child: Row(
+          mainAxisSize: MainAxisSize.min, // Importante para que se ajuste al contenido
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 350),
+              transitionBuilder: (child, animation) {
+                return ScaleTransition(
+                  scale: CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOut,
+                  ),
+                  child: child,
+                );
+              },
+              child: Icon(
+                icon,
+                key: ValueKey<bool>(isCardPayment),
+                size: 12,
+                color: backgroundColor,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              paymentMethod,
+              style: TextStyle(
+                color: backgroundColor,
+                fontWeight: FontWeight.w600,
+                fontSize: 11,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+  Widget _statusChip(bool accepted, bool hasItBeenCanceledByUser) {
+  final bg = hasItBeenCanceledByUser
+      ? Colors.red
+      : accepted
+          ? Colors.green
+          : Colors.orange;
+
+  final statusName = hasItBeenCanceledByUser
+      ? 'Cancelada'
+      : accepted
+          ? 'Aceptada'
+          : 'En revisión';
+
+  final statusIcon = hasItBeenCanceledByUser
+      ? Icons.cancel_rounded 
+      : accepted
+          ? Icons.check_circle_rounded 
+          : Icons.access_time_rounded;
+
+  return AnimatedContainer(
+    duration: const Duration(milliseconds: 450),
+    curve: Curves.easeInOut,
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+    decoration: BoxDecoration(
+      color: bg,
+      borderRadius: BorderRadius.circular(14),
+      boxShadow: [
+        BoxShadow(
+          color: bg.withOpacity(0.3),
+          blurRadius: 4,
+          offset: const Offset(0, 1),
+        ),
+      ],
+    ),
+    child: AnimatedSize(
+      duration: const Duration(milliseconds: 450),
+      curve: Curves.easeInOut,
+      alignment: Alignment.centerLeft,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: backgroundColor),
-          const SizedBox(width: 4),
-          Text(
-            paymentMethod,
-            style: TextStyle(
-              color: backgroundColor,
-              fontWeight: FontWeight.w600,
-              fontSize: 11,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _statusChip(bool accepted) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: accepted ? Colors.green : Colors.orange,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: accepted ? Colors.green.withOpacity(0.3) : Colors.orange.withOpacity(0.3),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Icon(
-            accepted ? Icons.check_circle_rounded : Icons.access_time_rounded,
-            size: 12,
-            color: Colors.white,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            accepted ? 'Aceptada' : 'Pendiente',
-            style: const TextStyle(
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 400),
+            transitionBuilder: (child, animation) {
+              return ScaleTransition(
+                scale: CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeInOut,
+                ),
+                child: FadeTransition(
+                  opacity: animation,
+                  child: child,
+                ),
+              );
+            },
+            child: Icon(
+              statusIcon,
+              key: ValueKey<String>(statusName),
+              size: 12,
               color: Colors.white,
-              fontWeight: FontWeight.w600,
-              fontSize: 11,
+            ),
+          ),
+          const SizedBox(width: 4),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 350),
+            transitionBuilder: (child, animation) {
+              return FadeTransition(
+                opacity: animation,
+                child: SizeTransition(
+                  sizeFactor: animation,
+                  axis: Axis.horizontal,
+                  child: child,
+                ),
+              );
+            },
+            child: Text(
+              statusName,
+              key: ValueKey<String>(statusName),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 11,
+              ),
             ),
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }

@@ -8,7 +8,7 @@ import 'package:printfast_rebuild/config/routes/routes.dart';
 import 'package:printfast_rebuild/di/service_locator.dart';
 import 'package:printfast_rebuild/domain/entities/entities.dart';
 import 'package:printfast_rebuild/domain/repositories/auth_repository.dart';
-import 'package:printfast_rebuild/domain/repositories/copyshop_repository.dart';
+import 'package:printfast_rebuild/domain/repositories/admin_repository.dart';
 import 'package:printfast_rebuild/domain/repositories/storage_repository.dart';
 import 'package:printfast_rebuild/domain/repositories/user_repository.dart';
 import 'package:printfast_rebuild/presentation/blocs/admin_blocs/admin_change_report_date_range_bloc/admin_change_report_date_range_bloc.dart';
@@ -16,11 +16,13 @@ import 'package:printfast_rebuild/presentation/blocs/admin_blocs/admin_home_bloc
 import 'package:printfast_rebuild/presentation/blocs/admin_blocs/admin_order_change_delivery_time_bloc/admin_order_change_delivery_time_bloc.dart';
 import 'package:printfast_rebuild/presentation/blocs/admin_blocs/admin_role_selection_bloc/admin_role_selection_bloc.dart';
 import 'package:printfast_rebuild/presentation/blocs/shared_blocs/cloud_storage_pdf_bloc.dart/cloud_storage_pdf_bloc.dart';
+import 'package:printfast_rebuild/presentation/blocs/shared_blocs/connectivity_bloc/connectivity_bloc.dart';
 import 'package:printfast_rebuild/presentation/blocs/user_blocs/home_bloc/home_bloc.dart';
 import 'package:printfast_rebuild/presentation/blocs/shared_blocs/login_bloc/login_bloc.dart';
 import 'package:printfast_rebuild/presentation/blocs/shared_blocs/message_error_warning_bloc/message_error_warning_bloc.dart';
 import 'package:printfast_rebuild/presentation/blocs/shared_blocs/register_bloc/register_bloc.dart';
 import 'package:printfast_rebuild/presentation/blocs/user_blocs/shopping_blocs/shopping_bloc/shopping_bloc.dart';
+import 'package:toastification/toastification.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,33 +39,44 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color themeColor = Colors.purple.shade400;
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider(create: (context) => MessageErrorWarningBloc()),
-        BlocProvider( create: (context) => CloudStoragePdfBloc( storageRepository: getIt<StorageRepository>(), ), ),
-        BlocProvider( create: (context) => LoginBloc(authRepository: getIt<AuthRepository>()), ),
-        BlocProvider( create: (context) => RegisterBloc(authRepository: getIt<AuthRepository>()), ),
-        BlocProvider( create: (context) => AdminRoleSelectionBloc( copyshopRepository: getIt<CopyshopRepository>(), ), ),
-        BlocProvider( create: (context) => HomeBloc(authRepository: getIt<AuthRepository>(), userRepository: getIt<UserRepository>(), )
-        // ..add(HomeUpdateUserEntityEvent(userEntity: UserEntity.defaultValues))
-         ),
-        BlocProvider(create: (context) => AdminOrderChangeDeliveryTimeBloc()),
-        BlocProvider(create: (context) => AdminChangeReportDateRangeBloc()),
-        BlocProvider( create: (context) => AdminHomeBloc(authRepository: getIt<AuthRepository>()), ),
-        BlocProvider( create: (context) => ShoppingBloc(userRepository: getIt<UserRepository>()), ),
-      ],
-      child: MaterialApp.router(
-        title: 'Material App',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.purpleAccent,
-            primary: themeColor,
+    return ToastificationWrapper(
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (context) => ConnectivityBloc()..add(ConnectivityStarted()), lazy: false),
+          BlocProvider(create: (context) => MessageErrorWarningBloc()),
+          BlocProvider( create: (context) => CloudStoragePdfBloc( storageRepository: getIt<StorageRepository>(), adminRepository: getIt<AdminRepository>()), ),
+          BlocProvider( create: (context) => LoginBloc(authRepository: getIt<AuthRepository>()), ),
+          BlocProvider( create: (context) => RegisterBloc(authRepository: getIt<AuthRepository>()), ),
+          BlocProvider( create: (context) => AdminRoleSelectionBloc( copyshopRepository: getIt<AdminRepository>(), ), ),
+          BlocProvider(
+            create: (context) => HomeBloc(
+              authRepository: getIt<AuthRepository>(),
+              userRepository: getIt<UserRepository>(),
+            )
+            // ..add(HomeUpdateUserEntityEvent(userEntity: UserEntity.defaultValues))
           ),
+          BlocProvider(create: (context) => AdminOrderChangeDeliveryTimeBloc()),
+          BlocProvider(create: (context) => AdminChangeReportDateRangeBloc()),
+          BlocProvider(
+            create: (context) =>
+                AdminHomeBloc(authRepository: getIt<AuthRepository>(), adminRepository: getIt<AdminRepository>())
+                // ..add( AdminHomeUpdateUserEntityEvent( userEntity: UserEntity.defaultAdminValues, ) )
+                // ..add( AdminHomeUpdateCopyShopEntityEvent(copyShopEntity: CopyShopEntity.defaultCopyShopValues, ) ),
+          ),
+          BlocProvider( create: (context) => ShoppingBloc(userRepository: getIt<UserRepository>()), ),
+        ],
+        child: MaterialApp.router(
+          title: 'Material App',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.purpleAccent,
+              primary: themeColor,
+            ),
+          ),
+          routerConfig: Routes().routes,
         ),
-        routerConfig: Routes().routes,
       ),
-      
     );
   }
 }
@@ -89,7 +102,7 @@ class UserInitializer {
       'name': name,
     }, SetOptions(merge: true));
 
-    // 2) notifications -> documento "information" con campo items: [map,...]
+    // 2) notifications -> documento "information" con campo items: [map,...]'
     final notificationsRef = userDoc
         .collection('notifications')
         .doc('information');
@@ -646,7 +659,7 @@ class UserInitializer {
           if (e is Map<String, dynamic>) {
             items.add(Map<String, dynamic>.from(e));
           } else if (e is Map) {
-            items.add(Map<String, dynamic>.from(e as Map));
+            items.add(Map<String, dynamic>.from(e));
           }
         }
       }

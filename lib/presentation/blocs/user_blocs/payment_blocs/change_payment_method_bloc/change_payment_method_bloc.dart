@@ -21,7 +21,9 @@ class ChangePaymentMethodBloc
     on<SelectPaymentMethod>(_onSelectPaymentMethod);
     on<ConfirmChange>(_onConfirmChange);
     on<ResetState>(_onResetState);
-    on<ChangePaymentMethodActionStatusEvent>(_onChangePaymentMethodActionStatus);
+    on<ChangePaymentMethodActionStatusEvent>(
+      _onChangePaymentMethodActionStatus,
+    );
   }
 
   Future<void> _onLoadPaymentMethods(
@@ -96,14 +98,17 @@ class ChangePaymentMethodBloc
     // Simular proceso de cambio
     await Future.delayed(const Duration(seconds: 2));
 
-
     // En una implementación real, aquí actualizarías el método de pago en el backend
     try {
-    throw Exception("sdsds");
+      await userRepository.changeOrderPaymentMethod(
+        event.userRegistration,
+        event.copyShopEmail,
+        event.orderCode,
+        state.selectedMethodId ?? '',
+      );
       emit(
         state.copyWith(
           changeStatus: ChangePaymentMethodActionStatus.success,
-          currentMethodId: state.selectedMethodId,
         ),
       );
     } catch (e) {
@@ -125,11 +130,10 @@ class ChangePaymentMethodBloc
     );
   }
 
-  void _onChangePaymentMethodActionStatus(ChangePaymentMethodActionStatusEvent  event, Emitter<ChangePaymentMethodState> emit) {
-    emit(
-      state.copyWith(
-        changeStatus: event.changePaymentMethodActionStatus,
-      ),
-    );
+  void _onChangePaymentMethodActionStatus(
+    ChangePaymentMethodActionStatusEvent event,
+    Emitter<ChangePaymentMethodState> emit,
+  ) {
+    emit(state.copyWith(changeStatus: event.changePaymentMethodActionStatus));
   }
 }

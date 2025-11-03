@@ -1,22 +1,33 @@
 part of 'admin_change_report_date_range_bloc.dart';
 
-final class AdminChangeReportDateRangeState extends Equatable {
+class AdminChangeReportDateRangeState extends Equatable {
+  final bool showChangeReportDateRangeBottomSheet;
+  final List<DateTime?> selectedDateRange;
+
   const AdminChangeReportDateRangeState({
     required this.showChangeReportDateRangeBottomSheet,
+    required this.selectedDateRange,
   });
-  final bool showChangeReportDateRangeBottomSheet;
 
-  AdminChangeReportDateRangeState copyWith({bool? showChangeReportDateRangeBottomSheet,}) {
+  AdminChangeReportDateRangeState copyWith({
+    bool? showChangeReportDateRangeBottomSheet,
+    List<DateTime?>? selectedDateRange,
+  }) {
     return AdminChangeReportDateRangeState(
       showChangeReportDateRangeBottomSheet:
-         showChangeReportDateRangeBottomSheet ?? this.showChangeReportDateRangeBottomSheet,
+          showChangeReportDateRangeBottomSheet ?? this.showChangeReportDateRangeBottomSheet,
+      selectedDateRange: selectedDateRange ?? this.selectedDateRange,
     );
   }
 
   @override
-  List<Object> get props => [showChangeReportDateRangeBottomSheet];
+  List<Object> get props => [showChangeReportDateRangeBottomSheet, selectedDateRange];
 }
 
-final class AdminChangeReportDateRangeInitial extends AdminChangeReportDateRangeState {
-      const AdminChangeReportDateRangeInitial() : super(showChangeReportDateRangeBottomSheet: false);
+class AdminChangeReportDateRangeInitial extends AdminChangeReportDateRangeState {
+  AdminChangeReportDateRangeInitial()
+      : super(
+          showChangeReportDateRangeBottomSheet: false,
+          selectedDateRange: [],
+        );
 }

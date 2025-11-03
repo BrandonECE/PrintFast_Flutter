@@ -70,7 +70,7 @@ class ShoppingLocationPickerBloc
 
   Completer<GoogleMapController>? _controllerCompleter;
   final PolylinePoints _polylinePoints = PolylinePoints(
-    apiKey: _googleDirectionsApiKey,
+    apiKey:_googleDirectionsApiKey,
   );
 
   StreamSubscription<Position>? _locationSubscription;
@@ -164,7 +164,7 @@ class ShoppingLocationPickerBloc
   // MODELO MATEMÁTICO
   // -----------------------
 
-  /// Calcula el tiempo estimado de espera para una copyshop según el PDF
+  /// Calcula el tiempo estimado de espera para una copyshop
   /// T_i = Σ (p_ij * t_p * c_ij) para cada pedido j en la copyshop i
   double _calculateWaitTime(CopyShopEntity shop) {
     double totalTime = 0.0;

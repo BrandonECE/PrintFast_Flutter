@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:printfast_rebuild/config/routes/routes.dart';
 import 'package:printfast_rebuild/di/service_locator.dart';
-import 'package:printfast_rebuild/domain/entities/entities.dart';
 import 'package:printfast_rebuild/domain/repositories/location_repository.dart';
 import 'package:printfast_rebuild/domain/repositories/user_repository.dart';
 import 'package:printfast_rebuild/presentation/blocs/shared_blocs/message_error_warning_bloc/message_error_warning_bloc.dart';
@@ -15,13 +14,13 @@ import 'package:printfast_rebuild/presentation/widgets/widgets.dart';
 import 'package:printfast_rebuild/utils/utils.dart';
 
 class MyLiveTrackingView extends StatelessWidget {
-
   const MyLiveTrackingView({super.key});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final messageErrorWarningBloc = context.read<MessageErrorWarningBloc>();
+    final homeBloc = context.read<HomeBloc>();
 
     return BlocProvider(
       create: (context) => LiveTrackingBloc(
@@ -34,13 +33,31 @@ class MyLiveTrackingView extends StatelessWidget {
         children: [
           Align(
             alignment: Alignment.center,
-            child: _MyLiveTrackingViewContent()),
+            child: _MyLiveTrackingViewContent(),
+          ),
 
-            MyMessageErrorWarning(
-                voidCallback: () => messageErrorWarningBloc.add(
-                  ShowMessageErrorWarningEvent(showMessageErrorWarning: false),
-                ),
-              ),
+          BlocBuilder<HomeBloc, HomeState>(
+            buildWhen: (prev, curr) => prev.homeActions != curr.homeActions,
+            builder: (context, state) {
+              return MyMessageErrorWarning(
+                voidCallback: () {
+                  if (state.homeActions == HomeActions.cancelOrder) {
+                    homeBloc.add(HomeCancelOrderEvent());
+                    homeBloc.add(
+                      HomeUpdateHomeActionsEvent(homeActions: HomeActions.none),
+                    );
+                    context.go(Routes.home);
+                  }
+
+                  messageErrorWarningBloc.add(
+                    ShowMessageErrorWarningEvent(
+                      showMessageErrorWarning: false,
+                    ),
+                  );
+                },
+              );
+            },
+          ),
         ],
       ),
     );
@@ -100,13 +117,13 @@ class _MyLiveTrackingViewContent extends StatelessWidget {
               children: [
                 // Mapa
                 _buildMapContainer(colorScheme, context),
-                
+
                 // Overlay degradado
                 _gradientOverlay(panelHeight, panelPadding),
-          
+
                 // Botón de centrar en usuario (MEJORADO)
                 _buildLocationIconContainer(colorScheme),
-          
+
                 // Panel inferior con animación
                 _buildBottomContentContainer(
                   panelHeight,
@@ -132,10 +149,10 @@ class _MyLiveTrackingViewContent extends StatelessWidget {
     return BlocBuilder<LiveTrackingBloc, LiveTrackingState>(
       builder: (context, state) {
         return FutureBuilder<BitmapDescriptor>(
-          future: _createShopMarker(Colors.white, colorScheme.primary,),
+          future: _createShopMarker(Colors.white, colorScheme.primary),
           builder: (context, snapshot) {
-            final shopMarkerIcon = snapshot.data ?? 
-                BitmapDescriptor.defaultMarker;
+            final shopMarkerIcon =
+                snapshot.data ?? BitmapDescriptor.defaultMarker;
 
             final markers = <Marker>{};
 
@@ -145,9 +162,7 @@ class _MyLiveTrackingViewContent extends StatelessWidget {
                 markerId: const MarkerId('copy_shop'),
                 position: copyShopLocation,
                 icon: shopMarkerIcon,
-                infoWindow: InfoWindow(
-                  title: activeOrder.copyShopName,
-                ),
+                infoWindow: InfoWindow(title: activeOrder.copyShopName),
                 zIndex: 2,
               ),
             );
@@ -187,7 +202,10 @@ class _MyLiveTrackingViewContent extends StatelessWidget {
           // Solo mostrar el botón si no estamos en estado de permisos denegados
           return AnimatedSwitcher(
             duration: Duration(
-              milliseconds: (LiveTrackingBloc.translationAnimationDurationInMilliseconds / 1.8).round(),
+              milliseconds:
+                  (LiveTrackingBloc.translationAnimationDurationInMilliseconds /
+                          1.8)
+                      .round(),
             ),
             transitionBuilder: (child, animation) {
               return FadeTransition(opacity: animation, child: child);
@@ -201,17 +219,24 @@ class _MyLiveTrackingViewContent extends StatelessWidget {
     );
   }
 
-  Widget _buildLocationIcon(LiveTrackingState state, BuildContext context, ColorScheme colorScheme) {
+  Widget _buildLocationIcon(
+    LiveTrackingState state,
+    BuildContext context,
+    ColorScheme colorScheme,
+  ) {
     return FloatingActionButton(
       onPressed: state.isGettingLocation || state.userLocation == null
           ? null
           : () => context.read<LiveTrackingBloc>().add(
-                LiveTrackingCenterOnUser(),
-              ),
+              LiveTrackingCenterOnUser(),
+            ),
       backgroundColor: colorScheme.primary,
       mini: true,
       child: AnimatedSwitcher(
-        duration: Duration(milliseconds: LiveTrackingBloc.translationAnimationDurationInMilliseconds),
+        duration: Duration(
+          milliseconds:
+              LiveTrackingBloc.translationAnimationDurationInMilliseconds,
+        ),
         transitionBuilder: (child, animation) {
           return FadeTransition(opacity: animation, child: child);
         },
@@ -301,9 +326,8 @@ class _MyLiveTrackingViewContent extends StatelessWidget {
             panelPadding: panelPadding,
             colorScheme: colorScheme,
             errorMessage: state.error ?? 'Error desconocido',
-            onRetry: () => context.read<LiveTrackingBloc>().add(
-                  LiveTrackingRetry(),
-                ),
+            onRetry: () =>
+                context.read<LiveTrackingBloc>().add(LiveTrackingRetry()),
           ),
         );
 
@@ -316,8 +340,8 @@ class _MyLiveTrackingViewContent extends StatelessWidget {
             panelPadding: panelPadding,
             colorScheme: colorScheme,
             onRetry: () => context.read<LiveTrackingBloc>().add(
-                  LiveTrackingRequestPermission(),
-                ),
+              LiveTrackingRequestPermission(),
+            ),
           ),
         );
 
@@ -410,7 +434,7 @@ class _MyLiveTrackingViewContent extends StatelessWidget {
     required ColorScheme colorScheme,
     required String errorMessage,
     required VoidCallback onRetry,
-    required BuildContext context
+    required BuildContext context,
   }) {
     return Align(
       alignment: Alignment.bottomCenter,
@@ -504,7 +528,8 @@ class _MyLiveTrackingViewContent extends StatelessWidget {
                       child: SizedBox(
                         height: 40,
                         child: OutlinedButton(
-                          onPressed: () => context.canPop() ? context.pop() : null,
+                          onPressed: () =>
+                              context.canPop() ? context.pop() : null,
                           style: OutlinedButton.styleFrom(
                             side: BorderSide(color: colorScheme.primary),
                             padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -537,7 +562,7 @@ class _MyLiveTrackingViewContent extends StatelessWidget {
     required double panelPadding,
     required ColorScheme colorScheme,
     required VoidCallback onRetry,
-    required BuildContext context
+    required BuildContext context,
   }) {
     return Align(
       alignment: Alignment.bottomCenter,
@@ -617,10 +642,7 @@ class _MyLiveTrackingViewContent extends StatelessWidget {
                             children: [
                               Icon(Icons.location_on_rounded, size: 14),
                               SizedBox(width: 4),
-                              Text(
-                                "Permitir",
-                                style: TextStyle(fontSize: 12),
-                              ),
+                              Text("Permitir", style: TextStyle(fontSize: 12)),
                             ],
                           ),
                         ),
@@ -631,7 +653,8 @@ class _MyLiveTrackingViewContent extends StatelessWidget {
                       child: SizedBox(
                         height: 40,
                         child: OutlinedButton(
-                          onPressed: () => context.canPop() ? context.pop() : null,
+                          onPressed: () =>
+                              context.canPop() ? context.pop() : null,
                           style: OutlinedButton.styleFrom(
                             side: BorderSide(color: colorScheme.primary),
                             padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -713,87 +736,95 @@ class _MyLiveTrackingViewContent extends StatelessWidget {
     required ColorScheme colorScheme,
     required LiveTrackingState state,
   }) {
-    Color statusColor;
-    String statusMessage;
-    IconData statusIcon;
-    bool showLoading = state.isFetchingRoute;
 
-    if (showLoading) {
-      statusColor = colorScheme.primary;
-      statusMessage = "Calculando tiempo...";
-      statusIcon = Icons.timer_rounded;
-    } else if (state.remainingTime <= 0) {
-      statusColor = Colors.green;
-      statusMessage = "¡Pedido listo para recoger!";
-      statusIcon = Icons.check_circle_rounded;
-    } else if (state.remainingTime <= 4) {
-      statusColor = Colors.orange;
-      statusMessage = "Listo en ~${state.remainingTime} min";
-      statusIcon = Icons.timer_rounded;
-    } else {
-      statusColor = colorScheme.primary;
-      statusMessage = "En preparación • ${state.remainingTime} min restantes";
-      statusIcon = Icons.local_printshop_rounded;
-    }
+    return BlocBuilder<HomeBloc, HomeState>(
+      builder: (context, homeState) {
 
-    return Column(
-      children: [
-        Text(
-          placeName,
-          style: TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
-            color: colorScheme.inverseSurface,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: statusColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: statusColor.withOpacity(0.3)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(statusIcon, size: 14, color: statusColor),
-              const SizedBox(width: 6),
-              AnimatedSwitcher(
-                duration: Duration(
-                  milliseconds: LiveTrackingBloc.translationAnimationDurationInMilliseconds,
-                ),
-                transitionBuilder: (Widget child, Animation<double> animation) {
-                  return FadeTransition(
-                    opacity: animation,
-                    child: child,
-                  );
-                },
-                child: showLoading
-                    ? SizedBox(
-                        key: const ValueKey('loading_indicator'),
-                        width: 20,
-                        height: 20,
-                        child: MyLoadingIndicator(
-                          size: 20,
-                          color: statusColor,
-                        ),
-                      )
-                    : Text(
-                        key: ValueKey(statusMessage),
-                        statusMessage,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+      Color statusColor;
+      String statusMessage;
+      IconData statusIcon;
+      bool showLoading = state.isFetchingRoute;
+      
+      if (showLoading) {
+        statusColor = colorScheme.primary;
+        statusMessage = "Calculando tiempo...";
+        statusIcon = Icons.timer_rounded;
+      } else if (homeState.remainingMinutes <= 0) {
+        statusColor = Colors.green;
+        statusMessage = "¡Pedido listo para recoger!";
+        statusIcon = Icons.check_circle_rounded;
+      } else if (homeState.remainingMinutes <= 4) {
+        statusColor = Colors.orange;
+        statusMessage = "Listo en ~${homeState.remainingMinutes.ceil()} min";
+        statusIcon = Icons.timer_rounded;
+      } else {
+        statusColor = colorScheme.primary;
+        statusMessage = "En preparación • ${homeState.remainingMinutes.ceil()} min restantes";
+        statusIcon = Icons.local_printshop_rounded;
+      }
+
+        return Column(
+          children: [
+            Text(
+              placeName,
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.inverseSurface,
               ),
-            ],
-          ),
-        ),
-      ],
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: statusColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: statusColor.withOpacity(0.3)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(statusIcon, size: 14, color: statusColor),
+                  const SizedBox(width: 6),
+                  AnimatedSwitcher(
+                    duration: Duration(
+                      milliseconds: LiveTrackingBloc
+                          .translationAnimationDurationInMilliseconds,
+                    ),
+                    transitionBuilder:
+                        (Widget child, Animation<double> animation) {
+                          return FadeTransition(
+                            opacity: animation,
+                            child: child,
+                          );
+                        },
+                    child: showLoading
+                        ? SizedBox(
+                            key: const ValueKey('loading_indicator'),
+                            width: 20,
+                            height: 20,
+                            child: MyLoadingIndicator(
+                              size: 20,
+                              color: statusColor,
+                            ),
+                          )
+                        : Text(
+                            key: ValueKey(statusMessage),
+                            statusMessage,
+                            style: TextStyle(
+                              color: statusColor,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -814,20 +845,20 @@ class _MyLiveTrackingViewContent extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-               if (state.userLocation != null) ...[
-                              _infoItem(
-                                icon: Icons.navigation_rounded,
-                                text: "Desde tu ubicación",
-                                color: Colors.blue,
-                                isBold: true,
-                              ),
-                              const SizedBox(height: 4),
-                            ],
+              if (state.userLocation != null) ...[
+                _infoItem(
+                  icon: Icons.navigation_rounded,
+                  text: "Desde tu ubicación",
+                  color: Colors.blue,
+                  isBold: true,
+                ),
+                const SizedBox(height: 4),
+              ],
               _buildInfoItemWithLoading(
                 icon: Icons.location_on_rounded,
-                text: showLoading 
-                  ? "Calculando distancia..." 
-                  : "${_formatDistance(state.remainingDistance)} de distancia",
+                text: showLoading
+                    ? "Calculando distancia..."
+                    : "${_formatDistance(state.remainingDistance)} de distancia",
                 color: colorScheme.inverseSurface,
                 isLoading: showLoading,
               ),
@@ -835,8 +866,8 @@ class _MyLiveTrackingViewContent extends StatelessWidget {
               _buildInfoItemWithLoading(
                 icon: Icons.access_time_rounded,
                 text: showLoading
-                  ? "Calculando tiempo..."
-                  : "${_formatDuration(state.remainingTime)} estimado",
+                    ? "Calculando tiempo..."
+                    : "${_formatDuration(state.remainingTime)} estimado",
                 color: colorScheme.inverseSurface.withOpacity(0.7),
                 isLoading: showLoading,
               ),
@@ -868,7 +899,8 @@ class _MyLiveTrackingViewContent extends StatelessWidget {
   }) {
     return AnimatedSwitcher(
       duration: Duration(
-        milliseconds: LiveTrackingBloc.translationAnimationDurationInMilliseconds,
+        milliseconds:
+            LiveTrackingBloc.translationAnimationDurationInMilliseconds,
       ),
       child: isLoading
           ? SizedBox(
@@ -885,11 +917,7 @@ class _MyLiveTrackingViewContent extends StatelessWidget {
           : SizedBox(
               key: const ValueKey('loaded'),
               height: 20,
-              child: _infoItem(
-                icon: icon, 
-                text: text, 
-                color: color
-              ),
+              child: _infoItem(icon: icon, text: text, color: color),
             ),
     );
   }
@@ -922,44 +950,34 @@ class _MyLiveTrackingViewContent extends StatelessWidget {
   }
 
   Widget _cancelButton(LiveTrackingState state, BuildContext context) {
-    // if (state.isCanceled) {
-    //   return SizedBox(
-    //     width: 125,
-    //     child: ElevatedButton(
-    //       onPressed: null,
-    //       style: ElevatedButton.styleFrom(
-    //         backgroundColor: Colors.grey,
-    //         foregroundColor: Colors.white,
-    //         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-    //         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    //       ),
-    //       child: const Row(
-    //         mainAxisAlignment: MainAxisAlignment.center,
-    //         children: [
-    //           Icon(Icons.check_rounded, size: 18),
-    //           SizedBox(width: 6),
-    //           Text(
-    //             "Cancelada",
-    //             style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-    //           ),
-    //         ],
-    //       ),
-    //     ),
-    //   );
-    // }
+    final homeBloc = context.read<HomeBloc>();
 
     return SizedBox(
       width: 125,
       child: ElevatedButton(
-        onPressed: state.isCanceling ? null : () {
-         showSnackBar( context: context, title: "¿Cancelar orden?", text: "Esta acción no se puede deshacer", showCancelButton: true, );
-          // context.read<LiveTrackingBloc>().add(LiveTrackingCancelOrder());
-        },
+        onPressed: state.isCanceling
+            ? null
+            : () {
+                // context.go(Routes.home);
+                homeBloc.add(
+                  HomeUpdateHomeActionsEvent(
+                    homeActions: HomeActions.cancelOrder,
+                  ),
+                );
+                showSnackBar(
+                  context: context,
+                  title: "¿Cancelar orden?",
+                  text: "Esta acción no se puede deshacer",
+                  showCancelButton: true,
+                );
+              },
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.red,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
         child: state.isCanceling
             ? SizedBox(
@@ -1098,11 +1116,13 @@ class _MyMapPulseWrapperWidget extends StatefulWidget {
   const _MyMapPulseWrapperWidget({
     required this.isLoading,
     required this.child,
+    // ignore: unused_element_parameter
     this.pulseDuration = const Duration(milliseconds: 800),
   });
 
   @override
-  State<_MyMapPulseWrapperWidget> createState() => _MyMapPulseWrapperWidgetState();
+  State<_MyMapPulseWrapperWidget> createState() =>
+      _MyMapPulseWrapperWidgetState();
 }
 
 class _MyMapPulseWrapperWidgetState extends State<_MyMapPulseWrapperWidget>

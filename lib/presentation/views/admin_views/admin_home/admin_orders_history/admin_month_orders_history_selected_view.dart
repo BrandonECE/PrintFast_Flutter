@@ -2,23 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:printfast_rebuild/config/routes/routes.dart';
-import 'package:printfast_rebuild/presentation/blocs/admin_blocs/admin_home_bloc/admin_home_bloc.dart';
+import 'package:printfast_rebuild/domain/entities/entities.dart';
+import 'package:printfast_rebuild/presentation/blocs/admin_blocs/admin_history_bloc/admin_history_bloc.dart';
 import 'package:printfast_rebuild/presentation/widgets/appbar_widget.dart';
+import 'package:printfast_rebuild/presentation/widgets/widgets.dart';
 import 'package:printfast_rebuild/utils/utils.dart';
-
-import '../../../../../domain/entities/entities.dart';
 
 class MyAdminMonthOrdersHistorySelectedView extends StatelessWidget {
   const MyAdminMonthOrdersHistorySelectedView({super.key});
-
-  // ---------- Estatus visual ----------
-  final bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Scaffold(
       backgroundColor: colorScheme.primary,
       appBar: _myAppBar(context),
@@ -63,7 +60,7 @@ class MyAdminMonthOrdersHistorySelectedView extends StatelessWidget {
   }
 
   Widget _buildBody(BuildContext context, double width) {
-    return BlocBuilder<AdminHomeBloc, AdminHomeState>(
+    return BlocBuilder<AdminHistoryBloc, AdminHistoryState>(
       builder: (context, state) {
         final selected = state.monthOrderHistoryElementSelected;
 
@@ -71,7 +68,6 @@ class MyAdminMonthOrdersHistorySelectedView extends StatelessWidget {
           return Expanded(child: _buildEmpty(context));
         }
 
-        // Solo hay un elemento → el mes seleccionado
         final entry = selected.entries.first;
         final monthTitle = entry.key;
         final orders = entry.value;
@@ -92,7 +88,7 @@ class MyAdminMonthOrdersHistorySelectedView extends StatelessWidget {
 
   Widget _buildTitleRow(BuildContext context, double width, String title) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Container(
       width: width * 0.83,
       child: Row(
@@ -106,221 +102,227 @@ class MyAdminMonthOrdersHistorySelectedView extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Icon(Icons.arrow_drop_down, 
-               size: 25, 
-               color: colorScheme.inverseSurface),
+          Icon(
+            Icons.arrow_drop_down,
+            size: 25,
+            color: colorScheme.inverseSurface,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSectionContainer(
-      BuildContext context, double width, List<AorderEntity> orders) {
-    final content = _chooseContent(context, orders);
-
+  Widget _buildSectionContainer(BuildContext context, double width, List<HorderEntity> orders) {
     return Container(
-      width: width * 0.83,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.grey.shade100,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey.shade300),
       ),
-      child: content,
+      width: width * 0.83,
+      child: _buildList(context, orders),
     );
   }
 
-  // ---------- Contenido condicional ----------
-  Widget _chooseContent(BuildContext context, List<AorderEntity> orders) {
-    if (_isLoading) return _buildLoading(context);
-    if (orders.isEmpty) return _buildEmpty(context);
-    return _buildList(context, orders);
-  }
-
-  Widget _buildLoading(BuildContext context) {
-    return const Center(
-      child: Padding(
-        padding: EdgeInsets.all(32),
-        child: CircularProgressIndicator(strokeWidth: 3),
-      ),
+  Widget _buildList(BuildContext context, List<HorderEntity> orders) {
+    if (orders.isEmpty) {
+      return _buildEmpty(context);
+    }
+    
+    return ListView.separated(
+      itemCount: orders.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 16),
+      itemBuilder: (context, index) {
+        final order = orders[index];
+        return _buildOrderItem(context, order);
+      },
     );
   }
 
   Widget _buildEmpty(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.history_rounded,
-            color: Colors.grey.shade300,
-            size: 80,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            "No hay órdenes en este período",
-            style: TextStyle(
-              color: Colors.grey.shade500,
-              fontSize: 16,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 96,
+              height: 96,
+              decoration: BoxDecoration(
+                color: colorScheme.primary.withOpacity(0.12),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.history_rounded,
+                size: 44,
+                color: colorScheme.primary,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 18),
+            Text(
+              "No hay órdenes en este mes",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: colorScheme.inverseSurface,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildList(BuildContext context, List<AorderEntity> orders) {
+  Widget _buildOrderItem(BuildContext context, HorderEntity order) {
     final colorScheme = Theme.of(context).colorScheme;
-    final adminHomeBloc = context.read<AdminHomeBloc>();
+    final formatYmd = formatDateToYMD(order.initDate);
+    final formatAmPm = formatTimeToAmPm(order.initDate);
+    final String date = "$formatYmd, $formatAmPm";
 
-    return ListView.separated(
-      padding: const EdgeInsets.all(16),
-      physics: const BouncingScrollPhysics(),
-      itemCount: orders.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 16),
-      itemBuilder: (context, index) {
-        final item = orders[index];
-        final formatYmd = formatDateToYMD(item.initDate);
-        final formatAmPm = formatTimeToAmPm(item.initDate);
-        final String date = "$formatYmd , $formatAmPm";
+    void selectOrder() {
+      context.read<AdminHistoryBloc>().add(SelectAdminHistoryOrder(order: order));
+      context.push(Routes.adminOrderHistoryView, extra: context.read<AdminHistoryBloc>());
+    }
 
-        void selectOrder() {
-          adminHomeBloc.add(
-            AdminHomeUpdateSelectedOrderEvent(selectedOrder: item),
-          );
-          context.push(Routes.adminOrderHistoryView);
-        }
-
-        return Column(
-          children: [
-            // fecha banner
-            Container(
-              alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-              decoration: BoxDecoration(
-                color: colorScheme.primary,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: colorScheme.primary.withOpacity(0.2),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+    return Column(
+      children: [
+        Container(
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          decoration: BoxDecoration(
+            color: colorScheme.primary,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: colorScheme.primary.withOpacity(0.2),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
               ),
-              width: double.infinity,
-              child: Text(
-                date,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
-              ),
+            ],
+          ),
+          width: double.infinity,
+          child: Text(
+            date,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
             ),
-            const SizedBox(height: 12),
-
-            // tarjeta de orden
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Info izquierda
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.receipt_long_rounded,
-                              size: 18,
-                              color: colorScheme.inverseSurface,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              "Ord #${item.orderCode}",
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: colorScheme.inverseSurface,
-                                fontSize: 15,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.person_2_rounded,
-                              size: 18,
-                              color: colorScheme.inverseSurface.withOpacity(0.8),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              item.userRegistration,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w500,
-                                color: colorScheme.inverseSurface.withOpacity(0.8),
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Precio y botón
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+          ),
+        ),
+        const SizedBox(height: 12),
+        InkWell(
+          onTap: selectOrder,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        "${item.price}\$",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.inverseSurface,
-                          fontSize: 16,
-                        ),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.receipt_long_rounded,
+                            size: 18,
+                            color: colorScheme.inverseSurface,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            "Orden #${order.orderCode}",
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.inverseSurface,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 8),
-                      ElevatedButton(
-                        onPressed: selectOrder,
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          backgroundColor: colorScheme.primary,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.person_2_rounded,
+                            size: 18,
+                            color: colorScheme.inverseSurface.withOpacity(0.8),
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                          const SizedBox(width: 8),
+                          Text(
+                            order.copyShopName,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w500,
+                              color: colorScheme.inverseSurface.withOpacity(0.8),
+                              fontSize: 14,
+                            ),
                           ),
-                          elevation: 2,
-                          shadowColor: colorScheme.primary.withOpacity(0.3),
-                        ),
-                        child: const Icon(Icons.remove_red_eye, size: 20),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      "\$${order.price.toStringAsFixed(2)}",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.inverseSurface,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ElevatedButton(
+                      onPressed: selectOrder,
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: colorScheme.primary,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        elevation: 2,
+                        shadowColor: colorScheme.primary.withOpacity(0.3),
+                      ),
+                      child: const Icon(Icons.remove_red_eye, size: 20),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
-        );
-      },
+          ),
+        ),
+      ],
     );
   }
 }

@@ -21,6 +21,7 @@ class AorderEntity {
   final Uint8List? pdfFileBytes;
   final String paymentMethod;
   final String verificationCode; //Son 5 numeros
+  final DateTime? printDate;
 
   AorderEntity({
     required this.copyShopName,
@@ -43,7 +44,59 @@ class AorderEntity {
     this.pdfFileBytes,
     required this.paymentMethod,
     required this.verificationCode,
+    required this.printDate
   });
+
+  AorderEntity copyWith({
+    String? copyShopName,
+    String? copyShopEmail,
+    String? userRegistration,
+    String? userName,
+    String? orderCode,
+    bool? hasItBeenCanceledByUser,
+    bool?
+    hasItBeenAccepted, // si pasas null explícito significa querer mantener el mismo valor
+    DateTime? estimatedDeliveryTime,
+    String? format,
+    DateTime? initDate,
+    bool? isColor,
+    int? pages,
+    String? pdfName,
+    String? placeLat,
+    String? placeLong,
+    double? price,
+    String? url,
+    Uint8List? pdfFileBytes,
+    String? paymentMethod,
+    String? verificationCode,
+    DateTime? printDate
+  }) {
+    return AorderEntity(
+      copyShopName: copyShopName ?? this.copyShopName,
+      copyShopEmail: copyShopEmail ?? this.copyShopEmail,
+      userRegistration: userRegistration ?? this.userRegistration,
+      userName: userName ?? this.userName,
+      orderCode: orderCode ?? this.orderCode,
+      hasItBeenCanceledByUser:
+          hasItBeenCanceledByUser ?? this.hasItBeenCanceledByUser,
+      hasItBeenAccepted: hasItBeenAccepted ?? this.hasItBeenAccepted,
+      estimatedDeliveryTime:
+          estimatedDeliveryTime ?? this.estimatedDeliveryTime,
+      format: format ?? this.format,
+      initDate: initDate ?? this.initDate,
+      isColor: isColor ?? this.isColor,
+      pages: pages ?? this.pages,
+      pdfName: pdfName ?? this.pdfName,
+      placeLat: placeLat ?? this.placeLat,
+      placeLong: placeLong ?? this.placeLong,
+      price: price ?? this.price,
+      url: url ?? this.url,
+      pdfFileBytes: pdfFileBytes ?? this.pdfFileBytes,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      verificationCode: verificationCode ?? this.verificationCode,
+      printDate: printDate ?? this.printDate
+    );
+  }
 
   /// Convierte un documento de Firestore (Map) a una instancia de AorderEntity
   factory AorderEntity.fromMap(Map<String, dynamic> map) {
@@ -51,7 +104,7 @@ class AorderEntity {
       userRegistration: map['userRegistration'] ?? '',
       userName: map['userName'] ?? '',
       orderCode: map['orderCode'] ?? '',
-      hasItBeenCanceledByUser: map['hasItBeenCanceledByUser:'] ?? false,
+      hasItBeenCanceledByUser: map['hasItBeenCanceledByUser'] ?? false,
       hasItBeenAccepted: map['hasItBeenAccepted'],
       estimatedDeliveryTime: map['estimatedDeliveryTime']?.toDate(),
       format: map['format'] ?? '',
@@ -65,8 +118,9 @@ class AorderEntity {
       placeLong: map['placeLong'] ?? '',
       price: (map['price'] ?? 0).toDouble(),
       url: map['url'] ?? '',
-      paymentMethod: map['isCardPayment'] ?? '',
+      paymentMethod: map['paymentMethod'] ?? '',
       verificationCode: map['verificationCode'] ?? '',
+      printDate: map['printDate']?.toDate(),
     );
   }
 
@@ -91,11 +145,13 @@ class AorderEntity {
       'price': price,
       'url': url,
       'verificationCode': verificationCode,
-      'isCardPayment': paymentMethod,
+      'paymentMethod': paymentMethod,
+      'printDate': printDate
     };
   }
 
-  static const String _urlExample = "";
+  static const String _urlExample =
+      "gs://printfastofficial2025.firebasestorage.app/1974238/printFastTest.pdf";
 
   static final List<AorderEntity> acceptedOrdersExample = [
     AorderEntity(
@@ -118,6 +174,7 @@ class AorderEntity {
       userName: "Brandon Cantu",
       paymentMethod: 'cash',
       verificationCode: "34524",
+      printDate: DateTime.now().add(Duration(minutes: 20)),
     ),
     AorderEntity(
       copyShopName: "Copias Norte",
@@ -137,8 +194,9 @@ class AorderEntity {
       url: _urlExample,
       orderCode: "346",
       userName: "María López",
-       paymentMethod: 'cash',
+      paymentMethod: 'cash',
       verificationCode: "67843",
+      printDate: DateTime.now().add(Duration(minutes: 40)),
     ),
     AorderEntity(
       copyShopName: "Papelería FIME",
@@ -162,6 +220,7 @@ class AorderEntity {
       userName: "Luis Martínez",
       paymentMethod: 'cash',
       verificationCode: "12467",
+      printDate: DateTime.now().add(Duration(minutes: 59)),
     ),
   ];
 
@@ -184,8 +243,9 @@ class AorderEntity {
       url: _urlExample,
       orderCode: "448",
       userName: "Ana Gómez",
-       paymentMethod: 'cash',
+      paymentMethod: 'cash',
       verificationCode: "12467",
+      printDate: DateTime.now().add(Duration(hours: 2)),
     ),
     AorderEntity(
       copyShopName: "Copias Sur",
@@ -207,8 +267,9 @@ class AorderEntity {
       url: _urlExample,
       orderCode: "449",
       userName: "Carlos Rivera",
-       paymentMethod: 'cash',
+      paymentMethod: 'cash',
       verificationCode: "12467",
+      printDate: DateTime.now().add(Duration(minutes: 20)),
     ),
     AorderEntity(
       copyShopName: "Papelería Central",
@@ -228,121 +289,34 @@ class AorderEntity {
       url: _urlExample,
       orderCode: "450",
       userName: "Sofía Hernández",
-       paymentMethod: 'cash',
+      paymentMethod: 'cash',
       verificationCode: "12467",
+      printDate: DateTime.now().add(Duration(minutes: 70)),
     ),
   ];
 
-  static final List<AorderEntity> historyOrders = [
-    AorderEntity(
-      copyShopName: "Imprenta Norte",
-      copyShopEmail: "facdyc@gmail.com",
-      userRegistration: "1954345",
-      hasItBeenAccepted: true,
-      estimatedDeliveryTime: DateTime(2025, 1, 2, 24),
-      format: "Carta",
-      initDate: DateTime(2025, 1, 2, 23),
-      isColor: false,
-      pages: 10,
-      hasItBeenCanceledByUser: false,
-      pdfName: "tarea1.pdf",
-      placeLat: "25.693100",
-      placeLong: "-100.315000",
-      price: 20,
-      url: _urlExample,
-      orderCode: "501",
-      userName: "Alejandro Pérez",
-       paymentMethod: 'cash',
-      verificationCode: "12467",
-    ),
 
-    AorderEntity(
-      copyShopName: "Copias Facultad",
-      copyShopEmail: "facdyc@gmail.com",
-      userRegistration: "1906456",
-      hasItBeenAccepted: true,
-      estimatedDeliveryTime: DateTime(2025, 2, 2, 24),
 
-      format: "Oficio",
-      initDate: DateTime(2025, 2, 2, 23),
-      isColor: true,
-      pages: 25,
-      hasItBeenCanceledByUser: true,
-      pdfName: "proyecto_capitulo.pdf",
-      placeLat: "25.687800",
-      placeLong: "-100.320500",
-      price: 75,
-      url: _urlExample,
-      orderCode: "452",
-      userName: "Beatriz Flores",
-       paymentMethod: 'cash',
-      verificationCode: "12467",
-    ),
-
-    AorderEntity(
-      copyShopName: "Papelería Central",
-      copyShopEmail: "facdyc@gmail.com",
-      userRegistration: "1906546",
-      hasItBeenAccepted: true,
-      estimatedDeliveryTime: DateTime(2025, 3, 2, 24),
-      format: "Carta",
-      initDate: DateTime(2025, 3, 2, 23),
-      isColor: false,
-      pages: 4,
-      hasItBeenCanceledByUser: false,
-      pdfName: "resumen_articulo.pdf",
-      placeLat: "25.690200",
-      placeLong: "-100.312300",
-      price: 8,
-      url: _urlExample,
-      orderCode: "003",
-      userName: "Carlos Mendoza",
-       paymentMethod: 'cash',
-      verificationCode: "12467",
-    ),
-
-    AorderEntity(
-      copyShopName: "Imprenta Express",
-      copyShopEmail: "facdyc@gmail.com",
-      userRegistration: "1945654",
-      hasItBeenAccepted: true,
-      estimatedDeliveryTime: DateTime.now().add(Duration(hours: 2)),
-      format: "Oficio",
-      initDate: DateTime.now().subtract(Duration(minutes: 5)),
-      isColor: true,
-      pages: 60,
-      hasItBeenCanceledByUser: true,
-      pdfName: "tesis_entregable.pdf",
-      placeLat: "25.691500",
-      placeLong: "-100.318000",
-      price: 180,
-      url: _urlExample,
-      orderCode: "004",
-      userName: "Diana Rodríguez",
-       paymentMethod: 'cash',
-      verificationCode: "12467",
-    ),
-  ];
-
-  static final AorderEntity aorderEntityExample = AorderEntity(
-    copyShopName: "Imprenta Central",
-    userRegistration: "1945567",
-    copyShopEmail: "facdyc@gmail.com",
-    hasItBeenAccepted: true,
-    estimatedDeliveryTime: DateTime.now().add(Duration(minutes: 40)),
-    format: "Carta",
-    initDate: DateTime.now().subtract(Duration(hours: 1, minutes: 20)),
-    isColor: true,
-    pages: 25,
+  static final AorderEntity aorderEntityEmpty = AorderEntity(
+    copyShopName: "",
+    userRegistration: "",
+    copyShopEmail: "",
+    hasItBeenAccepted: null,
+    estimatedDeliveryTime: DateTime.now(),
+    format: "",
+    initDate: DateTime.now(),
+    isColor: false,
+    pages: 0,
     hasItBeenCanceledByUser: false,
-    pdfName: "ModeloMatematicoCom.pdf",
-    placeLat: "25.689210",
-    placeLong: "-100.318900",
-    price: 75,
-    url: _urlExample,
-    orderCode: "345",
-    userName: "UserTest",
-    paymentMethod: 'cash',
-    verificationCode: "12467",
+    pdfName: "",
+    placeLat: "",
+    placeLong: "",
+    price: 0,
+    url: "",
+    orderCode: "",
+    userName: "",
+    paymentMethod: "",
+    verificationCode: "",
+    printDate: null
   );
 }

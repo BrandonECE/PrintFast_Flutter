@@ -68,6 +68,11 @@ class ShoppingBloc extends Bloc<ShoppingEvent, ShoppingState> {
         ),
       );
     });
+
+    on<ShoppingResetEvent>((event, emit) {
+      print("testsss - RESETEANDOOOO");
+      emit(ShoppingInitial().copyWith(shoppingStatus: event.shoppingStatus));
+    });
   }
 
   Future<void> onPick() async {
@@ -157,7 +162,7 @@ class ShoppingBloc extends Bloc<ShoppingEvent, ShoppingState> {
   Future<void> processingPayment(
     UserEntity userEntity,
     CopyShopEntity selectedCopyShop,
-    String  paymentMethod,
+    String paymentMethod,
   ) async {
     add(ShoppingChangeStatusEvent(shoppingStatus: ShoppingStatus.loading));
 
@@ -188,6 +193,7 @@ class ShoppingBloc extends Bloc<ShoppingEvent, ShoppingState> {
         url: _getFinalUrl(userEntity.registration, state.fileName),
         paymentMethod: paymentMethod,
         verificationCode: generateFiveDigitCode(),
+        printDate: null
       );
 
       //  throw Exception("La recepción de órdenes está temporalmente detenida en esta papelería.");
@@ -206,7 +212,7 @@ class ShoppingBloc extends Bloc<ShoppingEvent, ShoppingState> {
         return;
       }
 
-      await userRepository.placeAOrder(aorderEntity, uploadPdf: false);
+      await userRepository.placeAOrder(aorderEntity, uploadPdf: true);
 
       await Future.delayed(Duration(milliseconds: 1000));
 

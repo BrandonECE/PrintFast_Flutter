@@ -4,7 +4,7 @@ sealed class ChangePaymentMethodEvent extends Equatable {
   const ChangePaymentMethodEvent();
 
   @override
-  List<Object?> get props => [];
+  List<Object> get props => [];
 }
 
 class LoadPaymentMethods extends ChangePaymentMethodEvent {
@@ -12,7 +12,7 @@ class LoadPaymentMethods extends ChangePaymentMethodEvent {
   const LoadPaymentMethods({required this.currentPaymentMethodId});
 
   @override
-  List<Object?> get props => [currentPaymentMethodId];
+  List<Object> get props => [currentPaymentMethodId];
 }
 
 class SelectPaymentMethod extends ChangePaymentMethodEvent {
@@ -20,12 +20,18 @@ class SelectPaymentMethod extends ChangePaymentMethodEvent {
   const SelectPaymentMethod(this.methodId);
 
   @override
-  List<Object?> get props => [methodId];
+  List<Object> get props => [methodId];
 }
 
 class ConfirmChange extends ChangePaymentMethodEvent {
-  const ConfirmChange();
+  final String userRegistration;
+  final String copyShopEmail;
+  final String orderCode;
+  const ConfirmChange({required this.userRegistration, required this.copyShopEmail, required this.orderCode});
+  @override
+  List<Object> get props => [userRegistration, copyShopEmail, orderCode];
 }
+
 
 class ResetState extends ChangePaymentMethodEvent {
   const ResetState();
@@ -37,6 +43,6 @@ class ChangePaymentMethodActionStatusEvent extends ChangePaymentMethodEvent {
   const ChangePaymentMethodActionStatusEvent({required this.changePaymentMethodActionStatus});
 
   @override
-  List<Object?> get props => [changePaymentMethodActionStatus];
+  List<Object> get props => [changePaymentMethodActionStatus];
 }
 

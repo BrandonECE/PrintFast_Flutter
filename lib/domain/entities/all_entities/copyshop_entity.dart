@@ -6,6 +6,7 @@ class CopyShopEntity {
   final String long;
   final bool pauseReception;
   final String copyShopEmail;
+  final String copyShopPhone;
   final int queue;
   final double price;
   final bool isRecommended;
@@ -21,6 +22,7 @@ class CopyShopEntity {
     required this.pauseReception,
     required this.queue,
     required this.copyShopEmail,
+    required this.copyShopPhone,
     this.price = 0,
     this.isRecommended = false,
     this.distance = 0,
@@ -34,6 +36,7 @@ class CopyShopEntity {
     return CopyShopEntity(
       copyShopName: map['copyShopName'] as String,
       copyShopEmail: map['copyShopEmail'] as String,
+      copyShopPhone: map['copyShopPhone'] as String,
       lat: map['lat'] as String,
       long: map['long'] as String,
       pauseReception: map['pauseReception'] as bool,
@@ -46,6 +49,7 @@ class CopyShopEntity {
     return {
       'copyShopName': copyShopName,
       'copyShopEmail': copyShopEmail,
+      'copyShopPhone': copyShopPhone,
       'lat': lat,
       'long': long,
       'pauseReception': pauseReception,
@@ -56,6 +60,7 @@ class CopyShopEntity {
   // Método copyWith para actualizar distancia y duración
   CopyShopEntity copyWith({
     String? copyShopName,
+    String? copyShopPhone,
     String? lat,
     String? long,
     bool? pauseReception,
@@ -79,10 +84,22 @@ class CopyShopEntity {
       distance: distance ?? this.distance,
       duration: duration ?? this.duration,
       copyShopEmail: copyShopEmail ?? this.copyShopEmail,
-      estimatedDeliveryTime: estimatedDeliveryTime ?? this.estimatedDeliveryTime,
+      copyShopPhone: copyShopPhone ?? this.copyShopPhone,
+      estimatedDeliveryTime:
+          estimatedDeliveryTime ?? this.estimatedDeliveryTime,
       aorders: aorders ?? this.aorders,
     );
   }
+
+  static final CopyShopEntity defaultCopyShopValues = CopyShopEntity(
+    copyShopName: "24/7",
+    lat: "25.724302",
+    long: "-100.308550",
+    copyShopPhone: "8124354678",
+    pauseReception: false,
+    queue: 0,
+    copyShopEmail: "24.7@gmail.com",
+  );
 
   static List<CopyShopEntity> exmapleUanl = [
     CopyShopEntity(
@@ -94,6 +111,7 @@ class CopyShopEntity {
       price: 17.0,
       isRecommended: true,
       copyShopEmail: "24.7@gmail.com",
+       copyShopPhone: "8124354678",
     ),
     CopyShopEntity(
       copyShopName: 'BIBL. RECTORIA',
@@ -103,6 +121,7 @@ class CopyShopEntity {
       queue: 0,
       price: 17.0,
       copyShopEmail: 'bibl.rectoria@gmail.com',
+       copyShopPhone: "8124354678",
     ),
     CopyShopEntity(
       copyShopName: 'FACDYC',
@@ -112,6 +131,7 @@ class CopyShopEntity {
       queue: 0,
       price: 17.0,
       copyShopEmail: 'facdyc@gmail.com',
+       copyShopPhone: "8124354678",
     ),
     CopyShopEntity(
       copyShopName: 'FARQ',
@@ -121,6 +141,7 @@ class CopyShopEntity {
       queue: 0,
       price: 17.0,
       copyShopEmail: 'farq@gmail.com',
+       copyShopPhone: "8124354678",
     ),
     CopyShopEntity(
       copyShopName: 'FIME | x | FARQ',
@@ -130,6 +151,7 @@ class CopyShopEntity {
       queue: 0,
       price: 17.0,
       copyShopEmail: 'fime.x.farq@gmail.com',
+       copyShopPhone: "8124354678",
     ),
     CopyShopEntity(
       copyShopName: 'FIME',
@@ -139,6 +161,7 @@ class CopyShopEntity {
       queue: 0,
       price: 17.0,
       copyShopEmail: 'fime@gmail.com',
+       copyShopPhone: "8124354678",
     ),
   ];
 

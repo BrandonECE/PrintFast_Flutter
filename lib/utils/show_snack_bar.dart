@@ -9,6 +9,11 @@ void showSnackBar({
   bool showCancelButton = false,
 }) {
   final messageErrorWarningBloc = context.read<MessageErrorWarningBloc>();
+  
+  // messageErrorWarningBloc.add(
+  //     const ShowMessageErrorWarningEvent(showMessageErrorWarning: false),
+  //   );
+
   messageErrorWarningBloc.add(
     ChangeTitleTextAndButtonEvent(
       title: title,

@@ -29,8 +29,7 @@ class ShoppingPayMethodBloc
     LoadSavedCards event,
     Emitter<ShoppingPayMethodState> emit,
   ) async {
-
-    emit(ShoppingPayMethodInitial(),);
+    emit(ShoppingPayMethodInitial());
 
     await Future.delayed(const Duration(milliseconds: 50));
 
@@ -115,6 +114,14 @@ class ShoppingPayMethodBloc
     );
 
     try {
+      final double outstandingCharges = await userRepository
+          .getOutstandingCharges(event.userRegistration);
+
+      emit(state.copyWith(outstandingCharges: outstandingCharges));
+      if (outstandingCharges > 0.0) {
+        throw Exception("Pago Pendiente");
+      }
+
       if (state.selectedMethodId != 'cash') {
         final selectedMethodId = state.selectedMethodId;
 
@@ -122,9 +129,17 @@ class ShoppingPayMethodBloc
         final functions = FirebaseFunctions.instanceFor(region: 'us-central1');
         final callable = functions.httpsCallable('createPaymentIntent');
         final result = await callable.call(<String, dynamic>{
-          'amount': 1000, // poner aquí el monto real en centavos
+          'amount':
+              (event.amount *
+                          100) //Se necesita almenos una cantidad de 10.00 mxn
+                      .round() >
+                  1000
+              ? (event.amount * 100).round()
+              : 1000, // poner aquí el monto real en centavos
           'currency': 'mxn',
         });
+
+  
 
         final clientSecret = result.data['clientSecret'] as String;
 
@@ -147,7 +162,9 @@ class ShoppingPayMethodBloc
         ),
       );
     } catch (e) {
-      print(e);
+      print(
+        'Error procesando pago: ${e.toString().replaceAll(RegExp(r'\r?\n'), ' ')}',
+      );
       emit(
         state.copyWith(
           paymentStatus: ActionMethodPayStatus.failure,

@@ -1,10 +1,12 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:printfast_rebuild/presentation/blocs/shared_blocs/message_error_warning_bloc/message_error_warning_bloc.dart';
 
 class MyMessageErrorWarning extends StatelessWidget {
-  const MyMessageErrorWarning({super.key, required this.voidCallback});
+  const MyMessageErrorWarning({super.key, required this.voidCallback, this.voidCallbackByCloseIcon});
   final VoidCallback voidCallback;
+  final VoidCallback? voidCallbackByCloseIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -14,12 +16,17 @@ class MyMessageErrorWarning extends StatelessWidget {
         final colorScheme = Theme.of(context).colorScheme;
         final title = state.title.toLowerCase();
 
-        final IconData snackBarIcon = switch (title) {
+      final IconData snackBarIcon = switch (title) {
           String s when s.contains("error") => Icons.error,
           String s when s.contains("cambiar") => Icons.swap_horiz_rounded,
           String s when s.contains("guardar") => Icons.save_rounded,
-          String s when s.contains("cancelar") => Icons.cancel_rounded,
-          String s when s.contains("confirmar") => Icons.check_circle,
+          String s when s.contains("pago") => Icons.payment_rounded,
+          String s when s.contains("pendiente") => Icons.pending,
+          String s when s.contains("cancelar")  || s.contains("rechazar") || s.contains("rechazada") => Icons.cancel_rounded,
+          String s when s.contains("impresión") => Icons.print,
+          String s when s.contains("confirmar") || s.contains("aceptar") => Icons.check_circle,
+          String s when s.contains("pausar recepción") => Icons.pause_circle,
+          String s when s.contains("reanudar recepción") => Icons.check_circle,
           _ => Icons.circle_outlined,
         };
 
@@ -109,11 +116,11 @@ class MyMessageErrorWarning extends StatelessWidget {
                               ],
                             ),
                             IconButton(
-                              onPressed: () => messageErrorWarningBloc.add(
+                              onPressed: voidCallbackByCloseIcon == null ? () => messageErrorWarningBloc.add(
                                 ShowMessageErrorWarningEvent(
                                   showMessageErrorWarning: false,
                                 ),
-                              ),
+                              ) : () => voidCallbackByCloseIcon?.call(),
                               icon: Icon(
                                 Icons.close_rounded,
                                 color: colorScheme.inverseSurface.withOpacity(

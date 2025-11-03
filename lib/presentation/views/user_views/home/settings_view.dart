@@ -5,6 +5,7 @@ import 'package:printfast_rebuild/config/routes/routes.dart';
 import 'package:printfast_rebuild/domain/entities/entities.dart';
 import 'package:printfast_rebuild/presentation/blocs/user_blocs/home_bloc/home_bloc.dart';
 import 'package:printfast_rebuild/presentation/blocs/shared_blocs/message_error_warning_bloc/message_error_warning_bloc.dart';
+import 'package:printfast_rebuild/presentation/blocs/user_blocs/shopping_blocs/shopping_bloc/shopping_bloc.dart';
 import 'package:printfast_rebuild/presentation/widgets/widgets.dart';
 
 import '../../../../utils/utils.dart';
@@ -17,6 +18,7 @@ class MySettingsView extends StatelessWidget {
     final width = MediaQuery.of(context).size.width;
     final messageErrorWarningBloc = context.read<MessageErrorWarningBloc>();
     final homeBloc = context.read<HomeBloc>();
+    final shoppingBloc = context.read<ShoppingBloc>();
 
     void signOut() async {
       if (homeBloc.state.homeLogOutStatus != HomeLogOutStatus.loading &&
@@ -30,7 +32,11 @@ class MySettingsView extends StatelessWidget {
       HomeState state,
       HomeBloc homeBloc,
     ) {
-      showSnackBar(context: context, title: "¡Error inesperado!", text: state.messageError ?? "",);
+      showSnackBar(
+        context: context,
+        title: "¡Error inesperado!",
+        text: state.messageError ?? "",
+      );
       homeBloc.add(
         HomeUpdateHomeLogOutStatusEvent(
           homeLogOutStatus: HomeLogOutStatus.initial,
@@ -55,6 +61,7 @@ class MySettingsView extends StatelessWidget {
     return BlocListener<HomeBloc, HomeState>(
       listener: (context, state) {
         if (state.homeLogOutStatus == HomeLogOutStatus.success) {
+          shoppingBloc.add( ShoppingResetEvent(shoppingStatus: ShoppingStatus.idle), );
           comeBackToLoginScreen(homeBloc, context);
         }
         if (state.homeLogOutStatus == HomeLogOutStatus.failure) {

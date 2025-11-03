@@ -38,7 +38,7 @@ class LiveTrackingBloc extends Bloc<LiveTrackingEvent, LiveTrackingState> {
     on<LiveTrackingCancelOrder>(_onCancelOrder);
   }
 
-  static const String _googleDirectionsApiKey = ApiKeys.firebaseApiKey;
+  static const String _googleDirectionsApiKey =ApiKeys.firebaseApiKey;
   static const LatLng initCoordinates = LatLng(
     25.721534676539743,
     -100.31223736703396,

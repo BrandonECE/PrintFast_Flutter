@@ -157,7 +157,7 @@ class MyAdminSettingsView extends StatelessWidget {
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Text(
-                      "FIME | x | FARQ",
+                      adminHomeState.copyShopEntity.copyShopName,
                       style: TextStyle(
                         color: colorScheme.inverseSurface,
                         fontWeight: FontWeight.bold,
@@ -168,7 +168,7 @@ class MyAdminSettingsView extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  "1974238",
+                  adminHomeState.userEntity.registration,
                   style: TextStyle(
                     color: colorScheme.inverseSurface.withOpacity(0.7),
                     fontWeight: FontWeight.w600,
@@ -239,7 +239,8 @@ class MyAdminSettingsView extends StatelessWidget {
   Widget _detailsCard(BuildContext context, AdminHomeState adminHomeState) {
     final colorScheme = Theme.of(context).colorScheme;
     final width = MediaQuery.of(context).size.width;
-    final messageErrorWarningBloc = context.read<MessageErrorWarningBloc>();
+    final adminHomeBloc = context.read<AdminHomeBloc>();
+
 
     return Container(
       width: width * 0.83,
@@ -274,16 +275,19 @@ class MyAdminSettingsView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          _detailRow(context, "Email", "fimexfarq@gmail.com"),
-          _detailRow(context, "Teléfono", "+52 8123445566"),
+          _detailRow(context, "Email", adminHomeState.copyShopEntity.copyShopEmail),
+          _detailRow(context, "Teléfono", "+52 ${adminHomeState.copyShopEntity.copyShopPhone}"),
           const SizedBox(height: 20),
           _pauseReception(
             context: context,
-            isChecked: false,
+            isChecked: adminHomeState.copyShopEntity.pauseReception,
             onChanged: (value) {
-              final String title = value! ? "Pausar Recepción" : "Reanudar Recepción";
-              final String message = value ? "¿Seguro quieres pausar?" : "¿Seguro quieres reanudar?";
-             showSnackBar(context: context, title: title, text: message,);
+              if(adminHomeState.receptionStatus == AdminReceptionStatus.success){
+                adminHomeBloc.add(AdminHomeUpdateAdminHomeActionsEvent(adminHomeActions: AdminHomeActions.togglePauseReception));
+                final String title = value! ? "Pausar Recepción" : "Reanudar Recepción";
+                final String message = value ? "¿Seguro quieres pausar?" : "¿Seguro quieres reanudar?";
+                showSnackBar(context: context, title: title, text: message,);
+              }
             },
           ),
         ],

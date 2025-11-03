@@ -21,31 +21,34 @@ class MyNotificationsView extends StatelessWidget {
     final homeState = context.read<HomeBloc>().state;
     final registration = homeState.userEntity.registration;
 
-    return BlocProvider(
-      create: (_) => NotificationsBloc(
-        userRepository: getIt<UserRepository>(),
-        registration: registration,
-      ),
-      child: Scaffold(
-        backgroundColor: colorScheme.primary,
-        appBar: _myAppBar(context),
-        body: Center(
-          child: Padding(
-            padding: EdgeInsets.only(bottom: width * 0.025),
-            child: Container(
-              width: width * 0.95,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) =>  context.read<HomeBloc>().add( const HomeMarkAllNotificationsAsSeenEvent(), ),
+      child: BlocProvider(
+        create: (_) => NotificationsBloc(
+          userRepository: getIt<UserRepository>(),
+          registration: registration,
+        ),
+        child: Scaffold(
+          backgroundColor: colorScheme.primary,
+          appBar: _myAppBar(context),
+          body: Center(
+            child: Padding(
+              padding: EdgeInsets.only(bottom: width * 0.025),
+              child: Container(
+                width: width * 0.95,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: _NotificationsBody(width: width),
               ),
-              child: _NotificationsBody(width: width),
             ),
           ),
         ),
@@ -71,7 +74,6 @@ class _NotificationsBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -149,10 +151,7 @@ class _NotificationsBody extends StatelessWidget {
         } else {
           return _buildList(context, state.notifications, key: const ValueKey('list'));
         }
-      default:
-        // mostrar loader mientras llega algo
-        return _buildLoading(context, key: const ValueKey('initial_loading'));
-    }
+      }
   }
 
   Widget _buildLoading(BuildContext context, {required Key key}) {
@@ -305,15 +304,16 @@ class _NotificationsBody extends StatelessWidget {
     );
   }
 
+
   Widget _buildNotificationItem(BuildContext context, NotificationEntity item) {
     final colorScheme = Theme.of(context).colorScheme;
     final formatYmd = formatDateToYMD(item.dateTime!);
     final formatAmPm = formatTimeToAmPm(item.dateTime!);
     final String date = "$formatYmd , $formatAmPm";
+    final bool isUnseen = !item.seen;
 
     return Column(
       children: [
-        // banner fecha
         Container(
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -331,51 +331,69 @@ class _NotificationsBody extends StatelessWidget {
           width: double.infinity,
           child: Text(
             date,
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
           ),
         ),
         const SizedBox(height: 12),
-
-        // tarjeta de notificación
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 3)),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
             ],
             border: Border.all(color: Colors.grey.shade300),
           ),
           child: Row(
             children: [
-              // icono circular
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: colorScheme.primary,
+                  color: isUnseen ? colorScheme.primary : Colors.grey.shade400.withOpacity(0.5),
                   shape: BoxShape.circle,
                   boxShadow: [
-                    BoxShadow(color: colorScheme.primary.withOpacity(0.3), blurRadius: 6, offset: const Offset(0, 2)),
+                    BoxShadow(
+                      color:  isUnseen ? colorScheme.primary.withOpacity(0.3) : Colors.transparent,
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
                   ],
                 ),
-                child: Icon( Icons.shopping_basket_rounded, color: Colors.white, size: 24),
+                child: Icon(
+                  Icons.shopping_basket_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 16),
-
-              // texto (asunto + mensaje)
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       item.subject,
-                      style: TextStyle(fontWeight: FontWeight.w600, color: colorScheme.inverseSurface, fontSize: 15),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.inverseSurface,
+                        fontSize: 15,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       item.message,
-                      style: TextStyle(color: colorScheme.inverseSurface.withOpacity(0.8), fontSize: 14),
+                      style: TextStyle(
+                        color: colorScheme.inverseSurface.withOpacity(0.8),
+                        fontSize: 14,
+                      ),
                     ),
                   ],
                 ),

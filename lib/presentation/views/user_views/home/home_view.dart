@@ -19,6 +19,7 @@ class MyHomeView extends StatelessWidget {
     final primary = Theme.of(context).colorScheme.primary;
     final shoppingBloc = context.read<ShoppingBloc>();
     final messageErrorWarningBloc = context.read<MessageErrorWarningBloc>();
+    final homeBloc = context.read<HomeBloc>();
 
     // final onPrimary = Theme.of(context).colorScheme.onPrimary;
     // final width = MediaQuery.of(context).size.width;
@@ -38,32 +39,111 @@ class MyHomeView extends StatelessWidget {
       );
     }
 
-    return Stack(
-      children: [
-        Align(
-          alignment: Alignment.center,
-          child: _myHomeScreen(primary, context, shoppingBloc, messageErrorWarningBloc, pageController, pages, onTapBottomNav)),
-           MyMessageErrorWarning(
-                voidCallback: () => messageErrorWarningBloc.add(
-                  ShowMessageErrorWarningEvent(showMessageErrorWarning: false),
-                ),
-              ),
-      ],
+    return BlocListener<HomeBloc, HomeState>(
+      listenWhen: (prev, curr) => prev.homeOrderStatus != curr.homeOrderStatus || prev.activeOrder?.hasItBeenAccepted != curr.activeOrder?.hasItBeenAccepted || prev.homeCanceledOrderStatus != curr.homeCanceledOrderStatus ,
+      listener: (context, state) {
+
+        if(state.homeCanceledOrderStatus == HomeCanceledOrderStatus.failure){
+          _thereWasAnError("¡Error inesperado!",  state.messageError ?? "", context, );
+        }else if (state.homeCanceledOrderStatus == HomeCanceledOrderStatus.sucessul){
+          homeBloc.add( HomeUpdateHomeActionsEvent(homeActions: HomeActions.none), );
+          homeBloc.add(HomeUpdateHomeCanceledOrderStatusEvent(homeCanceledOrderStatus: HomeCanceledOrderStatus.idle));
+        }
+
+        final hasItBeenActiveOrderAccepted = state.activeOrder?.hasItBeenAccepted ?? false;
+
+        if (state.homeOrderStatus == HomeOrderStatus.idle) {
+          shoppingBloc.add( ShoppingChangeStatusEvent(shoppingStatus: ShoppingStatus.idle), );
+        } else if (state.homeOrderStatus == HomeOrderStatus.canceledByCopyShop && !state.isCanceledByCopyShopLoading) {
+          shoppingBloc.add( ShoppingChangeStatusEvent(shoppingStatus: ShoppingStatus.idle), );
+          homeBloc.add( HomeUpdateIsCanceledByCopyShopLoadingEvent( isCanceledByCopyShopLoading: true, ), );
+          homeBloc.add(HomeCancelOrderEvent());
+          if (shoppingBloc.state.bytes != null) {
+            context.push(Routes.shopping);
+            context.push(Routes.locationPicker);
+          }
+          _thereWasAnError( "Orden rechazada", "Lo sentimos — la papeleria no pudo aceptar tu pedido.", context, );
+        } else if (state.homeOrderStatus == HomeOrderStatus.orderActive && hasItBeenActiveOrderAccepted) {
+          shoppingBloc.add(
+            ShoppingResetEvent(shoppingStatus: ShoppingStatus.idle),
+          );
+        }
+      },
+      child: Stack(
+        children: [
+          Align(
+            alignment: Alignment.center,
+            child: _myHomeScreen(
+              primary,
+              context,
+              shoppingBloc,
+              messageErrorWarningBloc,
+              pageController,
+              pages,
+              onTapBottomNav,
+            ),
+          ),
+          BlocBuilder<HomeBloc, HomeState>(
+            buildWhen: (prev, curr) => prev.homeActions != curr.homeActions || prev.homeCanceledOrderStatus != curr.homeCanceledOrderStatus,
+            builder: (context, state) {
+              return MyMessageErrorWarning(
+                voidCallbackByCloseIcon: () {
+                  if(state.homeCanceledOrderStatus == HomeCanceledOrderStatus.failure){
+                     homeBloc.add( HomeUpdateHomeActionsEvent(homeActions: HomeActions.none), );
+                    homeBloc.add(HomeUpdateHomeCanceledOrderStatusEvent(homeCanceledOrderStatus: HomeCanceledOrderStatus.idle));
+                  }
+                  messageErrorWarningBloc.add(
+                    ShowMessageErrorWarningEvent(
+                      showMessageErrorWarning: false,
+                    ),
+                  );
+                },
+                voidCallback: () {
+                  if (state.homeActions == HomeActions.cancelOrder && state.homeCanceledOrderStatus == HomeCanceledOrderStatus.idle) {
+                    homeBloc.add(HomeCancelOrderEvent());
+                  }else if(state.homeCanceledOrderStatus == HomeCanceledOrderStatus.failure){
+                    homeBloc.add( HomeUpdateHomeActionsEvent(homeActions: HomeActions.none), );
+                    homeBloc.add(HomeUpdateHomeCanceledOrderStatusEvent(homeCanceledOrderStatus: HomeCanceledOrderStatus.idle));
+                  }
+
+                  messageErrorWarningBloc.add(
+                    ShowMessageErrorWarningEvent(
+                      showMessageErrorWarning: false,
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 
-  Scaffold _myHomeScreen(Color primary, BuildContext context, ShoppingBloc shoppingBloc, MessageErrorWarningBloc messageErrorWarningBloc, PageController pageController, List<Widget> pages, void Function(int index, HomeBloc homeBloc) onTapBottomNav) {
+  void _thereWasAnError(String title, String message, BuildContext context) {
+    showSnackBar(context: context, title: title, text: message);
+  }
+
+  Scaffold _myHomeScreen(
+    Color primary,
+    BuildContext context,
+    ShoppingBloc shoppingBloc,
+    MessageErrorWarningBloc messageErrorWarningBloc,
+    PageController pageController,
+    List<Widget> pages,
+    void Function(int index, HomeBloc homeBloc) onTapBottomNav,
+  ) {
     return Scaffold(
-    backgroundColor: primary,
-    appBar: _myAppBar(context),
-    body: _myHomeBody(
-      shoppingBloc,
-      messageErrorWarningBloc,
-      pageController,
-      pages,
-    ), //MySettingsaView
-    bottomNavigationBar: _myBottomNavigationBar(context, onTapBottomNav),
-  );
+      backgroundColor: primary,
+      appBar: _myAppBar(context),
+      body: _myHomeBody(
+        shoppingBloc,
+        messageErrorWarningBloc,
+        pageController,
+        pages,
+      ), //MySettingsaViewz
+      bottomNavigationBar: _myBottomNavigationBar(context, onTapBottomNav),
+    );
   }
 
   BlocListener<ShoppingBloc, ShoppingState> _myHomeBody(
@@ -82,10 +162,10 @@ class MyHomeView extends StatelessWidget {
             );
           });
         } else if (state.shoppingStatus == ShoppingStatus.failure) {
-          _thereWasAnError(state, shoppingBloc, context);
+          _thereWasAShoppingError(state, shoppingBloc, context);
         } else if (state.shoppingStatus ==
             ShoppingStatus.failureByNoReception) {
-          _thereWasAnError(state, shoppingBloc, context);
+          _thereWasAShoppingError(state, shoppingBloc, context);
         }
       },
       child: BlocBuilder<HomeBloc, HomeState>(
@@ -111,63 +191,57 @@ class MyHomeView extends StatelessWidget {
           builder: (context, state) {
             final unseenNotificationsCount = state.unseenNotificationsCount;
 
-            return GestureDetector(
-              onTap: () {
-                context.read<HomeBloc>().add( const HomeMarkAllNotificationsAsSeenEvent(), );
-                context.push(Routes.notifications);
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 210),
-                curve: Curves.easeOut,
-                padding: EdgeInsets.only(
-                  right: unseenNotificationsCount > 9 ? 7.0 : 0.0,
-                ),
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    const Icon(
-                      Icons.notifications,
-                      size: 26,
-                      color: Colors.white,
-                    ),
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 210),
+              curve: Curves.easeOut,
+              padding: EdgeInsets.only(
+                right: unseenNotificationsCount > 9 ? 7.0 : 0.0,
+              ),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(
+                    Icons.notifications,
+                    size: 26,
+                    color: Colors.white,
+                  ),
 
-                    Positioned(
-                      top: -4,
-                      right: unseenNotificationsCount > 9 ? -9.0 : -2.0,
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 210),
-                        child: unseenNotificationsCount > 0
-                            ? Container(
-                                key: ValueKey(unseenNotificationsCount),
-                                padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(
-                                  color: Colors.redAccent,
-                                  shape: BoxShape.circle,
-                                ),
-                                constraints: const BoxConstraints(
-                                  minWidth: 19,
-                                  minHeight: 19,
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    unseenNotificationsCount > 9
-                                        ? "+9"
-                                        : unseenNotificationsCount.toString(),
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: unseenNotificationsCount > 9
-                                          ? 10.5
-                                          : 11,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                  Positioned(
+                    top: -4,
+                    right: unseenNotificationsCount > 9 ? -9.0 : -2.0,
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 210),
+                      child: unseenNotificationsCount > 0
+                          ? Container(
+                              key: ValueKey(unseenNotificationsCount),
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Colors.redAccent,
+                                shape: BoxShape.circle,
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 19,
+                                minHeight: 19,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  unseenNotificationsCount > 9
+                                      ? "+9"
+                                      : unseenNotificationsCount.toString(),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: unseenNotificationsCount > 9
+                                        ? 10.5
+                                        : 11,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                              )
-                            : const SizedBox.shrink(),
-                      ),
+                              ),
+                            )
+                          : const SizedBox.shrink(),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             );
           },
@@ -177,12 +251,16 @@ class MyHomeView extends StatelessWidget {
     );
   }
 
-  void _thereWasAnError(
+  void _thereWasAShoppingError(
     ShoppingState state,
     ShoppingBloc shoppingBloc,
-    BuildContext context
+    BuildContext context,
   ) {
-   showSnackBar(context: context, title: "¡Error inesperado!", text: state.messageError ?? "",);
+    showSnackBar(
+      context: context,
+      title: "¡Error inesperado!",
+      text: state.messageError ?? "",
+    );
     shoppingBloc.add(
       ShoppingChangeStatusEvent(shoppingStatus: ShoppingStatus.idle),
     );

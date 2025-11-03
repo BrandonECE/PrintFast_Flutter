@@ -67,7 +67,6 @@ class _HistoryBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -141,9 +140,7 @@ class _HistoryBody extends StatelessWidget {
         return _buildFailure(context, state.errorMessage!, key:  const ValueKey('history_failure'),);
       case HistoryStatus.success:
         return _buildSucessfulContent(state, context);
-      default:
-        return _buildLoading(context, key: ValueKey('history_loading'));;
-    }
+      }
   }
 
   Widget _buildSucessfulContent(HistoryState state, BuildContext context) {
@@ -314,8 +311,8 @@ class _HistoryBody extends StatelessWidget {
     ColorScheme colorScheme,
     HorderEntity order,
   ) {
-    final formatYmd = formatDateToYMD(order.initDate!);
-    final formatAmPm = formatTimeToAmPm(order.initDate!);
+    final formatYmd = formatDateToYMD(order.initDate);
+    final formatAmPm = formatTimeToAmPm(order.initDate);
     final String date = "$formatYmd, $formatAmPm";
 
     void selectOrder() {

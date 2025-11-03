@@ -59,12 +59,11 @@ class MyActiveOrderView extends StatelessWidget {
   Widget _topCard(BuildContext context, double width, HomeState homeState) {
     final colorScheme = Theme.of(context).colorScheme;
 
-     final status = homeState.activeOrder!.hasItBeenAccepted == null
-            ? "En revisión"
-            : "Activa";
-        final isActive = homeState.activeOrder!.hasItBeenAccepted == null
+
+    final isActive = homeState.activeOrder!.hasItBeenAccepted == null
             ? false
             : true;
+    final hasItBeenCanceledByUser = homeState.activeOrder!.hasItBeenCanceledByUser;
 
     return Container(
       width: width * 0.95,
@@ -116,7 +115,7 @@ class MyActiveOrderView extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              _statusChip(context, isActive: isActive, status: status),
+              _statusChip(isActive, hasItBeenCanceledByUser ),
               const SizedBox(height: 8),
               Text(
                 '\$${homeState.activeOrder!.price.toStringAsFixed(2)}',
@@ -331,16 +330,54 @@ class MyActiveOrderView extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'Previsualización',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: colorScheme.inverseSurface,
-                fontSize: 15,
+         Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Previsualización',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.inverseSurface,
+                    fontSize: 15,
+                  ),
+                ),
               ),
-            ),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 1000),
+                switchInCurve: Curves.fastLinearToSlowEaseIn,
+                switchOutCurve: Curves.fastEaseInToSlowEaseOut,
+                transitionBuilder: (child, animation) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
+                child: homeState.activeOrder?.printDate != null
+                    ? Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            key: ValueKey(
+                              "printDate ${homeState.activeOrder?.printDate}",
+                            ),
+                            'Imp.',
+                            style: TextStyle(
+                              color: colorScheme.inverseSurface,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.local_print_shop_rounded,
+                            size: 18, // 18 en lugar de 20 para mejor proporción
+                            color: colorScheme.primary,
+                          ),
+                        ],
+                      )
+                    : SizedBox.shrink(key: ValueKey("empty")),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           Expanded(
@@ -509,29 +546,51 @@ class MyActiveOrderView extends StatelessWidget {
     );
   }
 
-  Widget _paymentMethodChip(
-    BuildContext context, {
-    required bool isCardPayment,
-  }) {
-    final paymentMethod = isCardPayment ? 'Tarjeta' : 'Efectivo';
-    final icon = isCardPayment
-        ? Icons.credit_card_rounded
-        : Icons.money_rounded;
-    final backgroundColor = isCardPayment ? Colors.blue : Colors.orange;
+    Widget _paymentMethodChip(
+  BuildContext context, {
+  required bool isCardPayment,
+}) {
+  final paymentMethod = isCardPayment ? 'Tarjeta' : 'Efectivo';
+  final icon = isCardPayment
+      ? Icons.credit_card_rounded
+      : Icons.money_rounded;
+  final backgroundColor = isCardPayment ? Colors.blue : Colors.orange;
 
-    return GestureDetector(
-      onTap: () => context.push(Routes.changePaymentMethod),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: backgroundColor.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: backgroundColor.withOpacity(0.3)),
-        ),
+  return GestureDetector(
+    onTap: () => context.push(Routes.changePaymentMethod),
+    child: Container(
+
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: backgroundColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: backgroundColor.withOpacity(0.3)),
+      ),
+      child: AnimatedSize(
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+        alignment: Alignment.centerLeft,
         child: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: MainAxisSize.min, // Importante para que se ajuste al contenido
           children: [
-            Icon(icon, size: 12, color: backgroundColor),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 350),
+              transitionBuilder: (child, animation) {
+                return ScaleTransition(
+                  scale: CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOut,
+                  ),
+                  child: child,
+                );
+              },
+              child: Icon(
+                icon,
+                key: ValueKey<bool>(isCardPayment),
+                size: 12,
+                color: backgroundColor,
+              ),
+            ),
             const SizedBox(width: 4),
             Text(
               paymentMethod,
@@ -544,60 +603,101 @@ class MyActiveOrderView extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
- Widget _statusChip(
-    BuildContext context, {
-    required bool isActive,
-    required String status,
-  }) {
-    final baseGreen = Colors.green;
-    final baseOrange = Colors.orange;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 5,
-      ), // Reducido
-      decoration: BoxDecoration(
-        
-        color: isActive
-            ? baseGreen
-            : baseOrange,
-        borderRadius: BorderRadius.circular(16), // Reducido
-         boxShadow: [
-          BoxShadow(
-            color: isActive
-                ? baseGreen.withOpacity(0.3)
-                : baseOrange.withOpacity(0.3),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
+ Widget _statusChip(bool accepted, bool hasItBeenCanceledByUser) {
+  final bg = hasItBeenCanceledByUser
+      ? Colors.red
+      : accepted
+          ? Colors.green
+          : Colors.orange;
+
+  final statusName = hasItBeenCanceledByUser
+      ? 'Cancelada'
+      : accepted
+          ? 'Aceptada'
+          : 'En revisión';
+
+  final statusIcon = hasItBeenCanceledByUser
+      ? Icons.cancel_rounded 
+      : accepted
+          ? Icons.check_circle_rounded 
+          : Icons.access_time_rounded;
+
+  return AnimatedContainer(
+    duration: const Duration(milliseconds: 450),
+    curve: Curves.easeInOut,
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+    decoration: BoxDecoration(
+      color: bg,
+      borderRadius: BorderRadius.circular(14),
+      boxShadow: [
+        BoxShadow(
+          color: bg.withOpacity(0.3),
+          blurRadius: 4,
+          offset: const Offset(0, 1),
+        ),
+      ],
+    ),
+    child: AnimatedSize(
+      duration: const Duration(milliseconds: 450),
+      curve: Curves.easeInOut,
+      alignment: Alignment.centerLeft,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            isActive ? Icons.check_circle : Icons.pending,
-            size: 12,
-            color: Colors.white,
-          ),
-          const SizedBox(width: 5), // Reducido
-          Text(
-            status,
-            style: TextStyle(
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 400),
+            transitionBuilder: (child, animation) {
+              return ScaleTransition(
+                scale: CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeInOut,
+                ),
+                child: FadeTransition(
+                  opacity: animation,
+                  child: child,
+                ),
+              );
+            },
+            child: Icon(
+              statusIcon,
+              key: ValueKey<String>(statusName),
+              size: 12,
               color: Colors.white,
-              fontWeight: FontWeight.w600,
-              fontSize: 11, // Reducido
+            ),
+          ),
+          const SizedBox(width: 4),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 350),
+            transitionBuilder: (child, animation) {
+              return FadeTransition(
+                opacity: animation,
+                child: SizeTransition(
+                  sizeFactor: animation,
+                  axis: Axis.horizontal,
+                  child: child,
+                ),
+              );
+            },
+            child: Text(
+              statusName,
+              key: ValueKey<String>(statusName),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 11,
+              ),
             ),
           ),
         ],
       ),
-    );
-  }
-
+    ),
+  );
+}
 
 
 }

@@ -2,14 +2,14 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:printfast_rebuild/domain/entities/entities.dart';
 import 'package:printfast_rebuild/domain/entities/all_entities/user_entity.dart';
-import 'package:printfast_rebuild/domain/repositories/copyshop_repository.dart';
+import 'package:printfast_rebuild/domain/repositories/admin_repository.dart';
 
 part 'admin_role_selection_event.dart';
 part 'admin_role_selection_state.dart';
 
 class AdminRoleSelectionBloc
     extends Bloc<AdminRoleSelectionEvent, AdminRoleSelectionState> {
-  final CopyshopRepository copyshopRepository;
+  final AdminRepository copyshopRepository;
   AdminRoleSelectionBloc({required this.copyshopRepository})
     : super(AdminRoleSelectionInitial()) {
     on<AdminRoleSelectionUserUpdated>((event, emit) {
@@ -35,11 +35,14 @@ class AdminRoleSelectionBloc
     on<ChangeAdminRoleResetEvent>((event, emit) {
       emit(AdminRoleSelectionInitial());
     });
-
   }
 
   Future<void> selectRole(AdminRoleDestination adminRoleDestination) async {
-    add( AdminRoleSelectionStatusUpdated( adminRoleSelectionStatus: AdminRoleSelectionStatus.loading, ), );
+    add(
+      AdminRoleSelectionStatusUpdated(
+        adminRoleSelectionStatus: AdminRoleSelectionStatus.loading,
+      ),
+    );
     await Future.delayed(const Duration(milliseconds: 1200));
     add(ChangeAdminRoleDestinationEvent(adminRoleDestination));
   }

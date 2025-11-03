@@ -65,12 +65,13 @@ final class HomeStopActiveOrderListenerEvent extends HomeEvent {
 
 // Progress update (internal)
 final class HomeUpdateProgressEvent extends HomeEvent {
-  const HomeUpdateProgressEvent({required this.progress, required this.label});
+  const HomeUpdateProgressEvent({required this.progress, required this.label, required this.remainingMinutes});
   final double progress;
   final String label;
+  final double remainingMinutes;
 
   @override
-  List<Object?> get props => [progress, label];
+  List<Object?> get props => [progress, label, remainingMinutes];
 }
 
 // ---------------- Notifications events ----------------
@@ -119,10 +120,52 @@ final class HomeUpdateHomeLogOutStatusEvent extends HomeEvent {
   List<Object?> get props => [homeLogOutStatus, messageError];
 }
 
-
 final class HomeMarkAllNotificationsAsSeenEvent extends HomeEvent {
   const HomeMarkAllNotificationsAsSeenEvent();
   @override
   List<Object?> get props => [];
+}
+
+final class HomeUpdateHomeActionsEvent extends HomeEvent {
+  const HomeUpdateHomeActionsEvent({required this.homeActions});
+  final HomeActions homeActions;
+
+  @override
+  List<Object?> get props => [homeActions];
+}
+
+final class HomeCancelOrderEvent extends HomeEvent {
+  const HomeCancelOrderEvent();
+
+  @override
+  List<Object?> get props => [];
+}
+
+final class HomeUpdateIsCanceledByCopyShopLoadingEvent extends HomeEvent {
+  const HomeUpdateIsCanceledByCopyShopLoadingEvent({
+    required this.isCanceledByCopyShopLoading,
+  });
+  final bool isCanceledByCopyShopLoading;
+
+  @override
+  List<Object?> get props => [isCanceledByCopyShopLoading];
+}
+
+final class HomeUpdateIsTheShoppingButtonBlockedEvent extends HomeEvent {
+  const HomeUpdateIsTheShoppingButtonBlockedEvent({
+    required this.isTheShoppingButtonBlocked,
+  });
+  final bool isTheShoppingButtonBlocked;
+
+  @override
+  List<Object?> get props => [isTheShoppingButtonBlocked];
+}
+
+final class HomeUpdateHomeCanceledOrderStatusEvent extends HomeEvent {
+  const HomeUpdateHomeCanceledOrderStatusEvent({required this.homeCanceledOrderStatus});
+  final HomeCanceledOrderStatus homeCanceledOrderStatus;
+
+  @override
+  List<Object?> get props => [homeCanceledOrderStatus];
 }
 
