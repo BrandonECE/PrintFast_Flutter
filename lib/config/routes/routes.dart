@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:printfast_rebuild/config/constants/navigator_key.dart';
 import 'package:printfast_rebuild/presentation/blocs/admin_blocs/admin_history_bloc/admin_history_bloc.dart';
 import 'package:printfast_rebuild/presentation/blocs/user_blocs/history_bloc/history_bloc.dart';
 import 'package:printfast_rebuild/presentation/blocs/user_blocs/payment_blocs/change_payment_method_bloc/change_payment_method_bloc.dart';
@@ -44,7 +45,7 @@ class Routes {
   static final String adminSeeUserPaymentMethod = "/adminSeeUserPaymentMethod";
   static final String adminOrderHistoryView = "/adminOrderHistoryView";
   static final String adminMonthOrdersHistorySelectedView =
-      "/adminMonthOrdersHistorySelectedView";
+      "/adminMonthOrdersHistorySelePmqinctedView";
   static final String adminCodeValidationView = "/adminCodeValidationView";
 
   //Shared
@@ -53,6 +54,7 @@ class Routes {
 
   Routes._internal() {
     routes = GoRouter(
+      navigatorKey: NavigatorKey.navigatorKey,
       initialLocation: login, // Inicio en "/login"
       routes: <GoRoute>[
         //User

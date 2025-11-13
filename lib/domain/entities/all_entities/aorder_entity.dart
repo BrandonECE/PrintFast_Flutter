@@ -8,7 +8,9 @@ class AorderEntity {
   final String orderCode;
   final bool hasItBeenCanceledByUser;
   final bool? hasItBeenAccepted;
+  final bool hasItBeenCompleted;
   final DateTime? estimatedDeliveryTime;
+  final bool hasTheEstimatedDeliveryTimeChanged;
   final String format;
   final DateTime initDate;
   final bool isColor;
@@ -31,7 +33,9 @@ class AorderEntity {
     required this.orderCode,
     required this.hasItBeenCanceledByUser,
     required this.estimatedDeliveryTime,
+    required this.hasTheEstimatedDeliveryTimeChanged,
     required this.hasItBeenAccepted,
+    required this.hasItBeenCompleted,
     required this.format,
     required this.initDate,
     required this.isColor,
@@ -44,7 +48,7 @@ class AorderEntity {
     this.pdfFileBytes,
     required this.paymentMethod,
     required this.verificationCode,
-    required this.printDate
+    required this.printDate,
   });
 
   AorderEntity copyWith({
@@ -56,7 +60,9 @@ class AorderEntity {
     bool? hasItBeenCanceledByUser,
     bool?
     hasItBeenAccepted, // si pasas null explícito significa querer mantener el mismo valor
+    bool? hasItBeenCompleted,
     DateTime? estimatedDeliveryTime,
+    bool? hasTheEstimatedDeliveryTimeChanged,
     String? format,
     DateTime? initDate,
     bool? isColor,
@@ -69,7 +75,7 @@ class AorderEntity {
     Uint8List? pdfFileBytes,
     String? paymentMethod,
     String? verificationCode,
-    DateTime? printDate
+    DateTime? printDate,
   }) {
     return AorderEntity(
       copyShopName: copyShopName ?? this.copyShopName,
@@ -82,6 +88,10 @@ class AorderEntity {
       hasItBeenAccepted: hasItBeenAccepted ?? this.hasItBeenAccepted,
       estimatedDeliveryTime:
           estimatedDeliveryTime ?? this.estimatedDeliveryTime,
+      hasTheEstimatedDeliveryTimeChanged:
+          hasTheEstimatedDeliveryTimeChanged ??
+          this.hasTheEstimatedDeliveryTimeChanged,
+      hasItBeenCompleted: hasItBeenCompleted ?? this.hasItBeenCompleted,
       format: format ?? this.format,
       initDate: initDate ?? this.initDate,
       isColor: isColor ?? this.isColor,
@@ -94,7 +104,7 @@ class AorderEntity {
       pdfFileBytes: pdfFileBytes ?? this.pdfFileBytes,
       paymentMethod: paymentMethod ?? this.paymentMethod,
       verificationCode: verificationCode ?? this.verificationCode,
-      printDate: printDate ?? this.printDate
+      printDate: printDate ?? this.printDate,
     );
   }
 
@@ -106,7 +116,10 @@ class AorderEntity {
       orderCode: map['orderCode'] ?? '',
       hasItBeenCanceledByUser: map['hasItBeenCanceledByUser'] ?? false,
       hasItBeenAccepted: map['hasItBeenAccepted'],
+      hasItBeenCompleted: map['hasItBeenCompleted'],
       estimatedDeliveryTime: map['estimatedDeliveryTime']?.toDate(),
+      hasTheEstimatedDeliveryTimeChanged:
+          map['hasTheEstimatedDeliveryTimeChanged'] ?? false,
       format: map['format'] ?? '',
       initDate: map['initDate']?.toDate() ?? DateTime.now(),
       isColor: map['isColor'] ?? false,
@@ -132,7 +145,9 @@ class AorderEntity {
       'orderCode': orderCode,
       'hasItBeenCanceledByUser': hasItBeenCanceledByUser,
       'hasItBeenAccepted': hasItBeenAccepted,
+      'hasItBeenCompleted': hasItBeenCompleted,
       'estimatedDeliveryTime': estimatedDeliveryTime,
+      'hasTheEstimatedDeliveryTimeChanged': hasTheEstimatedDeliveryTimeChanged,
       'format': format,
       'initDate': initDate,
       'isColor': isColor,
@@ -146,7 +161,7 @@ class AorderEntity {
       'url': url,
       'verificationCode': verificationCode,
       'paymentMethod': paymentMethod,
-      'printDate': printDate
+      'printDate': printDate,
     };
   }
 
@@ -159,9 +174,11 @@ class AorderEntity {
       copyShopEmail: "facdyc@gmail.com",
       userRegistration: "1974238",
       hasItBeenAccepted: true,
+      hasItBeenCompleted: false,
       estimatedDeliveryTime: DateTime.now().add(Duration(minutes: 40)),
       format: "Carta",
       initDate: DateTime.now().subtract(Duration(hours: 1, minutes: 20)),
+      hasTheEstimatedDeliveryTimeChanged: false,
       isColor: true,
       pages: 25,
       hasItBeenCanceledByUser: false,
@@ -181,9 +198,11 @@ class AorderEntity {
       copyShopEmail: "facdyc@gmail.com",
       userRegistration: "1934563",
       hasItBeenAccepted: true,
+      hasItBeenCompleted: false,
       estimatedDeliveryTime: DateTime.now().add(Duration(minutes: 55)),
       format: "Oficio",
       initDate: DateTime.now().subtract(Duration(minutes: 30)),
+      hasTheEstimatedDeliveryTimeChanged: false,
       isColor: false,
       pages: 10,
       hasItBeenCanceledByUser: false,
@@ -203,11 +222,13 @@ class AorderEntity {
       copyShopEmail: "facdyc@gmail.com",
       userRegistration: "1978899",
       hasItBeenAccepted: true,
+      hasItBeenCompleted: false,
       estimatedDeliveryTime: DateTime.now().add(
         Duration(hours: 1, minutes: 10),
       ),
       format: "Carta",
       initDate: DateTime.now().subtract(Duration(hours: 2)),
+      hasTheEstimatedDeliveryTimeChanged: false,
       isColor: true,
       pages: 40,
       hasItBeenCanceledByUser: false,
@@ -230,9 +251,11 @@ class AorderEntity {
       copyShopEmail: "facdyc@gmail.com",
       userRegistration: "1924459",
       hasItBeenAccepted: false,
+      hasItBeenCompleted: false,
       estimatedDeliveryTime: DateTime.now().add(Duration(hours: 3)),
       format: "Carta",
       initDate: DateTime.now().subtract(Duration(minutes: 15)),
+      hasTheEstimatedDeliveryTimeChanged: false,
       isColor: true,
       pages: 12,
       hasItBeenCanceledByUser: false,
@@ -252,11 +275,13 @@ class AorderEntity {
       copyShopEmail: "facdyc@gmail.com",
       userRegistration: "5632456",
       hasItBeenAccepted: false,
+      hasItBeenCompleted: false,
       estimatedDeliveryTime: DateTime.now().add(
         Duration(hours: 2, minutes: 20),
       ),
       format: "Oficio",
       initDate: DateTime.now().subtract(Duration(hours: 1, minutes: 5)),
+      hasTheEstimatedDeliveryTimeChanged: false,
       isColor: false,
       pages: 6,
       hasItBeenCanceledByUser: false,
@@ -276,9 +301,11 @@ class AorderEntity {
       copyShopEmail: "facdyc@gmail.com",
       userRegistration: "2344455",
       hasItBeenAccepted: false,
+      hasItBeenCompleted: false,
       estimatedDeliveryTime: DateTime.now().add(Duration(minutes: 90)),
       format: "Carta",
       initDate: DateTime.now().subtract(Duration(minutes: 5)),
+      hasTheEstimatedDeliveryTimeChanged: false,
       isColor: false,
       pages: 3,
       hasItBeenCanceledByUser: false,
@@ -295,14 +322,14 @@ class AorderEntity {
     ),
   ];
 
-
-
   static final AorderEntity aorderEntityEmpty = AorderEntity(
     copyShopName: "",
     userRegistration: "",
     copyShopEmail: "",
     hasItBeenAccepted: null,
+    hasItBeenCompleted: false,
     estimatedDeliveryTime: DateTime.now(),
+    hasTheEstimatedDeliveryTimeChanged: false,
     format: "",
     initDate: DateTime.now(),
     isColor: false,
@@ -317,6 +344,6 @@ class AorderEntity {
     userName: "",
     paymentMethod: "",
     verificationCode: "",
-    printDate: null
+    printDate: null,
   );
 }

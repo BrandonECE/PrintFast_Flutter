@@ -11,6 +11,7 @@ class MyLoadingIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: size,
+      height: size,
       child: LoadingIndicator(
         indicatorType: Indicator.ballPulse,
         colors: [color ?? Theme.of(context).colorScheme.primary],

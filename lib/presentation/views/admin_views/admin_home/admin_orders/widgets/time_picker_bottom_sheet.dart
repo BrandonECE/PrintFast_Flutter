@@ -1,24 +1,47 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:printfast_rebuild/presentation/blocs/admin_blocs/admin_order_change_delivery_time_bloc/admin_order_change_delivery_time_bloc.dart';
+import 'package:printfast_rebuild/presentation/blocs/admin_blocs/admin_home_bloc/admin_home_bloc.dart';
+
+import '../../../../../../utils/utils.dart';
+import '../../../../../widgets/widgets.dart';
 
 class MyTimePickerBottomSheet extends StatelessWidget {
   const MyTimePickerBottomSheet({super.key, required this.deliveryTime});
   final DateTime deliveryTime;
-  
+
   @override
   Widget build(BuildContext context) {
-    final adminOrderChangeDeliveryTimeBloc = context.read<AdminOrderChangeDeliveryTimeBloc>();
+    final adminHomeBloc = context.read<AdminHomeBloc>();
     final colorScheme = Theme.of(context).colorScheme;
-    
-    return BlocBuilder<AdminOrderChangeDeliveryTimeBloc, AdminOrderChangeDeliveryTimeState>(
+
+    return BlocBuilder<AdminHomeBloc, AdminHomeState>(
+      buildWhen: (prev, curr) =>
+          prev.deliveryTime != curr.deliveryTime ||
+          prev.showDeliveryTimeBottomSheet !=
+              curr.showDeliveryTimeBottomSheet ||
+          prev.changeDeliveryPendingOrderTimeStatus !=
+              curr.changeDeliveryPendingOrderTimeStatus ||
+          prev.changeDeliveryAcceptedOrderTimeStatus !=
+              curr.changeDeliveryAcceptedOrderTimeStatus,
       builder: (context, state) {
         final showDeliveryTimeBottomSheet = state.showDeliveryTimeBottomSheet;
+        final isChangeDeliveryPendingOrderTimeStatusLoading =
+            state.changeDeliveryPendingOrderTimeStatus ==
+            ChangeDeliveryPendingOrderTimeStatus.loading;
+        final isChangeDeliveryAcceptedOrderTimeStatusLoading =
+            state.changeDeliveryAcceptedOrderTimeStatus ==
+            ChangeDeliveryAcceptedOrderTimeStatus.loading;
+        final isButtonLoading = state.selectedOrder.hasItBeenAccepted == true
+            ? isChangeDeliveryAcceptedOrderTimeStatusLoading
+            : isChangeDeliveryPendingOrderTimeStatusLoading;
+
         return PopScope(
           onPopInvokedWithResult: (didPop, result) {
-            adminOrderChangeDeliveryTimeBloc.add(
-              AdminOrderShowChangeDeliveryTimeEvent(showDeliveryTimeBottomSheet: false),
+            adminHomeBloc.add(
+              AdminHomeOrderShowChangeDeliveryTimeEvent(
+                showDeliveryTimeBottomSheet: false,
+              ),
             );
           },
           child: Stack(
@@ -46,8 +69,10 @@ class MyTimePickerBottomSheet extends StatelessWidget {
                     : -MediaQuery.of(context).size.height * 0.335,
                 left: 0,
                 right: 0,
-                top: showDeliveryTimeBottomSheet ? MediaQuery.of(context).size.height * (1 - 0.335) : MediaQuery.of(context).size.height ,
-                duration: const Duration(milliseconds:875),
+                top: showDeliveryTimeBottomSheet
+                    ? MediaQuery.of(context).size.height * (1 - 0.335)
+                    : MediaQuery.of(context).size.height,
+                duration: const Duration(milliseconds: 875),
                 curve: Curves.fastLinearToSlowEaseIn,
                 child: Material(
                   color: colorScheme.surface,
@@ -66,12 +91,19 @@ class MyTimePickerBottomSheet extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                Icon(
-                                  Icons.access_time_rounded,
-                                  color: colorScheme.primary,
-                                  size: 22,
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.primary.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(
+                                    Icons.edit_calendar_rounded,
+                                    color: colorScheme.primary,
+                                    size: 22,
+                                  ),
                                 ),
-                                const SizedBox(width: 10),
+                                const SizedBox(width: 12),
                                 Text(
                                   "Entrega estimada",
                                   style: TextStyle(
@@ -83,8 +115,10 @@ class MyTimePickerBottomSheet extends StatelessWidget {
                               ],
                             ),
                             IconButton(
-                              onPressed: () => adminOrderChangeDeliveryTimeBloc.add(
-                                AdminOrderShowChangeDeliveryTimeEvent(showDeliveryTimeBottomSheet: false),
+                              onPressed: () => adminHomeBloc.add(
+                                AdminHomeOrderShowChangeDeliveryTimeEvent(
+                                  showDeliveryTimeBottomSheet: false,
+                                ),
                               ),
                               icon: Icon(
                                 Icons.close_rounded,
@@ -98,9 +132,9 @@ class MyTimePickerBottomSheet extends StatelessWidget {
                             ),
                           ],
                         ),
-                        
+
                         const SizedBox(height: 6),
-                        
+
                         // Selector de tiempo Cupertino (sin fondo)
                         SizedBox(
                           height: 120, // Más compacto
@@ -117,23 +151,44 @@ class MyTimePickerBottomSheet extends StatelessWidget {
                             child: CupertinoDatePicker(
                               mode: CupertinoDatePickerMode.time,
                               minimumDate: DateTime.now(),
-                              initialDateTime: deliveryTime,
+                              initialDateTime:
+                                  deliveryTime.isAfter(DateTime.now())
+                                  ? deliveryTime
+                                  : DateTime.now(),
                               onDateTimeChanged: (DateTime value) {
+                                adminHomeBloc.add(
+                                  AdminHomeOrderUpdateDeliveryTimeEvent(
+                                    deliveryTime: value,
+                                  ),
+                                );
+                                print("ChangeDateTimeValue: $value");
                                 // Lógica para cambiar la hora
                               },
                             ),
                           ),
                         ),
-                        
+
                         const SizedBox(height: 24),
-                        
+
                         // Botón de aceptar
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: () => adminOrderChangeDeliveryTimeBloc.add(
-                              AdminOrderShowChangeDeliveryTimeEvent(showDeliveryTimeBottomSheet: false),
-                            ),
+                            onPressed:
+                                isButtonLoading
+                                ? () {}
+                                : () {
+                                    adminHomeBloc.add(
+                                      AdminHomeUpdateAdminHomeActionsEvent( adminHomeActions: state .selectedOrder .hasItBeenAccepted == true ? AdminHomeActions .changeDeliveryAcceptedOrderTime : AdminHomeActions .changeDeliveryPendingOrderTime, ),
+                                    );
+                                    showSnackBar(
+                                      context: context,
+                                      title: "Actualizar H. Entrega",
+                                      text:
+                                          'Acepta para modificar la hora de entrega del pedido.',
+                                      showCancelButton: true,
+                                    );
+                                  },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: colorScheme.primary,
                               foregroundColor: colorScheme.onPrimary,
@@ -143,12 +198,14 @@ class MyTimePickerBottomSheet extends StatelessWidget {
                               ),
                               elevation: 2,
                             ),
-                            child: const Text(
-                              'Aceptar',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                              ),
+
+                            child: MyAnimatedContentSwitcherButton(
+                              showLoad:isButtonLoading,
+                              text: "Aceptar",
+                              textSize: 15,
+                              icon: Icons.edit_calendar_rounded,
+                              iconSize: 18,
+                              loadingIndicatorSize: 28,
                             ),
                           ),
                         ),

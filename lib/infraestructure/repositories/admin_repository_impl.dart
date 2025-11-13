@@ -106,30 +106,104 @@ class AdminRepositoryImpl extends AdminRepository {
   Future<void> acceptPendingOrder(
     String userRegistration,
     String copyShopEmail,
-     String orderCode,
+    String orderCode,
   ) async {
     try {
-      return await adminService.acceptPendingOrder( userRegistration, copyShopEmail, orderCode );
+      return await adminService.acceptPendingOrder(
+        userRegistration,
+        copyShopEmail,
+        orderCode,
+      );
     } catch (e) {
       return Future.error(e);
     }
   }
-  
+
   @override
-  Future<void> rejectPendingOrder(String userRegistration, String copyShopEmail, String orderCode, String fileUrl) async {
+  Future<void> rejectPendingOrder(
+    String userRegistration,
+    String copyShopEmail,
+    String orderCode,
+    String fileUrl,
+  ) async {
     try {
-      return await adminService.rejectPendingOrder( userRegistration, copyShopEmail, orderCode, fileUrl );
+      return await adminService.rejectPendingOrder(
+        userRegistration,
+        copyShopEmail,
+        orderCode,
+        fileUrl,
+      );
+    } catch (e) {
+      return Future.error(e);
+    }
+  }
+
+  @override
+  Future<void> markOrderAsPrinting(
+    String userRegistration,
+    String copyShopEmail,
+    String orderCode,
+  ) async {
+    try {
+      return await adminService.markOrderAsPrinting(
+        userRegistration,
+        copyShopEmail,
+        orderCode,
+      );
+    } catch (e) {
+      return Future.error(e);
+    }
+  }
+
+  @override
+  Future<void> updateEstimatedDeliveryTime(
+    String userRegistration,
+    String copyShopEmail,
+    String orderCode,
+    DateTime newDeliveryTime, {
+    bool updateHasTheEstimatedDeliveryTimeChanged = false,
+  }) async {
+    try {
+      return await adminService.updateEstimatedDeliveryTime(
+        userRegistration,
+        copyShopEmail,
+        orderCode,
+        newDeliveryTime,
+        updateHasTheEstimatedDeliveryTimeChanged:
+            updateHasTheEstimatedDeliveryTimeChanged,
+      );
     } catch (e) {
       return Future.error(e);
     }
   }
   
   @override
-  Future<void> markOrderAsPrinting(String userRegistration, String copyShopEmail, String orderCode) async {
+  Future<void> archiveAcceptedOrderCanceledByUser(AorderEntity aorder) async {
  try {
-      return await adminService.markOrderAsPrinting( userRegistration, copyShopEmail, orderCode);
+      return await adminService.archiveAcceptedOrderCanceledByUser(aorder);
     } catch (e) {
       return Future.error(e);
     }
   }
+  
+  @override
+  Future<bool> verifyOrderByVerificationCode(String registration, String copyShopEmail, String verificationCode) async {
+    try {
+      return await adminService.verifyOrderByVerificationCode(registration, copyShopEmail, verificationCode);
+    } catch (e) {
+      return Future.error(e);
+    }
+  }
+  
+  @override
+  Future<void> completeAndArchiveOrder(AorderEntity aorder, String userRegistration, String copyShopEmail, {bool deleteStorage = true}) async {
+    try {
+      return await adminService.completeAndArchiveOrder(aorder, userRegistration, copyShopEmail, deleteStorage: deleteStorage);
+    } catch (e) {
+      return Future.error(e);
+    };
+  }
+
+  
+
 }

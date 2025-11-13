@@ -70,24 +70,32 @@ class MyDateRangeBottomSheet extends StatelessWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.calendar_month_rounded,
+                              
+                               Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.primary.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(
+                                     Icons.calendar_month_rounded,
                                     color: colorScheme.primary,
                                     size: 22,
                                   ),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    "Rango de fechas",
-                                    style: TextStyle(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w600,
-                                      color: colorScheme.onSurface,
-                                    ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  "Rango de fechas",
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w600,
+                                    color: colorScheme.onSurface,
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
+                            ),
                               IconButton(
                                 onPressed: () => adminChangeReportDateRangeBloc.add(
                                   AdminShowChangeReportDateRangeEvent(
@@ -107,12 +115,12 @@ class MyDateRangeBottomSheet extends StatelessWidget {
                             ],
                           ),
                           
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
                           
                           // Selector de rango de fechas
                           _myDateRangeBottomSheet(context),
                           
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 18),
                           
                           // Botón de aceptar
                           SizedBox(

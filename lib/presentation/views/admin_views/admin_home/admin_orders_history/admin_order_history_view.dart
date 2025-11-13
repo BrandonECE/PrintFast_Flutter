@@ -294,7 +294,7 @@ class MyAdminOrderHistoryView extends StatelessWidget {
                 ),
               ),
               // Chip de método de pago a la derecha
-              _paymentMethodChip(context, isCardPayment: (historyState.selectedOrder.paymentMethod! is! String), paymentMethodObject: historyState.selectedOrder.paymentMethod!),
+              _paymentMethodChip(context, isCardPayment: historyState.selectedOrder.paymentMethod != 'cash', paymentMethodObject: historyState.selectedOrder.paymentMethod!),
             ],
           ),
         ],
@@ -485,7 +485,7 @@ class MyAdminOrderHistoryView extends StatelessWidget {
   Widget _paymentMethodChip(BuildContext context, {required bool isCardPayment, required Object? paymentMethodObject}) {
     final paymentMethod = isCardPayment ? 'Tarjeta' : 'Efectivo';
     final icon = isCardPayment ? Icons.credit_card_rounded : Icons.money_rounded;
-    final backgroundColor = isCardPayment ? Colors.blue : Colors.green;
+    final backgroundColor = isCardPayment ? Colors.blue : Colors.orange;
     
     return GestureDetector(
       onTap: () => context.push(Routes.paymentMethodHistory, extra: paymentMethodObject),

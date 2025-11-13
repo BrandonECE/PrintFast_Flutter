@@ -58,7 +58,7 @@ class ChangePaymentMethodBloc
       final availableCards = savedCards
           .where((card) => card.token != currentPaymentMethodId)
           .toList();
-
+      print(currentMethodCard?.token);
       emit(
         state.copyWith(
           savedCards: availableCards, // Solo las tarjetas disponibles
@@ -107,9 +107,7 @@ class ChangePaymentMethodBloc
         state.selectedMethodId ?? '',
       );
       emit(
-        state.copyWith(
-          changeStatus: ChangePaymentMethodActionStatus.success,
-        ),
+        state.copyWith(changeStatus: ChangePaymentMethodActionStatus.success),
       );
     } catch (e) {
       emit(

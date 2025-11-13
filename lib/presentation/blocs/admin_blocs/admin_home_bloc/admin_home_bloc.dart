@@ -1,11 +1,9 @@
 import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-// import 'package:flutter/material.dart';
 import 'package:printfast_rebuild/domain/entities/entities.dart';
 import 'package:printfast_rebuild/domain/repositories/auth_repository.dart';
 import 'package:printfast_rebuild/domain/repositories/admin_repository.dart';
-// import 'package:toastification/toastification.dart';
 
 part 'admin_home_event.dart';
 part 'admin_home_state.dart';
@@ -14,6 +12,12 @@ class AdminHomeBloc extends Bloc<AdminHomeEvent, AdminHomeState> {
   final AuthRepository authRepository;
   final AdminRepository adminRepository;
 
+  // Timer para progreso general
+  Timer? _adminProgressTimer;
+  static const Duration _adminProgressTick = Duration(seconds: 3);
+  int _progressCounter = 0;
+
+  // Streams existentes
   StreamSubscription<List<AorderEntity>>? _aordersSubscription;
   Timer? _aordersReconnectTimer;
   int _aordersReconnectAttempt = 0;
@@ -29,8 +33,17 @@ class AdminHomeBloc extends Bloc<AdminHomeEvent, AdminHomeState> {
   Timer? _receptionReconnectTimer;
   int _receptionReconnectAttempt = 0;
 
+  bool _wasPendingOrderRejected = false;
+
+  // Archiving
+  static const int definedCountdownTime = 3;
+  Timer? _archivingTimer;
+  int _archivingCountdown = definedCountdownTime;
+  bool _isArchivingInProgress = false;
+
   AdminHomeBloc({required this.authRepository, required this.adminRepository})
     : super(AdminHomeInitial()) {
+    // ========== EVENTOS EXISTENTES ==========
     on<AdminHomeChangeIndexBottomNavigationBarEvent>((event, emit) {
       emit(state.copyWith(currentIndex: event.currentIndex));
     });
@@ -61,11 +74,22 @@ class AdminHomeBloc extends Bloc<AdminHomeEvent, AdminHomeState> {
     });
 
     on<AdminHomeUpdateSelectedOrderEvent>((event, emit) {
+      add(
+        AdminHomeOrderUpdateDeliveryTimeEvent(
+          deliveryTime:
+              event.selectedOrder.estimatedDeliveryTime ?? DateTime.now(),
+        ),
+      );
       emit(state.copyWith(selectedOrder: event.selectedOrder));
     });
 
     on<AdminHomeUpdateHomeLogOutStatusEvent>((event, emit) {
-      emit(state.copyWith(adminHomeLogOutStatus: event.adminHomeLogOutStatus));
+      emit(
+        state.copyWith(
+          adminHomeLogOutStatus: event.adminHomeLogOutStatus,
+          messageError: event.messageError,
+        ),
+      );
     });
 
     // --- Eventos para aorders ---
@@ -91,8 +115,8 @@ class AdminHomeBloc extends Bloc<AdminHomeEvent, AdminHomeState> {
 
     on<AdminHomeUpdateAordersEvent>((event, emit) {
       // Separar órdenes en aceptadas y pendientes
-      final acceptedOrders = <AorderEntity>[];
-      final pendingOrders = <AorderEntity>[];
+      final List<AorderEntity> acceptedOrders = <AorderEntity>[];
+      final List<AorderEntity> pendingOrders = <AorderEntity>[];
 
       for (final order in event.aorders) {
         if (order.hasItBeenAccepted == true) {
@@ -113,17 +137,46 @@ class AdminHomeBloc extends Bloc<AdminHomeEvent, AdminHomeState> {
       // Reset reconnect attempts on success
       _aordersReconnectAttempt = 0;
 
+      final doesSelectedAcceptedOrderCanceledByUserExist = event.aorders.any(
+        (aorder) => aorder.orderCode == state.selectedAceptedOrderCode,
+      );
+
+      final doesSelectedPendingOrderWasCanceledByUser = !pendingOrders.any(
+        (aorder) => aorder.orderCode == state.selectedOrder.orderCode,
+      );
+
+      print(
+        "_wasPendingOrderRejected ($_wasPendingOrderRejected) && doesSelectedPendingOrderWasCanceledByUser ($doesSelectedPendingOrderWasCanceledByUser)",
+      );
+
       emit(
         state.copyWith(
           adminAordersStatus: AdminAordersStatus.success,
           acceptedOrders: acceptedOrders,
           pendingOrders: pendingOrders,
+          archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus:
+              !doesSelectedAcceptedOrderCanceledByUserExist
+              ? ArchivingAcceptedOrderAfterBeingCanceledByTheUserStatus.idle
+              : state.archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus,
+          wasPendingOrderRejected:
+              _wasPendingOrderRejected &&
+              doesSelectedPendingOrderWasCanceledByUser,
           messageError: null,
         ),
       );
+
+      // Iniciar/verificar el progress timer después de actualizar órdenes
+      _startAdminProgressTimerIfNeeded();
+
+      if (_wasPendingOrderRejected) {
+        _wasPendingOrderRejected = false;
+      }
     });
 
     on<AdminHomeAordersErrorEvent>((event, emit) async {
+      // Detener timer cuando hay error
+      _stopAdminProgressTimer();
+
       // Si es el primer error, mostrar loading brevemente
       if (_aordersReconnectAttempt == 0) {
         emit(state.copyWith(adminAordersStatus: AdminAordersStatus.loading));
@@ -134,6 +187,7 @@ class AdminHomeBloc extends Bloc<AdminHomeEvent, AdminHomeState> {
         state.copyWith(
           adminAordersStatus: AdminAordersStatus.failure,
           messageError: event.message,
+          hasActiveOrders: false,
         ),
       );
 
@@ -273,6 +327,14 @@ class AdminHomeBloc extends Bloc<AdminHomeEvent, AdminHomeState> {
       );
     });
 
+    on<AdminHomeUpdateSelectedAcceptedOrderCodeValueEvent>((event, emit) {
+      emit(
+        state.copyWith(
+          selectedAceptedOrderCode: event.selectedAcceptedOrderCode,
+        ),
+      );
+    });
+
     on<AdminHomeUpdateAdminHomeActionsEvent>((event, emit) {
       emit(state.copyWith(adminHomeActions: event.adminHomeActions));
     });
@@ -280,6 +342,421 @@ class AdminHomeBloc extends Bloc<AdminHomeEvent, AdminHomeState> {
     on<AdminHomeUpdateReceptionStatusEvent>((event, emit) {
       emit(state.copyWith(receptionStatus: event.adminReceptionStatus));
     });
+
+    on<AdminHomeOrderShowChangeDeliveryTimeEvent>((event, emit) {
+      emit(
+        state.copyWith(
+          showDeliveryTimeBottomSheet: event.showDeliveryTimeBottomSheet,
+        ),
+      );
+    });
+
+    on<AdminHomeOrderUpdateDeliveryTimeEvent>((event, emit) {
+      emit(state.copyWith(deliveryTime: event.deliveryTime));
+    });
+
+    on<AdminHomeUpdateChangedeliveryPendingOrderTimeStatusEvent>((event, emit) {
+      emit(
+        state.copyWith(
+          changeDeliveryPendingOrderTimeStatus:
+              event.changedeliveryPendingOrderTimeStatus,
+        ),
+      );
+    });
+
+    on<AdminHomeUpdateChangedeliveryAcceptedOrderTimeStatusEvent>((
+      event,
+      emit,
+    ) {
+      emit(
+        state.copyWith(
+          changeDeliveryAcceptedOrderTimeStatus:
+              event.changedeliveryAcceptedOrderTimeStatus,
+        ),
+      );
+    });
+
+    on<
+      AdminHomeUpdateArchivingAcceptedOrderAfterBeingaCanceledByTheUserStatusEvent
+    >((event, emit) {
+      emit(
+        state.copyWith(
+          archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus:
+              event.archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus,
+        ),
+      );
+    });
+
+    on<AdminHomeUserAcceptedArchivingEvent>(_userAcceptedArchivingEvent);
+
+    on<AdminHomeAcceptChangeDeliveryTimeEvent>(
+      _adminHomeAcceptChangeDeliveryTimeEvent,
+    );
+
+    on<AdminHomeArchiveAcceptedOrderAfterBeingCanceledByTheUserEvent>(
+      _adminHomeArchiveAcceptedOrderAfterBeingaCanceledByTheUserEvent,
+    );
+
+    on<AdminHomeShowMessageArchiveCanceledOrderByUserEvent>((event, emit) {
+      emit(
+        state.copyWith(
+          showMessageArchiveCanceledOrderByUser:
+              event.showMessageArchiveCanceledOrderByUser,
+        ),
+      );
+    });
+
+    on<AdminHomeUpdateEnteredPinEvent>((event, emit) {
+      emit(state.copyWith(enteredPin: event.enteredPin));
+    });
+
+    on<AdminHomeUpdateCodeValidationStatusEvent>((event, emit) {
+      emit(state.copyWith(codeValidationStatus: event.codeValidationStatus));
+    });
+
+    on<AdminHomeConfirmCodeValidationStatusEvent>(
+      _adminHomeConfirmCodeValidationStatusEvent,
+    );
+
+    // --- NUEVOS EVENTOS PARA EL PROGRESS TIMER ---
+    on<AdminHomeCheckProgressTimerEvent>((event, emit) {
+      _startAdminProgressTimerIfNeeded();
+    });
+
+    on<AdminHomeForceProgressUpdateEvent>((event, emit) {
+      _progressCounter++;
+      emit(
+        state.copyWith(
+          progressTick: _progressCounter,
+          hasActiveOrders: _checkIfAnyActiveOrders(),
+        ),
+      );
+    });
+
+    on<AdminHomeUpdateHasActiveOrdersEvent>((event, emit) {
+      emit(state.copyWith(hasActiveOrders: event.hasActiveOrders));
+    });
+  }
+
+  // ========== MÉTODOS DEL PROGRESS TIMER ==========
+
+  void _startAdminProgressTimerIfNeeded() {
+    if (state.adminAordersStatus == AdminAordersStatus.failure) {
+      _stopAdminProgressTimer();
+      return;
+    }
+
+    final hasActiveOrders = _checkIfAnyActiveOrders();
+
+    if (hasActiveOrders &&
+        (_adminProgressTimer == null || !_adminProgressTimer!.isActive)) {
+      _startAdminProgressTimer();
+      add(AdminHomeUpdateHasActiveOrdersEvent(hasActiveOrders: true));
+    } else if (!hasActiveOrders) {
+      _stopAdminProgressTimer();
+      add(AdminHomeUpdateHasActiveOrdersEvent(hasActiveOrders: false));
+    }
+  }
+
+  bool _checkIfAnyActiveOrders() {
+    if (state.adminAordersStatus == AdminAordersStatus.failure) {
+      return false;
+    }
+
+    final allOrders = [...state.acceptedOrders, ...state.pendingOrders];
+
+    return allOrders.any(
+      (order) =>
+          order.estimatedDeliveryTime != null &&
+          DateTime.now().isBefore(order.estimatedDeliveryTime!) &&
+          !order.hasItBeenCompleted &&
+          !order.hasItBeenCanceledByUser &&
+          (order.hasItBeenAccepted == true || order.hasItBeenAccepted == null),
+    );
+  }
+
+  void _startAdminProgressTimer() {
+    _stopAdminProgressTimer();
+
+    _adminProgressTimer = Timer.periodic(_adminProgressTick, (timer) {
+      _progressCounter++;
+      print(_progressCounter);
+      add(AdminHomeForceProgressUpdateEvent());
+
+      if (!_checkIfAnyActiveOrders()) {
+        _stopAdminProgressTimer();
+        add(AdminHomeCheckProgressTimerEvent());
+      }
+    });
+  }
+
+  void _stopAdminProgressTimer() {
+    try {
+      _adminProgressTimer?.cancel();
+    } catch (_) {}
+    _adminProgressTimer = null;
+    _progressCounter = 0;
+  }
+
+  // ========== MÉTODOS EXISTENTES ==========
+
+  FutureOr<void> _adminHomeConfirmCodeValidationStatusEvent(
+    AdminHomeConfirmCodeValidationStatusEvent event,
+    Emitter<AdminHomeState> emit,
+  ) async {
+    try {
+      final String pin = state.enteredPin;
+      final AorderEntity aorder = state.selectedOrder;
+      emit(state.copyWith(codeValidationStatus: CodeValidationStatus.loading));
+      await Future.delayed(Duration(milliseconds: 2000));
+      emit(
+        state.copyWith(codeValidationStatus: CodeValidationStatus.validating),
+      );
+
+      //Funciones
+      final String registration = state.selectedOrder.userRegistration;
+      final String copyShopEmail = state.selectedOrder.copyShopEmail;
+      final String verificationCode = pin;
+
+      final bool itWasVerified = await adminRepository
+          .verifyOrderByVerificationCode(
+            registration,
+            copyShopEmail,
+            verificationCode,
+          );
+
+      print(itWasVerified);
+
+      if (!itWasVerified) {
+        emit(
+          state.copyWith(
+            adminHomeActions: AdminHomeActions.validateCode,
+            codeValidationStatus: CodeValidationStatus.invalid,
+            messageError: 'Error: El código proporcionado no es correcto',
+          ),
+        );
+        return;
+      }
+
+      await Future.delayed(Duration(milliseconds: 2000));
+
+      await adminRepository.completeAndArchiveOrder(
+        aorder,
+        registration,
+        copyShopEmail,
+      );
+
+      emit(state.copyWith(codeValidationStatus: CodeValidationStatus.success));
+    } catch (e) {
+      emit(
+        state.copyWith(
+          adminHomeActions: AdminHomeActions.validateCode,
+          codeValidationStatus: CodeValidationStatus.failure,
+          messageError: e.toString(),
+        ),
+      );
+    }
+    emit(state.copyWith(enteredPin: ''));
+  }
+
+  FutureOr<void>
+  _adminHomeArchiveAcceptedOrderAfterBeingaCanceledByTheUserEvent(
+    AdminHomeArchiveAcceptedOrderAfterBeingCanceledByTheUserEvent event,
+    Emitter<AdminHomeState> emit,
+  ) async {
+    try {
+      _cancelArchivingOperation();
+
+      _archivingCountdown = definedCountdownTime;
+      _isArchivingInProgress = true;
+
+      emit(
+        state.copyWith(
+          archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus:
+              ArchivingAcceptedOrderAfterBeingCanceledByTheUserStatus.loading,
+          archivingCountdown: _archivingCountdown,
+        ),
+      );
+
+      // CONTADOR SIMPLE CON LOOP
+      await Future.delayed(const Duration(milliseconds: 500));
+      while (_archivingCountdown > 0 && _isArchivingInProgress) {
+        await Future.delayed(const Duration(seconds: 1));
+
+        if (!_isArchivingInProgress) break; // Si fue cancelado
+
+        _archivingCountdown--;
+
+        if (!emit.isDone) {
+          emit(state.copyWith(archivingCountdown: _archivingCountdown));
+        }
+
+        print('⏰ Countdown: $_archivingCountdown');
+      }
+
+      // EJECUTAR FIREBASE SI LLEGÓ A 0 Y NO FUE CANCELADO
+      if (_archivingCountdown <= 0 && _isArchivingInProgress) {
+        await _executeFirebaseFunction(emit, true);
+      }
+    } catch (e) {
+      _cancelArchivingOperation();
+
+      if (!emit.isDone) {
+        emit(
+          state.copyWith(
+            archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus:
+                ArchivingAcceptedOrderAfterBeingCanceledByTheUserStatus.failure,
+            messageError: e.toString(),
+            adminHomeActions: AdminHomeActions.acceptedOrderCanceledByUser,
+            archivingCountdown: 0,
+          ),
+        );
+      }
+    }
+  }
+
+  FutureOr<void> _userAcceptedArchivingEvent(
+    AdminHomeUserAcceptedArchivingEvent event,
+    Emitter<AdminHomeState> emit,
+  ) async {
+    if (_isArchivingInProgress && !emit.isDone) {
+      print('Usuario aceptó manualmente');
+      emit(state.copyWith(archivingCountdown: 0));
+      _cancelArchivingOperation();
+      await _executeFirebaseFunction(emit, false);
+    }
+  }
+
+  Future<void> _executeFirebaseFunction(
+    Emitter<AdminHomeState> emit,
+    bool fromCountDown,
+  ) async {
+    print(
+      "!_isArchivingInProgress: ${!_isArchivingInProgress} || emit.isDone: ${emit.isDone}",
+    );
+    if ((!_isArchivingInProgress && fromCountDown) || emit.isDone) return;
+
+    try {
+      print('🔥 Ejecutando función de Firebase...');
+      await Future.delayed(const Duration(milliseconds: 500)); // Simulación
+
+      // TU FUNCIÓN DE FIREBASE AQUÍ
+      final bool doesExistAorder = state.acceptedOrders.any(
+        (aorder) => aorder.orderCode == state.selectedAceptedOrderCode,
+      );
+      if (doesExistAorder) {
+        final AorderEntity aorder = state.acceptedOrders.firstWhere(
+          (aorder) => aorder.orderCode == state.selectedAceptedOrderCode,
+        );
+        await adminRepository.archiveAcceptedOrderCanceledByUser(aorder);
+      } else {
+        throw Exception(
+          "No se pudo completar la operación. La referencia de la orden especificada es inexistente.",
+        );
+      }
+
+      _isArchivingInProgress = false;
+
+      if (!emit.isDone) {
+        emit(
+          state.copyWith(
+            archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus:
+                ArchivingAcceptedOrderAfterBeingCanceledByTheUserStatus.success,
+            archivingCountdown: 0,
+          ),
+        );
+      }
+    } catch (e) {
+      _isArchivingInProgress = false;
+
+      if (!emit.isDone) {
+        emit(
+          state.copyWith(
+            archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus:
+                ArchivingAcceptedOrderAfterBeingCanceledByTheUserStatus.failure,
+            messageError: e.toString(),
+            archivingCountdown: 0,
+          ),
+        );
+      }
+    }
+  }
+
+  void _cancelArchivingOperation() {
+    _archivingTimer?.cancel();
+    _archivingTimer = null;
+    _archivingCountdown = definedCountdownTime;
+    _isArchivingInProgress = false;
+  }
+
+  FutureOr<void> _adminHomeAcceptChangeDeliveryTimeEvent(
+    AdminHomeAcceptChangeDeliveryTimeEvent event,
+    Emitter<AdminHomeState> emit,
+  ) async {
+    final userRegistration = state.userEntity.registration;
+    final copyShopEmail = state.copyShopEntity.copyShopEmail;
+    final orderCode = state.selectedOrder.orderCode;
+    final newDeliveryTime = state.deliveryTime;
+    try {
+      emit(
+        state.copyWith(
+          changeDeliveryPendingOrderTimeStatus:
+              event.adminHomeActions ==
+                  AdminHomeActions.changeDeliveryPendingOrderTime
+              ? ChangeDeliveryPendingOrderTimeStatus.loading
+              : null,
+          changeDeliveryAcceptedOrderTimeStatus:
+              event.adminHomeActions ==
+                  AdminHomeActions.changeDeliveryAcceptedOrderTime
+              ? ChangeDeliveryAcceptedOrderTimeStatus.loading
+              : null,
+        ),
+      );
+      await Future.delayed(const Duration(milliseconds: 600));
+
+      await adminRepository.updateEstimatedDeliveryTime(
+        userRegistration,
+        copyShopEmail,
+        orderCode,
+        newDeliveryTime,
+        updateHasTheEstimatedDeliveryTimeChanged:
+            state.selectedOrder.hasItBeenAccepted ?? false,
+      );
+      print("GOOD");
+      emit(
+        state.copyWith(
+          changeDeliveryPendingOrderTimeStatus:
+              event.adminHomeActions ==
+                  AdminHomeActions.changeDeliveryPendingOrderTime
+              ? ChangeDeliveryPendingOrderTimeStatus.success
+              : null,
+          changeDeliveryAcceptedOrderTimeStatus:
+              event.adminHomeActions ==
+                  AdminHomeActions.changeDeliveryAcceptedOrderTime
+              ? ChangeDeliveryAcceptedOrderTimeStatus.success
+              : null,
+        ),
+      );
+    } catch (e) {
+      print("Error: $e");
+      emit(
+        state.copyWith(
+          changeDeliveryPendingOrderTimeStatus:
+              event.adminHomeActions ==
+                  AdminHomeActions.changeDeliveryPendingOrderTime
+              ? ChangeDeliveryPendingOrderTimeStatus.failure
+              : null,
+          changeDeliveryAcceptedOrderTimeStatus:
+              event.adminHomeActions ==
+                  AdminHomeActions.changeDeliveryAcceptedOrderTime
+              ? ChangeDeliveryAcceptedOrderTimeStatus.failure
+              : null,
+          adminHomeActions: event.adminHomeActions,
+          messageError: e.toString(),
+        ),
+      );
+    }
+    emit(state.copyWith(showDeliveryTimeBottomSheet: false));
   }
 
   Future<void> _adminHomeMakePendingOrderDecisionEvent(
@@ -293,8 +770,7 @@ class AdminHomeBloc extends Bloc<AdminHomeEvent, AdminHomeState> {
     try {
       emit(state.copyWith(pendingOrderStatus: PendingOrderStatus.loading));
       await Future.delayed(const Duration(milliseconds: 600));
-      // await Future.delayed(const Duration(milliseconds: 5000));
-      // throw Exception("PRUEBADECISION");
+
       if (state.pendingOrderDecision == PendingOrderDecision.accept) {
         await adminRepository.acceptPendingOrder(
           userRegistration,
@@ -302,15 +778,19 @@ class AdminHomeBloc extends Bloc<AdminHomeEvent, AdminHomeState> {
           orderCode,
         );
       } else if (state.pendingOrderDecision == PendingOrderDecision.reject) {
+        _wasPendingOrderRejected = true;
         await adminRepository.rejectPendingOrder(
           userRegistration,
           copyShopEmail,
           orderCode,
           fileUrl,
         );
-      } //Pending
+      }
       emit(state.copyWith(pendingOrderStatus: PendingOrderStatus.success));
     } catch (e) {
+      if (state.pendingOrderDecision == PendingOrderDecision.reject) {
+        _wasPendingOrderRejected = false;
+      }
       emit(
         state.copyWith(
           adminHomeActions: AdminHomeActions.makePendingOrderDecision,
@@ -369,7 +849,7 @@ class AdminHomeBloc extends Bloc<AdminHomeEvent, AdminHomeState> {
           .getAordersStream(copyShopEmail);
 
       _aordersSubscription = stream.listen(
-        (aorders) {
+        (List<AorderEntity> aorders) {
           final doesTheSelectedOrderExist = aorders.any(
             (aorder) => aorder.orderCode == state.selectedOrder.orderCode,
           );
@@ -383,6 +863,7 @@ class AdminHomeBloc extends Bloc<AdminHomeEvent, AdminHomeState> {
               ),
             );
           }
+
           add(AdminHomeUpdateAordersEvent(aorders: aorders));
         },
         onError: (error, stack) {
@@ -607,12 +1088,15 @@ class AdminHomeBloc extends Bloc<AdminHomeEvent, AdminHomeState> {
       );
 
       // Detener todo
+      _stopAdminProgressTimer();
       await _stopAordersListener();
       _aordersReconnectTimer?.cancel();
       await _stopNotificationsListener();
       _notifReconnectTimer?.cancel();
       await _stopReceptionListener();
       _receptionReconnectTimer?.cancel();
+      _cancelArchivingOperation();
+
       add(
         AdminHomeUpdateReceptionStatusEvent(
           adminReceptionStatus: AdminReceptionStatus.loading,
@@ -631,46 +1115,14 @@ class AdminHomeBloc extends Bloc<AdminHomeEvent, AdminHomeState> {
 
   @override
   Future<void> close() async {
+    _stopAdminProgressTimer();
     _aordersReconnectTimer?.cancel();
     _notifReconnectTimer?.cancel();
     _receptionReconnectTimer?.cancel();
+    _cancelArchivingOperation();
     await _stopAordersListener();
     await _stopNotificationsListener();
     await _stopReceptionListener();
     return super.close();
   }
 }
-
-
-
-  // void _showToast(String message) {
-  //   // Asegúrate de envolver la app con ToastificationWrapper en main.dart
-  //   toastification.show(
-  //     // Usamos title como String para compatibilidad con la API típica
-  //     title: Text(message),
-  //     primaryColor: Colors.white,
-  //     backgroundColor:Colors.black,
-  //     foregroundColor: Colors.purple.shade400,
-  //     type: ToastificationType.success,
-  //     style: ToastificationStyle.fillColored,
-  //     alignment: Alignment.topCenter,
-  //     showProgressBar: true,
-  //     autoCloseDuration: const Duration(seconds: 3),
-  //     icon: Icon(Icons.error_outline, color: Colors.purple.shade400),
-  //     // Animación personalizada: se desliza desde arriba hacia su posición
-  //     animationBuilder: (context, animation, alignment, child) {
-  //       final curved = CurvedAnimation(
-  //         parent: animation,
-  //         curve: Curves.easeOutCubic,
-  //       );
-  //       final offset = Tween<Offset>(
-  //         begin: const Offset(0, -1.0),
-  //         end: Offset.zero,
-  //       ).animate(curved);
-  //       return SlideTransition(
-  //         position: offset,
-  //         child: FadeTransition(opacity: animation, child: child),
-  //       );
-  //     },
-  //   );
-  // }

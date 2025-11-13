@@ -22,7 +22,7 @@ class MyChangePaymentMethodView extends StatelessWidget {
     final homeBlocState = context.watch<HomeBloc>().state;
     final currentPaymentMethodId = homeBlocState.activeOrder!.paymentMethod;
     final registration = homeBlocState.userEntity.registration;
-
+    print(currentPaymentMethodId);
     return _myChangePaymentMethodScreen(
       homeBlocState.activeOrder,
       registration,
@@ -391,7 +391,6 @@ class _ChangePaymentMethodViewContent extends StatelessWidget {
     ChangePaymentMethodState state,
     BuildContext context,
   ) {
-    
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -468,9 +467,11 @@ class _ChangePaymentMethodViewContent extends StatelessWidget {
       id: 'cash',
       icon: Icons.money_rounded,
       title: "Efectivo",
-      subtitle: "Paga al recibir tu pedido",
+      subtitle: "Paga al recibir tpu pedido",
       color: Colors.orange,
-      isDefault: !state.savedCards.any((card) => card.isDefault) && !state.currentMethodCard!.isDefault,
+      isDefault:
+          !state.savedCards.any((card) => card.isDefault) &&
+(state.currentMethodCard == null || !state.currentMethodCard!.isDefault),
       isSelected: isSelected,
       isCurrent: isCurrent,
       onTap: onTap,
@@ -752,11 +753,10 @@ class _ChangePaymentMethodViewContent extends StatelessWidget {
       child: InkWell(
         onTap: () => context.push(
           Routes.manageCards,
-           extra: {
+          extra: {
             'passedBloc': context.read<ChangePaymentMethodBloc>(),
-            'voidCallBack': null
-          }
-        
+            'voidCallBack': null,
+          },
         ),
         borderRadius: BorderRadius.circular(10),
         child: Container(

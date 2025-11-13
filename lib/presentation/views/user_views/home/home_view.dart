@@ -1,3 +1,4 @@
+// import 'package:custom_quick_alert/custom_quick_alert.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -40,9 +41,9 @@ class MyHomeView extends StatelessWidget {
     }
 
     return BlocListener<HomeBloc, HomeState>(
-      listenWhen: (prev, curr) => prev.homeOrderStatus != curr.homeOrderStatus || prev.activeOrder?.hasItBeenAccepted != curr.activeOrder?.hasItBeenAccepted || prev.homeCanceledOrderStatus != curr.homeCanceledOrderStatus ,
+      listenWhen: (prev, curr) => prev.homeOrderStatus != curr.homeOrderStatus || prev.activeOrder?.hasItBeenAccepted != curr.activeOrder?.hasItBeenAccepted || prev.homeCanceledOrderStatus != curr.homeCanceledOrderStatus  || prev.activeOrder?.hasTheEstimatedDeliveryTimeChanged != curr.activeOrder?.hasTheEstimatedDeliveryTimeChanged,
       listener: (context, state) {
-
+        print("LISTENER");
         if(state.homeCanceledOrderStatus == HomeCanceledOrderStatus.failure){
           _thereWasAnError("¡Error inesperado!",  state.messageError ?? "", context, );
         }else if (state.homeCanceledOrderStatus == HomeCanceledOrderStatus.sucessul){
@@ -54,20 +55,40 @@ class MyHomeView extends StatelessWidget {
 
         if (state.homeOrderStatus == HomeOrderStatus.idle) {
           shoppingBloc.add( ShoppingChangeStatusEvent(shoppingStatus: ShoppingStatus.idle), );
-        } else if (state.homeOrderStatus == HomeOrderStatus.canceledByCopyShop && !state.isCanceledByCopyShopLoading) {
+        } else if (state.homeOrderStatus == HomeOrderStatus.rejectedByCopyShop && !state.isRejectedByCopyShopLoading) {
           shoppingBloc.add( ShoppingChangeStatusEvent(shoppingStatus: ShoppingStatus.idle), );
-          homeBloc.add( HomeUpdateIsCanceledByCopyShopLoadingEvent( isCanceledByCopyShopLoading: true, ), );
+          homeBloc.add( HomeUpdateIsRejectedByCopyShopLoadingEvent( isRejectedByCopyShopLoading: true, ), );
           homeBloc.add(HomeCancelOrderEvent());
           if (shoppingBloc.state.bytes != null) {
             context.push(Routes.shopping);
             context.push(Routes.locationPicker);
           }
           _thereWasAnError( "Orden rechazada", "Lo sentimos — la papeleria no pudo aceptar tu pedido.", context, );
-        } else if (state.homeOrderStatus == HomeOrderStatus.orderActive && hasItBeenActiveOrderAccepted) {
+        } else if (state.homeOrderStatus == HomeOrderStatus.orderActive && hasItBeenActiveOrderAccepted && !state.isTheEstimatedDeliveryTimeLoading) {
           shoppingBloc.add(
             ShoppingResetEvent(shoppingStatus: ShoppingStatus.idle),
           );
+        } else if (state.homeOrderStatus == HomeOrderStatus.orderCompleted && state.activeOrder?.hasItBeenCompleted == true && !state.isLoadingTheOrderBeingArchivedAndCompleted) {
+          print("ACTUALIZANDOOOOOOOOOOOOOOOOOOOOOOOO");
+          homeBloc.add(HomeUpdateIsLoadingTheOrderBeingArchivedAndCompletedEvent(isLoadingTheOrderBeingArchivedAndCompleted: true));
+          homeBloc.add(HomeArchiveAndCompleteActiveOrderEvent());
+          shoppingBloc.add( ShoppingResetEvent(shoppingStatus: ShoppingStatus.idle), ); 
+          WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+            showHighlyCustomizableSuccessAlert(context);
+          });
         }
+
+        final bool? hasTheEstimatedDeliveryTimeChanged = state.activeOrder?.hasTheEstimatedDeliveryTimeChanged;
+
+        print("AAAAAAAAAAAAAAAAAAAA:${hasTheEstimatedDeliveryTimeChanged}");
+
+        if(hasTheEstimatedDeliveryTimeChanged == true && !state.isTheEstimatedDeliveryTimeLoading){
+          homeBloc.add(HomeUpdateIsTheEstimatedDeliveryTimeLoadingEvent(isTheEstimatedDeliveryTimeLoading: true));
+          homeBloc.add(HomeUpdateDBHasTheEstimatedDeliveryTimeChangedValueEvent());
+          _hasEstimatedDeliveryTimeChangedSnackBar("H. Entrega Actualizada", "Nueva hora: [${formatTimeToAmPm(state.activeOrder?.estimatedDeliveryTime ?? DateTime.now())}, ${formatDateToYMD(state.activeOrder?.estimatedDeliveryTime ?? DateTime.now())}]. Más detalles en el pedido.", context, );
+        }
+
+
       },
       child: Stack(
         children: [
@@ -84,9 +105,22 @@ class MyHomeView extends StatelessWidget {
             ),
           ),
           BlocBuilder<HomeBloc, HomeState>(
-            buildWhen: (prev, curr) => prev.homeActions != curr.homeActions || prev.homeCanceledOrderStatus != curr.homeCanceledOrderStatus,
+            buildWhen: (prev, curr) => prev.homeActions != curr.homeActions || prev.homeCanceledOrderStatus != curr.homeCanceledOrderStatus || prev.activeOrder?.hasTheEstimatedDeliveryTimeChanged != curr.activeOrder?.hasTheEstimatedDeliveryTimeChanged,
             builder: (context, state) {
               return MyMessageErrorWarning(
+
+                voidCallbackByPopScope: () {
+                  if(state.homeCanceledOrderStatus == HomeCanceledOrderStatus.failure){
+                     homeBloc.add( HomeUpdateHomeActionsEvent(homeActions: HomeActions.none), );
+                    homeBloc.add(HomeUpdateHomeCanceledOrderStatusEvent(homeCanceledOrderStatus: HomeCanceledOrderStatus.idle));
+                  }
+                  messageErrorWarningBloc.add(
+                    ShowMessageErrorWarningEvent(
+                      showMessageErrorWarning: false,
+                    ),
+                  );
+                },
+                
                 voidCallbackByCloseIcon: () {
                   if(state.homeCanceledOrderStatus == HomeCanceledOrderStatus.failure){
                      homeBloc.add( HomeUpdateHomeActionsEvent(homeActions: HomeActions.none), );
@@ -118,6 +152,10 @@ class MyHomeView extends StatelessWidget {
         ],
       ),
     );
+  }
+
+ void _hasEstimatedDeliveryTimeChangedSnackBar(String title, String message, BuildContext context) {
+    showSnackBar(context: context, title: title, text: message);
   }
 
   void _thereWasAnError(String title, String message, BuildContext context) {

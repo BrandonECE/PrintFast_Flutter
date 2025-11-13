@@ -31,12 +31,14 @@ class AdminReportsBloc extends Bloc<AdminReportsEvent, AdminReportsState> {
       // Obtener todas las órdenes históricas
       final List<HorderEntity> allHorders = await adminRepository
           .getCopyShopHOrders(emailCopyShop);
-
+      final now = DateTime.now();
       // Filtrar órdenes por el rango de fechas
       final filteredHorders = allHorders.where((order) {
         return order.initDate.isAfter(event.startDate) &&
-            order.initDate.isBefore(event.endDate);
+            (order.initDate.isBefore(event.endDate) || (order.initDate.day == now.day && order.initDate.month == now.month && order.initDate.year == now.year) );
       }).toList();
+
+      print(filteredHorders.length);
 
       // Crear el reporte
       final report = ReportEntity.fromHorders(

@@ -648,7 +648,7 @@ class UserServiceImpl extends UserService {
                   final Map<String, dynamic> orderMap =
                       Map<String, dynamic>.from(value);
                   final bool accepted =
-                      (orderMap['hasItBeenAccepted'] ?? false) == true;
+                      ((orderMap['hasItBeenAccepted'] ?? false) == true) && orderMap['hasItBeenCanceledByUser'] == false;
                   if (accepted) count++;
                 }
               } catch (_) {}
@@ -1174,7 +1174,7 @@ Future<void> deleteUserOrder(
         await storageRepository.deleteFileByPath(storagePath);
         return;
       } on FirebaseException catch (e) {
-        final code = (e.code ?? '').toLowerCase();
+        final code = (e.code).toLowerCase();
         if (code.contains('object-not-found') || code.contains('not-found')) {
           return;
         }
@@ -1311,9 +1311,25 @@ Future<void> deleteUserOrder(
           int acceptedCount = 0;
           itemsMap2.forEach((k, v) {
             try {
-              if (v is Map && (v['hasItBeenAccepted'] == true)) acceptedCount++;
+              if (v is Map) {
+                final h = v['hasItBeenAccepted'];
+                final canceled = v['hasItBeenCanceledByUser'];
+
+                final bool isAccepted = (h == true) ||
+                    (h is String && h.toLowerCase() == 'true') ||
+                    (h is num && h != 0);
+
+                final bool isCanceled = (canceled == true) ||
+                    (canceled is String && canceled.toLowerCase() == 'true') ||
+                    (canceled is num && canceled != 0);
+
+                if (isAccepted && !isCanceled) {
+                  acceptedCount++;
+                }
+              }
             } catch (_) {}
           });
+
           final int newQueue = (acceptedCount - 1) >= 0 ? (acceptedCount - 1) : 0;
 
           // Escrituras (todas después de las lecturas)
@@ -1459,9 +1475,25 @@ Future<void> deleteUserOrder(
           int acceptedCount = 0;
           itemsMap2.forEach((k, v) {
             try {
-              if (v is Map && (v['hasItBeenAccepted'] == true)) acceptedCount++;
+              if (v is Map) {
+                final h = v['hasItBeenAccepted'];
+                final canceled = v['hasItBeenCanceledByUser'];
+
+                final bool isAccepted = (h == true) ||
+                    (h is String && h.toLowerCase() == 'true') ||
+                    (h is num && h != 0);
+
+                final bool isCanceled = (canceled == true) ||
+                    (canceled is String && canceled.toLowerCase() == 'true') ||
+                    (canceled is num && canceled != 0);
+
+                if (isAccepted || isCanceled) {
+                  acceptedCount++;
+                }
+              }
             } catch (_) {}
           });
+
           final int newQueue = (acceptedCount - 1) >= 0 ? (acceptedCount - 1) : 0;
 
           // Escrituras (todas después de lecturas)
@@ -1612,145 +1644,172 @@ void _removeCancellationNotification(
   });
 }
 
+@override
+Future<void> changeOrderPaymentMethod(
+  String userRegistration,
+  String copyShopEmail,
+  String orderCode,
+  String paymentMethod,
+) async {
+  try {
+    final adminDocRef = _firestore
+        .collection('copyshops')
+        .doc(copyShopEmail)
+        .collection('aorders')
+        .doc('information');
 
-  @override
-  Future<void> changeOrderPaymentMethod(
-    String userRegistration,
-    String copyShopEmail,
-    String orderCode,
-    String paymentMethod,
-  ) async {
-  
-    try {
-      final adminDocRef = _firestore
-          .collection('copyshops')
-          .doc(copyShopEmail)
-          .collection('aorders')
-          .doc('information');
+    final userAorderDocRef = _firestore
+        .collection('users')
+        .doc(userRegistration)
+        .collection('aorder')
+        .doc('information');
 
-      final userAorderDocRef = _firestore
-          .collection('users')
-          .doc(userRegistration)
-          .collection('aorder')
-          .doc('information');
+    final copyshopNotificationsDocRef = _firestore
+        .collection('copyshops')
+        .doc(copyShopEmail)
+        .collection('notifications')
+        .doc('information');
 
-      await _firestore.runTransaction((tx) async {
-        // --- Leer admin doc ---
-        final adminSnap = await tx.get(adminDocRef);
-        if (!adminSnap.exists) {
-          throw Exception(
-            'Documento admin (aorders/information) no existe para $copyShopEmail.',
-          );
-        }
-        final adminData = adminSnap.data();
-        if (adminData == null) {
-          throw Exception('Documento admin sin datos para $copyShopEmail.');
-        }
+    await _firestore.runTransaction((tx) async {
+      // --- READS (todas antes de writes) ---
+      final adminSnap = await tx.get(adminDocRef);
+      final userSnap = await tx.get(userAorderDocRef);
+      final notifSnap = await tx.get(copyshopNotificationsDocRef);
 
-        final dynamic itemsRaw = adminData['items'];
-        if (itemsRaw is! Map) {
-          throw Exception(
-            'Estructura inválida: "items" no es un Map en admin doc.',
-          );
-        }
-
-        final Map<String, dynamic> items = Map<String, dynamic>.from(itemsRaw);
-        if (!items.containsKey(orderCode)) {
-          throw Exception(
-            'El orderCode "$orderCode" no existe en items (admin).',
-          );
-        }
-
-        final dynamic itemRaw = items[orderCode];
-        if (itemRaw is! Map) {
-          throw Exception(
-            'El item para "$orderCode" no tiene la estructura esperada (admin).',
-          );
-        }
-
-        // --- Preparamos admin update ---
-        final Map<String, dynamic> updatedItem = Map<String, dynamic>.from(
-          itemRaw,
+      if (!adminSnap.exists) {
+        throw Exception(
+          'Documento admin (aorders/information) no existe para $copyShopEmail.',
         );
-        updatedItem['paymentMethod'] = paymentMethod;
-        items[orderCode] = updatedItem;
+      }
+      if (!userSnap.exists) {
+        throw Exception(
+          'Documento usuario (aorder/information) no existe para $userRegistration.',
+        );
+      }
 
-        // --- Leer user aorder doc ---
-        final userSnap = await tx.get(userAorderDocRef);
-        if (!userSnap.exists) {
+      final adminData = adminSnap.data();
+      if (adminData == null) {
+        throw Exception('Documento admin sin datos para $copyShopEmail.');
+      }
+
+      final userData = userSnap.data();
+      if (userData == null) {
+        throw Exception('Documento usuario sin datos para $userRegistration.');
+      }
+
+      final dynamic itemsRaw = adminData['items'];
+      if (itemsRaw is! Map) {
+        throw Exception(
+          'Estructura inválida: "items" no es un Map en admin doc.',
+        );
+      }
+
+      final dynamic specsRaw = userData['specifications'];
+      if (specsRaw == null) {
+        throw Exception(
+          'Campo "specifications" inexistente en users/{registration}/aorder/information.',
+        );
+      }
+      if (specsRaw is! Map) {
+        throw Exception(
+          'Estructura inválida: "specifications" no es un Map en user aorder doc.',
+        );
+      }
+
+      // --- Trabajar en memoria ---
+      final Map<String, dynamic> items = Map<String, dynamic>.from(itemsRaw);
+      if (!items.containsKey(orderCode)) {
+        throw Exception(
+          'El orderCode "$orderCode" no existe en items (admin).',
+        );
+      }
+
+      final dynamic itemRaw = items[orderCode];
+      if (itemRaw is! Map) {
+        throw Exception(
+          'El item para "$orderCode" no tiene la estructura esperada (admin).',
+        );
+      }
+
+      // --- Preparamos admin update ---
+      final Map<String, dynamic> updatedItem =
+          Map<String, dynamic>.from(itemRaw);
+      updatedItem['paymentMethod'] = paymentMethod;
+      items[orderCode] = updatedItem;
+
+      // --- Preparar user specs update ---
+      final Map<String, dynamic> specs =
+          Map<String, dynamic>.from(specsRaw as Map<String, dynamic>);
+
+      bool userUpdated = false;
+
+      // Si specifications contiene un mapa de órdenes por código (mapa de mapas)
+      if (specs.containsKey(orderCode)) {
+        final dynamic orderNode = specs[orderCode];
+        if (orderNode is! Map) {
           throw Exception(
-            'Documento usuario (aorder/information) no existe para $userRegistration.',
+            'El valor specs[$orderCode] no es un Map como se esperaba.',
           );
         }
-        final userData = userSnap.data();
-        if (userData == null) {
-          throw Exception(
-            'Documento usuario sin datos para $userRegistration.',
-          );
-        }
-
-        final dynamic specsRaw = userData['specifications'];
-        if (specsRaw == null) {
-          throw Exception(
-            'Campo "specifications" inexistente en users/{registration}/aorder/information.',
-          );
-        }
-        if (specsRaw is! Map) {
-          throw Exception(
-            'Estructura inválida: "specifications" no es un Map en user aorder doc.',
-          );
-        }
-
-        final Map<String, dynamic> specs = Map<String, dynamic>.from(specsRaw);
-
-        bool userUpdated = false;
-
-        if (specs.containsKey(orderCode)) {
-          final dynamic orderNode = specs[orderCode];
-          if (orderNode is! Map) {
-            throw Exception(
-              'El valor specs[$orderCode] no es un Map como se esperaba.',
-            );
-          }
-          final Map<String, dynamic> updatedOrderNode =
-              Map<String, dynamic>.from(orderNode);
-          updatedOrderNode['paymentMethod'] = paymentMethod;
-          specs[orderCode] = updatedOrderNode;
+        final Map<String, dynamic> updatedOrderNode =
+            Map<String, dynamic>.from(orderNode);
+        updatedOrderNode['paymentMethod'] = paymentMethod;
+        specs[orderCode] = updatedOrderNode;
+        userUpdated = true;
+      } else {
+        // Si specifications es la raíz de la orden (orden en root)
+        final dynamic maybeOrderCode = specs['orderCode'];
+        if (maybeOrderCode != null && maybeOrderCode.toString() == orderCode) {
+          final Map<String, dynamic> updatedRootSpecs =
+              Map<String, dynamic>.from(specs);
+          updatedRootSpecs['paymentMethod'] = paymentMethod;
+          // reemplazamos el contenido del mapa
+          specs
+            ..clear()
+            ..addAll(updatedRootSpecs);
           userUpdated = true;
-        } else {
-          final dynamic maybeOrderCode = specs['orderCode'];
-          if (maybeOrderCode != null &&
-              maybeOrderCode.toString() == orderCode) {
-            final Map<String, dynamic> updatedRootSpecs =
-                Map<String, dynamic>.from(specs);
-            updatedRootSpecs['paymentMethod'] = paymentMethod;
-            specs
-              ..clear()
-              ..addAll(updatedRootSpecs);
-            userUpdated = true;
-          }
         }
+      }
 
-        if (!userUpdated) {
-          throw Exception(
-            'No se encontró la orden $orderCode dentro de users/$userRegistration/aorder/information/specifications.',
-          );
-        }
+      if (!userUpdated) {
+        throw Exception(
+          'No se encontró la orden $orderCode dentro de users/$userRegistration/aorder/information/specifications.',
+        );
+      }
 
-        tx.update(adminDocRef, {'items': items});
-        tx.update(userAorderDocRef, {'specifications': specs});
-      });
+      // --- Preparar notificación para la copyshop ---
+      final Timestamp notifTs = Timestamp.fromDate(DateTime.now().toUtc());
+      final Map<String, dynamic> notificationMap = {
+        'dateTime': notifTs,
+        'message': 'Pago actualizado',
+        'seen': false,
+        'subject': 'Pago act. #$orderCode',
+      };
 
-      return;
-    } on FirebaseException catch (e) {
-      return Future.error(
-        'Error de Firebase cambiando método de pago: ${e.message ?? e}',
-      );
-    } catch (e) {
-      return Future.error('Error cambiando método de pago: $e');
-    }
+      // --- WRITES (todas después de las reads) ---
+      tx.update(adminDocRef, {'items': items});
+      tx.update(userAorderDocRef, {'specifications': specs});
+
+      if (notifSnap.exists) {
+        tx.update(copyshopNotificationsDocRef, {
+          'items': FieldValue.arrayUnion([notificationMap]),
+        });
+      } else {
+        tx.set(copyshopNotificationsDocRef, {
+          'items': [notificationMap],
+        }, SetOptions(merge: true));
+      }
+    });
+
+    return;
+  } on FirebaseException catch (e) {
+    return Future.error(
+      'Error de Firebase cambiando método de pago: ${e.message ?? e}',
+    );
+  } catch (e) {
+    return Future.error('Error cambiando método de pago: $e');
   }
-
+}
 
   @override
   Future<double> getOutstandingCharges(String registration) async {
@@ -1797,5 +1856,202 @@ void _removeCancellationNotification(
       return Future.error('Error actualizando saldo pendiente: $e');
     }
   }
+
+  @override
+  Future<void> resetEstimatedDeliveryTimeChangedFlag(
+    String userRegistration,
+    String copyShopEmail,
+    String orderCode,
+  ) async {
+    try {
+      final adminAordersDocRef = _firestore
+          .collection('copyshops')
+          .doc(copyShopEmail)
+          .collection('aorders')
+          .doc('information');
+
+      final userAorderDocRef = _firestore
+          .collection('users')
+          .doc(userRegistration)
+          .collection('aorder')
+          .doc('information');
+
+      await _firestore.runTransaction((tx) async {
+        // --- READS (todas antes de writes) ---
+        final adminSnap = await tx.get(adminAordersDocRef);
+        final userSnap = await tx.get(userAorderDocRef);
+
+        if (!adminSnap.exists) {
+          throw Exception('Documento admin (aorders/information) no existe para $copyShopEmail.');
+        }
+        if (!userSnap.exists) {
+          throw Exception('Documento usuario (aorder/information) no existe para $userRegistration.');
+        }
+
+        final adminData = adminSnap.data() ?? {};
+        final userData = userSnap.data() ?? {};
+
+        final dynamic itemsRaw = adminData['items'] ?? {};
+        if (itemsRaw is! Map) {
+          throw Exception('Estructura inválida: "items" no es un Map en admin doc.');
+        }
+
+        final dynamic specsRaw = userData['specifications'] ?? {};
+        if (specsRaw is! Map) {
+          throw Exception('Estructura inválida: "specifications" no es un Map en user doc.');
+        }
+
+        // --- Trabajar en memoria ---
+        final Map<String, dynamic> items = Map<String, dynamic>.from(itemsRaw);
+        if (!items.containsKey(orderCode)) {
+          throw Exception('El orderCode "$orderCode" no existe en items (admin).');
+        }
+
+        final dynamic itemRaw = items[orderCode];
+        if (itemRaw is! Map) {
+          throw Exception('El item para "$orderCode" no tiene la estructura esperada (admin).');
+        }
+
+        final Map<String, dynamic> updatedItem = Map<String, dynamic>.from(itemRaw);
+        updatedItem['hasTheEstimatedDeliveryTimeChanged'] = false;
+        items[orderCode] = updatedItem;
+
+        final Map<String, dynamic> updatedSpecs = Map<String, dynamic>.from(specsRaw);
+        updatedSpecs['hasTheEstimatedDeliveryTimeChanged'] = false;
+
+        // --- WRITES (después de reads) ---
+        tx.update(adminAordersDocRef, {'items': items});
+        tx.update(userAorderDocRef, {'specifications': updatedSpecs});
+      });
+
+      return;
+    } on FirebaseException catch (e) {
+      return Future.error(
+        'Error de Firebase al resetear isEstimatedDeliveryTimeChanged: ${e.message ?? e}',
+      );
+    } catch (e) {
+      return Future.error('Error al resetear isEstimatedDeliveryTimeChanged: $e');
+    }
+  }
+
+@override
+Future<void> archiveUserOrderForUserOffline(
+  AorderEntity aorder,
+  String userRegistration,
+) async {
+  try {
+    final userAorderDocRef = _firestore
+        .collection('users')
+        .doc(userRegistration)
+        .collection('aorder')
+        .doc('information');
+
+    final userHordersDocRef = _firestore
+        .collection('users')
+        .doc(userRegistration)
+        .collection('horders')
+        .doc('information');
+
+    final userMainDocRef = _firestore.collection('users').doc(userRegistration);
+
+    // Helper para convertir DateTime -> Timestamp (UTC) seguro
+    Timestamp toTs(DateTime? dt) =>
+        dt == null ? Timestamp.now() : Timestamp.fromDate(dt.toUtc());
+
+    // --- Resolver paymentMethod siguiendo la lógica que pediste ---
+    Object? paymentMethodObject;
+    final dynamic pmRaw = aorder.paymentMethod;
+
+    if (pmRaw == null) {
+      paymentMethodObject = '';
+    } else if (pmRaw is Map) {
+      // ya es un objeto (posible caso donde se guardó info de tarjeta)
+      paymentMethodObject = Map<String, dynamic>.from(pmRaw);
+    } else {
+      final String pmStr = pmRaw.toString();
+      if (pmStr.toLowerCase() == 'cash') {
+        paymentMethodObject = 'cash';
+      } else {
+        // intentar leer desde userMain.cardPaymentMethods (offline-friendly: get() usa cache cuando no hay red)
+        try {
+          final userMainSnap = await userMainDocRef.get();
+          if (userMainSnap.exists) {
+            final dynamic cardMethodsRaw = userMainSnap.data()?['cardPaymentMethods'];
+            if (cardMethodsRaw is Map && cardMethodsRaw.containsKey(pmStr)) {
+              final found = cardMethodsRaw[pmStr];
+              if (found is Map) {
+                paymentMethodObject = Map<String, dynamic>.from(found);
+              } else {
+                // por seguridad, si no es Map guardamos el token
+                paymentMethodObject = pmStr;
+              }
+            } else {
+              // no existe el metodo en el mapa del usuario -> guardamos el token
+              paymentMethodObject = pmStr;
+            }
+          } else {
+            // no existe user doc en cache -> fallback a token
+            paymentMethodObject = pmStr;
+          }
+        } catch (_) {
+          // cualquier error leyendo -> fallback a token
+          paymentMethodObject = pmStr;
+        }
+      }
+    }
+
+    // --- Construir el mapa de historial (compatible con HorderEntity.toMap) ---
+    final Map<String, dynamic> horderMap = {
+      'copyShopName': aorder.copyShopName ?? '',
+      'userName': aorder.userName ?? '',
+      'userRegistration': aorder.userRegistration?.toString() ?? userRegistration,
+      'finalDate': toTs(aorder.estimatedDeliveryTime ?? aorder.initDate),
+      'format': aorder.format ?? '',
+      'initDate': toTs(aorder.initDate),
+      'isColor': aorder.isColor ?? false,
+      'pages': aorder.pages ?? 0,
+      'pdfName': aorder.pdfName ?? '',
+      // place: si tienes lat/long prefieres eso; si tienes campo place úsalo:
+      'place': (aorder.copyShopEmail != null && aorder.copyShopEmail!.isNotEmpty)
+          ? aorder.copyShopEmail
+          : ((aorder.placeLat != null && aorder.placeLong != null)
+              ? '${aorder.placeLat},${aorder.placeLong}'
+              : ''),
+      'price': aorder.price ?? 0.0,
+      'url': aorder.url ?? '',
+      'paymentMethod': paymentMethodObject,
+      'orderCode': aorder.orderCode ?? '',
+      'hasItBeenCanceledByUser': aorder.hasItBeenCanceledByUser ?? false,
+      'copyShopEmail': aorder.copyShopEmail ?? '',
+    };
+
+    // 1) Añadir al historial usando arrayUnion (offline-friendly)
+    await userHordersDocRef.set({
+      'items': FieldValue.arrayUnion([horderMap]),
+    }, SetOptions(merge: true));
+
+    // 2) Borrar specifications del doc aorder (si existe). Si el doc no existe, no es crítico.
+    try {
+      await userAorderDocRef.update({'specifications': FieldValue.delete()});
+    } on FirebaseException catch (e) {
+      final code = (e.code ?? '').toString().toLowerCase();
+      if (code.contains('not-found') || code.contains('not_exists') || code.contains('not-found')) {
+        // documento no existe en cache/local -> no crítico
+        print('archiveUserOrderForUserOffline: user aorder doc no existe al intentar borrar specifications (no crítico).');
+      } else {
+        // otros errores los re-lanzamos
+        rethrow;
+      }
+    }
+
+    return;
+  } on FirebaseException catch (e) {
+    return Future.error('Error de Firebase archivando orden (offline-friendly): ${e.message ?? e}');
+  } catch (e) {
+    return Future.error('Error archivando orden (offline-friendly): $e');
+  }
+}
+
+
 }
 

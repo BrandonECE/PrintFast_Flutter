@@ -176,9 +176,10 @@ class MyMenuView extends StatelessWidget {
         BlocBuilder<HomeBloc, HomeState>(
           buildWhen: (prev, curr) =>
               prev.homeOrderStatus != curr.homeOrderStatus ||
-              prev.activeOrder != curr.activeOrder || prev.isTheShoppingButtonBlocked != curr.isTheShoppingButtonBlocked,
+              prev.activeOrder != curr.activeOrder ||
+              prev.isTheShoppingButtonBlocked !=
+                  curr.isTheShoppingButtonBlocked,
           builder: (context, state) {
-
             final isButtonEnable = !state.isTheShoppingButtonBlocked;
 
             final targetColor = isButtonEnable
@@ -475,6 +476,9 @@ class MyMenuView extends StatelessWidget {
     switch (state.homeOrderStatus) {
       case HomeOrderStatus.loading:
         return _loadingCard(key: const ValueKey('home_order_loading'));
+    
+       case HomeOrderStatus.orderCompleted:
+        return _loadingCard(key: const ValueKey('home_order_loading'));
 
       case HomeOrderStatus.orderActive:
         return Container(
@@ -497,7 +501,7 @@ class MyMenuView extends StatelessWidget {
           ),
         );
 
-      case HomeOrderStatus.canceledByCopyShop:
+      case HomeOrderStatus.rejectedByCopyShop:
         return Container(
           key: const ValueKey('home_order_canceled'),
           child: Center(
@@ -683,10 +687,50 @@ class MyMenuView extends StatelessWidget {
                           children: [
                             if (isActive)
                               Expanded(
-                                child: _infoRow(
-                                  context,
-                                  icon: Icons.access_time_rounded,
-                                  text: time,
+                                child: AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 325),
+                                  switchInCurve: Curves
+                                      .easeOutQuart, // Entra con aceleración fluida
+                                  switchOutCurve:
+                                      Curves.easeInSine, // Sale muy suave
+                                  transitionBuilder: (child, animation) {
+                                    return SlideTransition(
+                                      position:
+                                          Tween<Offset>(
+                                            begin: const Offset(-0.5, 0.0),
+                                            end: Offset.zero,
+                                          ).animate(
+                                            CurvedAnimation(
+                                              parent: animation,
+                                              curve: Curves.easeInOut,
+                                            ),
+                                          ),
+                                      child: FadeTransition(
+                                        opacity: animation,
+                                        child: child,
+                                      ),
+                                    );
+                                  },
+                                  child: progress == 1.0
+                                      ? Align(
+                                          key: ValueKey("Listo"),
+                                          alignment: Alignment.centerLeft,
+                                          child: _infoRow(
+                                            context,
+                                            iconColor: Colors.green,
+                                            icon: Icons.check_circle,
+                                            text: "Listo",
+                                          ),
+                                        )
+                                      : Align(
+                                          key: ValueKey(time),
+                                          alignment: Alignment.centerLeft,
+                                          child: _infoRow(
+                                            context,
+                                            icon: Icons.access_time_rounded,
+                                            text: time,
+                                          ),
+                                        ),
                                 ),
                               ),
                             Expanded(
@@ -705,37 +749,74 @@ class MyMenuView extends StatelessWidget {
                   const SizedBox(width: 12),
 
                   // Indicador visual de progreso (usa progress y texto %)
-                  Container(
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 325),
                     width: 50,
                     height: 50,
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: colorScheme.primary.withOpacity(0.08),
+                      color: progress != 1.0
+                          ? colorScheme.primary.withOpacity(0.08)
+                          : colorScheme.primary.withOpacity(0.18),
                       shape: BoxShape.circle,
                     ),
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
-                        SizedBox(
-                          width: 40,
-                          height: 40,
-                          child: CircularProgressIndicator(
-                            value: isActive ? progress : 0,
-                            strokeWidth: 3,
-                            backgroundColor: Colors.grey.shade300,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              colorScheme.primary,
-                            ),
+                        // ✅ CAMBIA SOLO ESTA PARTE: Progress Indicator con TweenAnimationBuilder
+                        TweenAnimationBuilder<double>(
+                          duration: const Duration(milliseconds: 800),
+                          curve: Curves.easeOutQuart,
+                          tween: Tween<double>(
+                            begin: 0,
+                            end: isActive ? progress : 0,
                           ),
+                          builder: (context, animatedValue, child) {
+                            return SizedBox(
+                              width: 40,
+                              height: 40,
+                              child: CircularProgressIndicator(
+                                value:
+                                    animatedValue, // ✅ Valor interpolado suavemente
+                                strokeWidth: 3,
+                                backgroundColor: Colors.grey.shade300,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  colorScheme.primary,
+                                ),
+                              ),
+                            );
+                          },
                         ),
-                        Text(
-                          isActive ? "${(progress * 100).round()}%" : "0%",
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: isActive
-                                ? colorScheme.primary
-                                : Colors.grey.shade500,
+
+                        // ✅ MANTÉN ESTO IGUAL (tu animación del texto)
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 300),
+                          transitionBuilder:
+                              (Widget child, Animation<double> animation) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: ScaleTransition(
+                                    scale: Tween<double>(begin: 0.8, end: 1.0)
+                                        .animate(
+                                          CurvedAnimation(
+                                            parent: animation,
+                                            curve: Curves.easeOutBack,
+                                          ),
+                                        ),
+                                    child: child,
+                                  ),
+                                );
+                              },
+                          child: Text(
+                            isActive ? "${(progress * 100).floor()}%" : "0%",
+                            key: ValueKey<int>((progress * 100).floor()),
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: isActive
+                                  ? colorScheme.primary
+                                  : Colors.grey.shade500,
+                            ),
                           ),
                         ),
                       ],
@@ -749,7 +830,9 @@ class MyMenuView extends StatelessWidget {
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: !state.isCanceledByCopyShopLoading ? () => context.push(Routes.activeOrder) : (){},
+                      onPressed: !state.isRejectedByCopyShopLoading
+                          ? () => context.push(Routes.activeOrder)
+                          : () {},
                       style: ElevatedButton.styleFrom(
                         backgroundColor: colorScheme.primary,
                         foregroundColor: Colors.white,
@@ -786,7 +869,7 @@ class MyMenuView extends StatelessWidget {
                     ),
                     child: IconButton(
                       onPressed: () {
-                        if(state.isCanceledByCopyShopLoading) {
+                        if (state.isRejectedByCopyShopLoading) {
                           return;
                         }
                         homeBloc.add(
@@ -824,8 +907,15 @@ class MyMenuView extends StatelessWidget {
     required IconData icon,
     required String text,
     Color? iconColor,
+    bool animate = false, // ✅ Nuevo parámetro opcional
+    Duration? duration, // ✅ Duración opcional
+    Curve? curve, // ✅ Curva opcional
   }) {
     final colorScheme = Theme.of(context).colorScheme;
+
+    // ✅ Valores por defecto si no se proporcionan
+    final animationDuration = duration ?? const Duration(milliseconds: 300);
+    final animationCurve = curve ?? Curves.easeInOut;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -837,14 +927,35 @@ class MyMenuView extends StatelessWidget {
         ),
         const SizedBox(width: 6),
         Flexible(
-          child: Text(
-            text,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: colorScheme.inverseSurface,
-            ),
-          ),
+          child: animate
+              ? AnimatedSwitcher(
+                  // ✅ Solo anima el texto si animate es true
+                  duration: animationDuration,
+                  switchInCurve: animationCurve,
+                  switchOutCurve: animationCurve,
+                  transitionBuilder:
+                      (Widget child, Animation<double> animation) {
+                        return FadeTransition(opacity: animation, child: child);
+                      },
+                  child: Text(
+                    text,
+                    key: ValueKey<String>(text), // ✅ Key única para cada texto
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: colorScheme.inverseSurface,
+                    ),
+                  ),
+                )
+              : Text(
+                  // ✅ Comportamiento normal si animate es false
+                  text,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: colorScheme.inverseSurface,
+                  ),
+                ),
         ),
       ],
     );

@@ -1,9 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:custom_quick_alert/custom_quick_alert.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:printfast_rebuild/config/constants/api_keys.dart';
+import 'package:printfast_rebuild/config/constants/navigator_key.dart';
 import 'package:printfast_rebuild/config/routes/routes.dart';
 import 'package:printfast_rebuild/di/service_locator.dart';
 import 'package:printfast_rebuild/domain/entities/entities.dart';
@@ -13,7 +15,6 @@ import 'package:printfast_rebuild/domain/repositories/storage_repository.dart';
 import 'package:printfast_rebuild/domain/repositories/user_repository.dart';
 import 'package:printfast_rebuild/presentation/blocs/admin_blocs/admin_change_report_date_range_bloc/admin_change_report_date_range_bloc.dart';
 import 'package:printfast_rebuild/presentation/blocs/admin_blocs/admin_home_bloc/admin_home_bloc.dart';
-import 'package:printfast_rebuild/presentation/blocs/admin_blocs/admin_order_change_delivery_time_bloc/admin_order_change_delivery_time_bloc.dart';
 import 'package:printfast_rebuild/presentation/blocs/admin_blocs/admin_role_selection_bloc/admin_role_selection_bloc.dart';
 import 'package:printfast_rebuild/presentation/blocs/shared_blocs/cloud_storage_pdf_bloc.dart/cloud_storage_pdf_bloc.dart';
 import 'package:printfast_rebuild/presentation/blocs/shared_blocs/connectivity_bloc/connectivity_bloc.dart';
@@ -24,8 +25,10 @@ import 'package:printfast_rebuild/presentation/blocs/shared_blocs/register_bloc/
 import 'package:printfast_rebuild/presentation/blocs/user_blocs/shopping_blocs/shopping_bloc/shopping_bloc.dart';
 import 'package:toastification/toastification.dart';
 
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  CustomQuickAlert.initialize(NavigatorKey.navigatorKey);
   Stripe.publishableKey = ApiKeys.stripePublishApiKey;
   await Stripe.instance.applySettings();
   await Firebase.initializeApp();
@@ -55,7 +58,6 @@ class MyApp extends StatelessWidget {
             )
             // ..add(HomeUpdateUserEntityEvent(userEntity: UserEntity.defaultValues))
           ),
-          BlocProvider(create: (context) => AdminOrderChangeDeliveryTimeBloc()),
           BlocProvider(create: (context) => AdminChangeReportDateRangeBloc()),
           BlocProvider(
             create: (context) =>

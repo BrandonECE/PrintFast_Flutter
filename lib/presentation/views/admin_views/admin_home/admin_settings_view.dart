@@ -145,7 +145,7 @@ class MyAdminSettingsView extends StatelessWidget {
               shape: BoxShape.circle,
               border: Border.all(color: colorScheme.primary, width: 2),
             ),
-            child: Icon(Icons.local_print_shop_sharp, color: colorScheme.primary, size: 28),
+            child: Icon(Icons.local_print_shop, color: colorScheme.primary, size: 28),
           ),
           const SizedBox(width: 16),
           Expanded(

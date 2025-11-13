@@ -1,12 +1,17 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:printfast_rebuild/presentation/blocs/shared_blocs/message_error_warning_bloc/message_error_warning_bloc.dart';
 
 class MyMessageErrorWarning extends StatelessWidget {
-  const MyMessageErrorWarning({super.key, required this.voidCallback, this.voidCallbackByCloseIcon});
+  const MyMessageErrorWarning({
+    super.key,
+    required this.voidCallback,
+    this.voidCallbackByCloseIcon,
+    this.voidCallbackByPopScope,
+  });
   final VoidCallback voidCallback;
   final VoidCallback? voidCallbackByCloseIcon;
+  final VoidCallback? voidCallbackByPopScope;
 
   @override
   Widget build(BuildContext context) {
@@ -16,26 +21,30 @@ class MyMessageErrorWarning extends StatelessWidget {
         final colorScheme = Theme.of(context).colorScheme;
         final title = state.title.toLowerCase();
 
-      final IconData snackBarIcon = switch (title) {
+        final IconData snackBarIcon = switch (title) {
           String s when s.contains("error") => Icons.error,
           String s when s.contains("cambiar") => Icons.swap_horiz_rounded,
           String s when s.contains("guardar") => Icons.save_rounded,
           String s when s.contains("pago") => Icons.payment_rounded,
+          String s when s.contains("entrega") =>  Icons.edit_calendar_rounded,
           String s when s.contains("pendiente") => Icons.pending,
-          String s when s.contains("cancelar")  || s.contains("rechazar") || s.contains("rechazada") => Icons.cancel_rounded,
+          String s when s.contains("orden aceptada") => Icons.receipt_long,
+          String s when s.contains("cancelar") || s.contains("cancelada") || s.contains("rechazar") || s.contains("rechazada") || s.contains("inválido") => Icons.cancel_rounded,
           String s when s.contains("impresión") => Icons.print,
           String s when s.contains("confirmar") || s.contains("aceptar") => Icons.check_circle,
           String s when s.contains("pausar recepción") => Icons.pause_circle,
-          String s when s.contains("reanudar recepción") => Icons.check_circle,
-          _ => Icons.circle_outlined,
+          String s when s.contains("reanudar recepción") => Icons.check_circle, _ => Icons.circle_outlined,
         };
 
         return PopScope(
           onPopInvokedWithResult: (didPop, result) {
-            if (state.showMessageErrorWarning) {
-              messageErrorWarningBloc.add(
-                ShowMessageErrorWarningEvent(showMessageErrorWarning: false),
-              );
+            if (didPop) {
+              if (state.showMessageErrorWarning) {
+                voidCallbackByPopScope == null ?
+                messageErrorWarningBloc.add(
+                  ShowMessageErrorWarningEvent(showMessageErrorWarning: false),
+                ) : voidCallbackByPopScope?.call();
+              }
             }
           },
           child: Stack(
@@ -116,11 +125,13 @@ class MyMessageErrorWarning extends StatelessWidget {
                               ],
                             ),
                             IconButton(
-                              onPressed: voidCallbackByCloseIcon == null ? () => messageErrorWarningBloc.add(
-                                ShowMessageErrorWarningEvent(
-                                  showMessageErrorWarning: false,
-                                ),
-                              ) : () => voidCallbackByCloseIcon?.call(),
+                              onPressed: voidCallbackByCloseIcon == null
+                                  ? () => messageErrorWarningBloc.add(
+                                      ShowMessageErrorWarningEvent(
+                                        showMessageErrorWarning: false,
+                                      ),
+                                    )
+                                  : () => voidCallbackByCloseIcon?.call(),
                               icon: Icon(
                                 Icons.close_rounded,
                                 color: colorScheme.inverseSurface.withOpacity(
@@ -195,13 +206,15 @@ class MyMessageErrorWarning extends StatelessWidget {
     );
   }
 
-  Widget _myActionButtons(BuildContext context, VoidCallback voidCallBack, MessageErrorWarningState state) {
+  Widget _myActionButtons(
+    BuildContext context,
+    VoidCallback voidCallBack,
+    MessageErrorWarningState state,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Row(
       children: [
-        
-        
         // Botón Aceptar
         Expanded(
           child: ElevatedButton(
@@ -217,50 +230,53 @@ class MyMessageErrorWarning extends StatelessWidget {
             ),
             child: const Text(
               'Aceptar',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
             ),
           ),
         ),
 
-        if(state.showCancelButton)
-        Expanded(
-          child: Row(
-            children: [
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () {
-                    context.read<MessageErrorWarningBloc>().add(
-                      ShowMessageErrorWarningEvent(showMessageErrorWarning: false),
-                    );
-                  },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: colorScheme.inverseSurface.withOpacity(0.7),
-                    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+        if (state.showCancelButton)
+          Expanded(
+            child: Row(
+              children: [
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {
+                      context.read<MessageErrorWarningBloc>().add(
+                        ShowMessageErrorWarningEvent(
+                          showMessageErrorWarning: false,
+                        ),
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: colorScheme.inverseSurface.withOpacity(
+                        0.7,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 14,
+                        horizontal: 20,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      side: BorderSide(
+                        color: colorScheme.inverseSurface.withOpacity(0.2),
+                        width: 1.2,
+                      ),
                     ),
-                    side: BorderSide(
-                      color: colorScheme.inverseSurface.withOpacity(0.2),
-                      width: 1.2,
-                    ),
-                  ),
-                  child: const Text(
-                    'Cancelar',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
+                    child: const Text(
+                      'Cancelar',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-        
       ],
     );
   }

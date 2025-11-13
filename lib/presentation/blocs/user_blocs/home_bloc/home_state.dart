@@ -5,17 +5,16 @@ enum HomeLogOutStatus { initial, loading, success, failure }
 
 /// Estado de la escucha / orden activa
 enum HomeOrderStatus {
-  idle, loading, orderActive,
+  idle,
+  loading,
+  orderActive,
   // noOrderActive,
-  failure, canceledByCopyShop,
+  failure,
+  rejectedByCopyShop,
+  orderCompleted,
 }
 
-enum HomeCanceledOrderStatus{
-  idle,
-  loading, 
-  sucessul,
-  failure
-}
+enum HomeCanceledOrderStatus { idle, loading, sucessul, failure }
 
 /// Estado para el contador de notificaciones no vistas
 enum HomeNotificationsStatus { idle, loading, success, failure }
@@ -36,10 +35,12 @@ final class HomeState extends Equatable {
     required this.notificationsStatus,
     required this.notificationsErrorMessage,
     required this.homeActions,
-    required this.isCanceledByCopyShopLoading,
+    required this.isRejectedByCopyShopLoading,
+    required this.isLoadingTheOrderBeingArchivedAndCompleted,
     required this.remainingMinutes,
     required this.isTheShoppingButtonBlocked,
-    required this.homeCanceledOrderStatus
+    required this.homeCanceledOrderStatus,
+    required this.isTheEstimatedDeliveryTimeLoading,
   });
 
   final int currentIndex;
@@ -49,9 +50,11 @@ final class HomeState extends Equatable {
   final AorderEntity? activeOrder;
   final HomeOrderStatus homeOrderStatus;
   final HomeActions homeActions;
-  final bool isCanceledByCopyShopLoading;
+  final bool isRejectedByCopyShopLoading;
+  final bool isLoadingTheOrderBeingArchivedAndCompleted;
   final bool isTheShoppingButtonBlocked;
   final HomeCanceledOrderStatus homeCanceledOrderStatus;
+  final bool isTheEstimatedDeliveryTimeLoading;
 
   // Progress / label for active order
   final double activeOrderProgress;
@@ -76,10 +79,12 @@ final class HomeState extends Equatable {
     HomeNotificationsStatus? notificationsStatus,
     String? notificationsErrorMessage,
     HomeActions? homeActions,
-    bool? isCanceledByCopyShopLoading,
+    bool? isRejectedByCopyShopLoading,
+    bool?  isLoadingTheOrderBeingArchivedAndCompleted,
     double? remainingMinutes,
     bool? isTheShoppingButtonBlocked,
-    HomeCanceledOrderStatus? homeCanceledOrderStatus
+    HomeCanceledOrderStatus? homeCanceledOrderStatus,
+    bool? isTheEstimatedDeliveryTimeLoading,
   }) {
     return HomeState(
       currentIndex: currentIndex ?? this.currentIndex,
@@ -96,11 +101,18 @@ final class HomeState extends Equatable {
       notificationsErrorMessage:
           notificationsErrorMessage ?? this.notificationsErrorMessage,
       homeActions: homeActions ?? this.homeActions,
-      isCanceledByCopyShopLoading:
-          isCanceledByCopyShopLoading ?? this.isCanceledByCopyShopLoading,
+      
+      isRejectedByCopyShopLoading:
+          isRejectedByCopyShopLoading ?? this.isRejectedByCopyShopLoading,
+           isLoadingTheOrderBeingArchivedAndCompleted:  isLoadingTheOrderBeingArchivedAndCompleted ?? this. isLoadingTheOrderBeingArchivedAndCompleted,
       remainingMinutes: remainingMinutes ?? this.remainingMinutes,
-      isTheShoppingButtonBlocked: isTheShoppingButtonBlocked ?? this.isTheShoppingButtonBlocked,
-      homeCanceledOrderStatus: homeCanceledOrderStatus ?? this.homeCanceledOrderStatus
+      isTheShoppingButtonBlocked:
+          isTheShoppingButtonBlocked ?? this.isTheShoppingButtonBlocked,
+      homeCanceledOrderStatus:
+          homeCanceledOrderStatus ?? this.homeCanceledOrderStatus,
+      isTheEstimatedDeliveryTimeLoading:
+          isTheEstimatedDeliveryTimeLoading ??
+          this.isTheEstimatedDeliveryTimeLoading,
     );
   }
 
@@ -118,10 +130,12 @@ final class HomeState extends Equatable {
     notificationsStatus,
     notificationsErrorMessage,
     homeActions,
-    isCanceledByCopyShopLoading,
+    isRejectedByCopyShopLoading,
+     isLoadingTheOrderBeingArchivedAndCompleted,
     remainingMinutes,
     isTheShoppingButtonBlocked,
-    homeCanceledOrderStatus
+    homeCanceledOrderStatus,
+    isTheEstimatedDeliveryTimeLoading,
   ];
 }
 
@@ -140,9 +154,11 @@ final class HomeInitial extends HomeState {
         notificationsStatus: HomeNotificationsStatus.idle,
         notificationsErrorMessage: null,
         homeActions: HomeActions.none,
-        isCanceledByCopyShopLoading: false,
+        isRejectedByCopyShopLoading: false,
+        isLoadingTheOrderBeingArchivedAndCompleted: false,
         remainingMinutes: 0.0,
         isTheShoppingButtonBlocked: true,
-        homeCanceledOrderStatus: HomeCanceledOrderStatus.idle
+        homeCanceledOrderStatus: HomeCanceledOrderStatus.idle,
+        isTheEstimatedDeliveryTimeLoading: false,
       );
 }

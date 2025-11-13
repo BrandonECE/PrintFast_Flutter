@@ -96,7 +96,7 @@ class CloudStoragePdfBloc
       ),
     );
     try {
-      // await Future.delayed(Duration(milliseconds: 5000));
+      await Future.delayed(Duration(milliseconds: 5000));
       // throw Exception("PRUEBAPRINT");
       final fileFromCloudStorage = await getCachedPdfOrDownload(
         cloudStorageURL,

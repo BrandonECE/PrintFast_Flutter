@@ -179,7 +179,9 @@ class ShoppingBloc extends Bloc<ShoppingEvent, ShoppingState> {
         userName: userEntity.name,
         orderCode: getOrderCode,
         hasItBeenCanceledByUser: false,
+        hasItBeenCompleted: false,
         estimatedDeliveryTime: selectedCopyShop.estimatedDeliveryTime,
+        hasTheEstimatedDeliveryTimeChanged: false,
         hasItBeenAccepted: null,
         format: state.isFormatCarta ? "Carta" : "Oficio",
         initDate: DateTime.now(),
@@ -193,7 +195,7 @@ class ShoppingBloc extends Bloc<ShoppingEvent, ShoppingState> {
         url: _getFinalUrl(userEntity.registration, state.fileName),
         paymentMethod: paymentMethod,
         verificationCode: generateFiveDigitCode(),
-        printDate: null
+        printDate: null,
       );
 
       //  throw Exception("La recepción de órdenes está temporalmente detenida en esta papelería.");

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:printfast_rebuild/config/routes/routes.dart';
 import 'package:printfast_rebuild/domain/entities/entities.dart';
 import 'package:printfast_rebuild/presentation/blocs/admin_blocs/admin_home_bloc/admin_home_bloc.dart';
+import 'package:printfast_rebuild/presentation/blocs/shared_blocs/cloud_storage_pdf_bloc.dart/cloud_storage_pdf_bloc.dart';
 import 'package:printfast_rebuild/presentation/widgets/widgets.dart';
 import 'package:printfast_rebuild/utils/utils.dart';
 
@@ -55,8 +56,7 @@ class MyAdminOrdersView extends StatelessWidget {
               child: Column(
                 children: [
                   BlocBuilder<AdminHomeBloc, AdminHomeState>(
-                    
-                      buildWhen: (prev, curr) =>
+                    buildWhen: (prev, curr) =>
                         prev.acceptedOrders.length !=
                             curr.acceptedOrders.length ||
                         prev.pendingOrders.length != curr.pendingOrders.length,
@@ -113,25 +113,52 @@ class MyAdminOrdersView extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   Expanded(
-                    child: BlocBuilder<AdminHomeBloc, AdminHomeState>(
+                    child: BlocBuilder<CloudStoragePdfBloc, CloudStoragePdfState>(
                       buildWhen: (prev, curr) =>
-                          prev.adminAordersStatus != curr.adminAordersStatus ||
-                          prev.acceptedOrders != curr.acceptedOrders ||
-                          prev.pendingOrders != curr.pendingOrders,
-                      builder: (context, state) {
-                        return TabBarView(
-                          children: [
-                            _buildSectionContainer(
-                              context,
-                              width,
-                              _buildContentForState(context, state, true),
-                            ),
-                            _buildSectionContainer(
-                              context,
-                              width,
-                              _buildContentForState(context, state, false),
-                            ),
-                          ],
+                          prev.cloudStoragePrintPdfStatus !=
+                          curr.cloudStoragePrintPdfStatus,
+                      builder: (context, cloudStoragePdfState) {
+                        return BlocBuilder<AdminHomeBloc, AdminHomeState>(
+                          buildWhen: (prev, curr) =>
+                              prev.adminAordersStatus !=
+                                  curr.adminAordersStatus ||
+                              prev.acceptedOrders != curr.acceptedOrders ||
+                              prev.pendingOrders != curr.pendingOrders ||
+                              prev.pendingOrderStatus !=
+                                  curr.pendingOrderStatus ||
+                              prev.changeDeliveryPendingOrderTimeStatus !=
+                                  curr.changeDeliveryPendingOrderTimeStatus ||
+                              prev.codeValidationStatus !=
+                                  curr.codeValidationStatus ||
+                              prev.archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus !=
+                                  curr.archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus,
+
+                          builder: (context, adminHomeState) {
+                            return TabBarView(
+                              children: [
+                                _buildSectionContainer(
+                                  context,
+                                  width,
+                                  _buildContentForState(
+                                    context,
+                                    cloudStoragePdfState,
+                                    adminHomeState,
+                                    true,
+                                  ),
+                                ),
+                                _buildSectionContainer(
+                                  context,
+                                  width,
+                                  _buildContentForState(
+                                    context,
+                                    cloudStoragePdfState,
+                                    adminHomeState,
+                                    false,
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
                         );
                       },
                     ),
@@ -147,10 +174,13 @@ class MyAdminOrdersView extends StatelessWidget {
 
   Widget _buildContentForState(
     BuildContext context,
-    AdminHomeState state,
+    CloudStoragePdfState cloudStoragePdfState,
+    AdminHomeState adminHomeState,
     bool isAcceptedOrdersTab,
   ) {
-    final orders = isAcceptedOrdersTab ? state.acceptedOrders : state.pendingOrders;
+    final orders = isAcceptedOrdersTab
+        ? adminHomeState.acceptedOrders
+        : adminHomeState.pendingOrders;
 
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 225),
@@ -161,7 +191,8 @@ class MyAdminOrdersView extends StatelessWidget {
       },
       child: _contentForAdminAordersStatus(
         context,
-        state,
+        cloudStoragePdfState,
+        adminHomeState,
         orders,
         isAcceptedOrdersTab,
       ),
@@ -170,11 +201,12 @@ class MyAdminOrdersView extends StatelessWidget {
 
   Widget _contentForAdminAordersStatus(
     BuildContext context,
-    AdminHomeState state,
+    CloudStoragePdfState cloudStoragePdfState,
+    AdminHomeState adminHomeState,
     List<AorderEntity> orders,
     bool isAcceptedTab,
   ) {
-    switch (state.adminAordersStatus) {
+    switch (adminHomeState.adminAordersStatus) {
       case AdminAordersStatus.loading:
         return _buildLoading(
           context,
@@ -184,7 +216,7 @@ class MyAdminOrdersView extends StatelessWidget {
       case AdminAordersStatus.failure:
         return _buildFailure(
           context,
-          state.messageError ?? 'Error desconocido',
+          adminHomeState.messageError ?? 'Error desconocido',
           key: const ValueKey('admin_orders_failure'),
         );
 
@@ -200,6 +232,8 @@ class MyAdminOrdersView extends StatelessWidget {
         }
         return _buildOrdersListWithAnimation(
           context,
+          cloudStoragePdfState,
+          adminHomeState,
           orders,
           isAcceptedTab,
           key: ValueKey(
@@ -217,9 +251,11 @@ class MyAdminOrdersView extends StatelessWidget {
 
   Widget _buildOrdersListWithAnimation(
     BuildContext context,
-    List<AorderEntity> orders, 
-    bool isAcceptedTab,
-    {required Key key,
+    CloudStoragePdfState cloudStoragePdfState,
+    AdminHomeState adminHomeState,
+    List<AorderEntity> orders,
+    bool isAcceptedTab, {
+    required Key key,
   }) {
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 500),
@@ -260,24 +296,33 @@ class MyAdminOrdersView extends StatelessWidget {
           ),
         );
       },
-      child: _buildList(context, orders, isAcceptedTab, key: key),
+      child: _buildList(
+        context,
+        cloudStoragePdfState,
+        adminHomeState,
+        orders,
+        isAcceptedTab,
+        key: key,
+      ),
     );
   }
 
-  void _thereWasAnError(BuildContext context, String title, String errorMessage) {
-      showSnackBar(
-        context: context,
-        title: title,
-        text: errorMessage,
-    );
+  void _thereWasAnError(
+    BuildContext context,
+    String title,
+    String errorMessage,
+  ) {
+    showSnackBar(context: context, title: title, text: errorMessage);
   }
 
   Widget _buildList(
     BuildContext context,
+    CloudStoragePdfState cloudStoragePdfState,
+    AdminHomeState adminHomeState,
     List<AorderEntity> orders,
-    bool isAcceptedTab,
-    {required Key key,
-  }){
+    bool isAcceptedTab, {
+    required Key key,
+  }) {
     final colorScheme = Theme.of(context).colorScheme;
     final adminHomeBloc = context.read<AdminHomeBloc>();
 
@@ -293,16 +338,23 @@ class MyAdminOrdersView extends StatelessWidget {
         final formatAmPm = formatTimeToAmPm(item.initDate);
         final String date = "$formatYmd , $formatAmPm";
 
-
         void selectOrder() {
           if (!isAcceptedTab) {
-            final status = adminHomeBloc.state.pendingOrderStatus;
-            final selectedCode = adminHomeBloc.state.selectedPendingOrderCode;
+            final pendingOrderStatus = adminHomeState.pendingOrderStatus;
+            final changeDeliveryTimeStatus =
+                adminHomeState.changeDeliveryPendingOrderTimeStatus;
+            final codeValidationStatus = adminHomeState.codeValidationStatus;
+            final selectedCode = adminHomeState.selectedPendingOrderCode;
             final targetCode = orders[index].orderCode;
 
-            final bool isSameOrEmpty = selectedCode == targetCode || selectedCode.isEmpty;
+            final bool isSameOrEmpty =
+                selectedCode == targetCode || selectedCode.isEmpty;
+            print(pendingOrderStatus);
 
-            if (status == PendingOrderStatus.idle) {
+            if (pendingOrderStatus == PendingOrderStatus.idle &&
+                changeDeliveryTimeStatus ==
+                    ChangeDeliveryPendingOrderTimeStatus.idle &&
+                codeValidationStatus == CodeValidationStatus.idle) {
               // Si está idle, entramos sin más validaciones
               adminHomeBloc.add(
                 AdminHomeUpdateSelectedPendingOrderCodeValueEvent(
@@ -316,7 +368,11 @@ class MyAdminOrdersView extends StatelessWidget {
               return;
             }
 
-            if (status == PendingOrderStatus.loading) {
+            if (pendingOrderStatus == PendingOrderStatus.loading ||
+                changeDeliveryTimeStatus ==
+                    ChangeDeliveryPendingOrderTimeStatus.loading ||
+                codeValidationStatus == CodeValidationStatus.loading ||
+                codeValidationStatus == CodeValidationStatus.validating) {
               // Si está cargando, sólo permitimos entrada si coincide la orden o si no hay selección previa
               if (isSameOrEmpty) {
                 // Si estaba vacío, lo seteamos para dejar claro que esta orden está en proceso
@@ -329,7 +385,9 @@ class MyAdminOrdersView extends StatelessWidget {
                 }
 
                 adminHomeBloc.add(
-                  AdminHomeUpdateSelectedOrderEvent(selectedOrder: orders[index]),
+                  AdminHomeUpdateSelectedOrderEvent(
+                    selectedOrder: orders[index],
+                  ),
                 );
                 context.push(Routes.adminOrderView);
                 return;
@@ -343,7 +401,7 @@ class MyAdminOrdersView extends StatelessWidget {
                 _thereWasAnError(
                   context,
                   'Orden pendiente en proceso',
-                  'Por favor espera a que se complete la autorización o el rechazo de la orden pendiente antes de acceder a una nueva',
+                  'Esta orden tiene acciones pendientes en curso. Espere a su finalización para acceder a una nueva',
                 );
                 return;
               }
@@ -358,17 +416,138 @@ class MyAdminOrdersView extends StatelessWidget {
             _thereWasAnError(
               context,
               'Orden pendiente en proceso',
-              'Por favor espera a que se complete la autorización o el rechazo de la orden pendiente antes de acceder a una nueva',
+              'Esta orden tiene acciones pendientes en curso. Espere a su finalización para acceder a una nueva',
             );
           } else {
-            // Si estamos en la pestaña accepted, entramos normalmente
+            final cloudStoragePrintPdfStatus =
+                cloudStoragePdfState.cloudStoragePrintPdfStatus;
+            final changeDeliveryAcceptedOrderTimeStatus =
+                adminHomeState.changeDeliveryAcceptedOrderTimeStatus;
+            final selectedCode = adminHomeState.selectedAceptedOrderCode;
+            final targetCode = orders[index].orderCode;
+            final archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus =
+                adminHomeState
+                    .archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus;
+
+            final bool isSameOrEmpty =
+                selectedCode == targetCode || selectedCode.isEmpty;
+
+            print(cloudStoragePrintPdfStatus);
+
+            if (cloudStoragePrintPdfStatus ==
+                    CloudStoragePrintPdfStatus.initial &&
+                changeDeliveryAcceptedOrderTimeStatus ==
+                    ChangeDeliveryAcceptedOrderTimeStatus.idle &&
+                archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus ==
+                    ArchivingAcceptedOrderAfterBeingCanceledByTheUserStatus
+                        .idle) {
+              // Si está idle, entramos sin más validaciones
+              adminHomeBloc.add(
+                AdminHomeUpdateSelectedAcceptedOrderCodeValueEvent(
+                  selectedAcceptedOrderCode: targetCode,
+                ),
+              );
+              adminHomeBloc.add(
+                AdminHomeUpdateSelectedOrderEvent(selectedOrder: orders[index]),
+              );
+              context.push(Routes.adminOrderView);
+              if (orders[index].hasItBeenCanceledByUser == true) {
+                print("YEEEEEEEEEEEES");
+                adminHomeBloc.add(
+                  AdminHomeUpdateAdminHomeActionsEvent(
+                    adminHomeActions:
+                        AdminHomeActions.acceptedOrderCanceledByUser,
+                  ),
+                );
+                adminHomeBloc.add(
+                  AdminHomeArchiveAcceptedOrderAfterBeingCanceledByTheUserEvent(),
+                );
+                WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
+                  adminHomeBloc.add(
+                    AdminHomeShowMessageArchiveCanceledOrderByUserEvent(
+                      showMessageArchiveCanceledOrderByUser: true,
+                    ),
+                  );
+                });
+              }
+              return;
+            }
+
+            if (cloudStoragePrintPdfStatus ==
+                    CloudStoragePrintPdfStatus.loading ||
+                changeDeliveryAcceptedOrderTimeStatus ==
+                    ChangeDeliveryAcceptedOrderTimeStatus.loading ||
+                archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus ==
+                    ArchivingAcceptedOrderAfterBeingCanceledByTheUserStatus
+                        .loading) {
+              // Si está cargando, sólo permitimos entrada si coincide la orden o si no hay selección previa
+              if (isSameOrEmpty) {
+                // Si estaba vacío, lo seteamos para dejar claro que esta orden está en proceso
+                if (selectedCode.isEmpty) {
+                  adminHomeBloc.add(
+                    AdminHomeUpdateSelectedAcceptedOrderCodeValueEvent(
+                      selectedAcceptedOrderCode: targetCode,
+                    ),
+                  );
+                }
+
+                adminHomeBloc.add(
+                  AdminHomeUpdateSelectedOrderEvent(
+                    selectedOrder: orders[index],
+                  ),
+                );
+                context.push(Routes.adminOrderView);
+                if (adminHomeState
+                        .archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus ==
+                    ArchivingAcceptedOrderAfterBeingCanceledByTheUserStatus
+                        .loading) {
+                  print("YEEEEEEEEEEEES");
+                  adminHomeBloc.add(
+                    AdminHomeUpdateAdminHomeActionsEvent(
+                      adminHomeActions:
+                          AdminHomeActions.acceptedOrderCanceledByUser,
+                    ),
+                  );
+                  WidgetsBinding.instance.addPostFrameCallback((
+                    timeStamp,
+                  ) async {
+                    adminHomeBloc.add(
+                      AdminHomeShowMessageArchiveCanceledOrderByUserEvent(
+                        showMessageArchiveCanceledOrderByUser: true,
+                      ),
+                    );
+                  });
+                }
+                return;
+              } else {
+                // Hay otra orden pendiente en proceso — bloqueamos
+                adminHomeBloc.add(
+                  AdminHomeUpdateAdminHomeActionsEvent(
+                    adminHomeActions: AdminHomeActions.accessAcceptedOrder,
+                  ),
+                );
+                _thereWasAnError(
+                  context,
+                  'Orden aceptada en proceso',
+                  'Esta orden tiene acciones pendientes en curso. Espere a su finalización para acceder a una nueva',
+                );
+                return;
+              }
+            }
+
+            // Para cualquier otro estado (si lo hay), bloqueamos por seguridad
             adminHomeBloc.add(
-              AdminHomeUpdateSelectedOrderEvent(selectedOrder: orders[index]),
+              AdminHomeUpdateAdminHomeActionsEvent(
+                adminHomeActions: AdminHomeActions.accessAcceptedOrder,
+              ),
             );
-            context.push(Routes.adminOrderView);
+            _thereWasAnError(
+              context,
+              'Orden aceptada en proceso',
+              'Esta orden tiene acciones pendientes en curso. Espere a su finalización para acceder a una nueva',
+            );
           }
         }
-
 
         return Column(
           children: [
@@ -414,148 +593,187 @@ class MyAdminOrdersView extends StatelessWidget {
                 ],
                 border: Border.all(color: Colors.grey.shade300),
               ),
-              child: Row(
-                // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                   Row(
-                  children: [
-                    Icon(
-                      Icons.receipt_long,
-                      size: 18,
-                      color: colorScheme.inverseSurface,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      "Ord #${item.orderCode}",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.inverseSurface,
-                        fontSize: 15,
-                      ),
-                    ),
-                    
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        return AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 250), // Más rápido: 250ms
-                          switchInCurve: Curves.easeOut,
-                          switchOutCurve: Curves.easeIn,
-                          layoutBuilder: (currentChild, previousChildren) {
-                            return Stack(
-                              alignment: Alignment.centerLeft,
-                              children: <Widget>[
-                                ...previousChildren,
-                                if (currentChild != null) currentChild,
-                              ],
-                            );
-                          },
-                          transitionBuilder: (child, animation) {
-                            return SlideTransition(
-                              position: Tween<Offset>(
-                                begin: const Offset(-1, 0), // Desplazamiento más corto
-                                end: Offset.zero,
-                              ).animate(CurvedAnimation(
-                                parent: animation,
-                                curve: Curves.easeOut,
-                              )),
-                              child: FadeTransition(
-                                opacity: animation,
-                                child: child,
-                              ),
-                            );
-                          },
-                              child: Row(
-                                key: ValueKey('icons_${item.printDate != null}_${item.hasItBeenCanceledByUser}'),
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (item.printDate != null) 
-                                    Padding(
-                                      padding: const EdgeInsets.only(left: 8),
-                                      child: Icon(
-                                        Icons.local_print_shop_rounded,
-                                        size: 18,
-                                        color: colorScheme.primary,
-                                      ),
-                                    ),
-                                  
-                                  if (item.hasItBeenCanceledByUser)
-                                    Padding(
-                                      padding: const EdgeInsets.only(left: 8),
-                                      child: Icon(
-                                        Icons.cancel_rounded,
-                                        size: 18,
-                                        color: Colors.red,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                        const SizedBox(height: 8),
-                        Row(
+              child: BlocBuilder<AdminHomeBloc, AdminHomeState>(
+                buildWhen: (prev, curr) =>
+                    prev.progressTick != curr.progressTick ||
+                    prev.acceptedOrders != curr.acceptedOrders,
+                builder: (context, state) {
+                  // CORRECCIÓN: Manejo seguro de fechas y estados
+                  print("CORRECION: ${item.estimatedDeliveryTime}");
+             
+
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(
-                              Icons.person_2_sharp,
-                              size: 18,
-                              color: colorScheme.inverseSurface.withOpacity(
-                                0.8,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              item.userRegistration,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w500,
-                                color: colorScheme.inverseSurface.withOpacity(
-                                  0.8,
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.receipt_long,
+                                  size: 18,
+                                  color: colorScheme.inverseSurface,
                                 ),
-                                fontSize: 14,
-                              ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  "Ord #${item.orderCode}",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: colorScheme.inverseSurface,
+                                    fontSize: 15,
+                                  ),
+                                ),
+
+                                // ICONO DE IMPRESIÓN (siempre se muestra si existe)
+                                LayoutBuilder(
+                                    builder: (context, constraints) {
+                                      return AnimatedSwitcher(
+                                        duration: const Duration(
+                                          milliseconds: 250,
+                                        ), // Más rápido: 250ms
+                                        switchInCurve: Curves.easeOut,
+                                        switchOutCurve: Curves.easeIn,
+                                        layoutBuilder: (currentChild, previousChildren) {
+                                          return Stack(
+                                            alignment: Alignment.centerLeft,
+                                            children: <Widget>[
+                                              ...previousChildren,
+                                              if (currentChild != null) currentChild,
+                                            ],
+                                          );
+                                        },
+                                        transitionBuilder: (child, animation) {
+                                          return SlideTransition(
+                                            position: Tween<Offset>(
+                                              begin: const Offset(
+                                                -1,
+                                                0,
+                                              ), // Desplazamiento más corto
+                                              end: Offset.zero,
+                                            ).animate(
+                                              CurvedAnimation(
+                                                parent: animation,
+                                                curve: Curves.easeOut,
+                                              ),
+                                            ),
+                                            child: FadeTransition(
+                                              opacity: animation,
+                                              child: child,
+                                            ),
+                                          );
+                                        },
+                                        child: Row(
+                                          key: ValueKey(
+                                            'icons_${item.printDate != null}_${item.hasItBeenCanceledByUser}_${item.estimatedDeliveryTime != null && DateTime.now().isAfter(item.estimatedDeliveryTime!)}',
+                                          ),
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            if (item.printDate != null)
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                  left: 8,
+                                                ),
+                                                child: Icon(
+                                                  Icons.local_print_shop_rounded,
+                                                  size: 18,
+                                                  color: colorScheme.primary,
+                                                ),
+                                              ),
+
+                                            // ICONO DE CHECK (cuando el tiempo se cumplió y NO está cancelada)
+                                            if (item.estimatedDeliveryTime != null && 
+                                                DateTime.now().isAfter(item.estimatedDeliveryTime!) &&
+                                                item.hasItBeenCanceledByUser != true)
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                  left: 8,
+                                                ),
+                                                child: Icon(
+                                                  Icons.check_circle_rounded,
+                                                  size: 18,
+                                                  color: Colors.green,
+                                                ),
+                                              ),
+
+                                            // ICONO DE CANCEL (si está cancelada - tiene prioridad sobre el check)
+                                            if (item.hasItBeenCanceledByUser)
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                  left: 8,
+                                                ),
+                                                child: Icon(
+                                                  Icons.cancel_rounded,
+                                                  size: 18,
+                                                  color: Colors.red,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.person_2_sharp,
+                                  size: 18,
+                                  color: colorScheme.inverseSurface.withOpacity(
+                                    0.8,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  item.userRegistration,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    color: colorScheme.inverseSurface
+                                        .withOpacity(0.8),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        "${item.price}\$",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.inverseSurface,
-                          fontSize: 16,
-                        ),
                       ),
-                      const SizedBox(height: 8),
-                      ElevatedButton(
-                        onPressed: selectOrder,
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          backgroundColor: colorScheme.primary,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            "${item.price}\$",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.inverseSurface,
+                              fontSize: 16,
+                            ),
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                          const SizedBox(height: 8),
+                          ElevatedButton(
+                            onPressed: selectOrder,
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: colorScheme.primary,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              elevation: 2,
+                              shadowColor: colorScheme.primary.withOpacity(0.3),
+                            ),
+                            child: const Icon(Icons.remove_red_eye, size: 20),
                           ),
-                          elevation: 2,
-                          shadowColor: colorScheme.primary.withOpacity(0.3),
-                        ),
-                        child: const Icon(Icons.remove_red_eye, size: 20),
+                        ],
                       ),
                     ],
-                  ),
-                ],
+                  );
+                },
               ),
             ),
           ],
@@ -810,7 +1028,7 @@ class _StatusPill extends StatelessWidget {
         state.receptionStatus;
         final bg = switch (state.receptionStatus) {
           AdminReceptionStatus.success =>
-            state.copyShopEntity.pauseReception ?  pausedColor :  onlineColor,
+            state.copyShopEntity.pauseReception ? pausedColor : onlineColor,
           _ => loadingColor, // default
         };
 
@@ -825,7 +1043,7 @@ class _StatusPill extends StatelessWidget {
             state.copyShopEntity.pauseReception
                 ? Icon(Icons.pause_circle, size: 16, color: bg)
                 : Icon(Icons.check_circle, size: 16, color: bg),
-          _ => MyLoadingIndicator(size: 18, color: bg,), // default
+          _ => MyLoadingIndicator(size: 18, color: bg), // default
         };
 
         return Material(
@@ -837,8 +1055,9 @@ class _StatusPill extends StatelessWidget {
               duration: const Duration(milliseconds: 200),
               switchInCurve: Curves.easeOut,
               switchOutCurve: Curves.easeIn,
-              transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
-                 layoutBuilder: (currentChild, previousChildren) {
+              transitionBuilder: (child, animation) =>
+                  FadeTransition(opacity: animation, child: child),
+              layoutBuilder: (currentChild, previousChildren) {
                 return Stack(
                   alignment: Alignment.centerRight,
                   children: <Widget>[

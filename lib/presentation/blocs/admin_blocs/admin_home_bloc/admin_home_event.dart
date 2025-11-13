@@ -7,8 +7,11 @@ sealed class AdminHomeEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-final class AdminHomeChangeIndexBottomNavigationBarEvent extends AdminHomeEvent {
-  const AdminHomeChangeIndexBottomNavigationBarEvent({required this.currentIndex});
+final class AdminHomeChangeIndexBottomNavigationBarEvent
+    extends AdminHomeEvent {
+  const AdminHomeChangeIndexBottomNavigationBarEvent({
+    required this.currentIndex,
+  });
   final int currentIndex;
 
   @override
@@ -99,7 +102,8 @@ final class AdminHomeStopNotificationsListenerEvent extends AdminHomeEvent {
   List<Object?> get props => [];
 }
 
-final class AdminHomeUpdateUnseenNotificationsCountEvent extends AdminHomeEvent {
+final class AdminHomeUpdateUnseenNotificationsCountEvent
+    extends AdminHomeEvent {
   const AdminHomeUpdateUnseenNotificationsCountEvent({required this.count});
   final int count;
 
@@ -132,7 +136,9 @@ final class AdminHomeStartReceptionListenerEvent extends AdminHomeEvent {
 }
 
 final class AdminHomeUpdateDataBaseReceptionValueEvent extends AdminHomeEvent {
-  const AdminHomeUpdateDataBaseReceptionValueEvent({required this.copyShopReceptionAvailabilityValue});
+  const AdminHomeUpdateDataBaseReceptionValueEvent({
+    required this.copyShopReceptionAvailabilityValue,
+  });
   final bool copyShopReceptionAvailabilityValue;
 
   @override
@@ -162,9 +168,10 @@ final class AdminHomeReceptionErrorEvent extends AdminHomeEvent {
   List<Object?> get props => [message];
 }
 
-
 final class AdminHomeUpdatePendingOrderDecisionEvent extends AdminHomeEvent {
-  const AdminHomeUpdatePendingOrderDecisionEvent({required this.pendingOrderDecision});
+  const AdminHomeUpdatePendingOrderDecisionEvent({
+    required this.pendingOrderDecision,
+  });
   final PendingOrderDecision pendingOrderDecision;
 
   @override
@@ -179,21 +186,36 @@ final class AdminHomeMakePendingOrderDecisionEvent extends AdminHomeEvent {
 }
 
 final class AdminHomeUpdatePendingOrderStatusEvent extends AdminHomeEvent {
-  const AdminHomeUpdatePendingOrderStatusEvent({required this.pendingOrderStatus});
+  const AdminHomeUpdatePendingOrderStatusEvent({
+    required this.pendingOrderStatus,
+  });
   final PendingOrderStatus pendingOrderStatus;
 
   @override
   List<Object?> get props => [pendingOrderStatus];
 }
 
-final class AdminHomeUpdateSelectedPendingOrderCodeValueEvent extends AdminHomeEvent {
-  const AdminHomeUpdateSelectedPendingOrderCodeValueEvent({required this.selectedPendingOrderCode});
+final class AdminHomeUpdateSelectedPendingOrderCodeValueEvent
+    extends AdminHomeEvent {
+  const AdminHomeUpdateSelectedPendingOrderCodeValueEvent({
+    required this.selectedPendingOrderCode,
+  });
   final String selectedPendingOrderCode;
 
   @override
   List<Object?> get props => [selectedPendingOrderCode];
 }
 
+final class AdminHomeUpdateSelectedAcceptedOrderCodeValueEvent
+    extends AdminHomeEvent {
+  const AdminHomeUpdateSelectedAcceptedOrderCodeValueEvent({
+    required this.selectedAcceptedOrderCode,
+  });
+  final String selectedAcceptedOrderCode;
+
+  @override
+  List<Object?> get props => [selectedAcceptedOrderCode];
+}
 
 final class AdminHomeUpdateAdminHomeActionsEvent extends AdminHomeEvent {
   const AdminHomeUpdateAdminHomeActionsEvent({required this.adminHomeActions});
@@ -204,12 +226,145 @@ final class AdminHomeUpdateAdminHomeActionsEvent extends AdminHomeEvent {
 }
 
 final class AdminHomeUpdateReceptionStatusEvent extends AdminHomeEvent {
-  const AdminHomeUpdateReceptionStatusEvent({required this.adminReceptionStatus});
+  const AdminHomeUpdateReceptionStatusEvent({
+    required this.adminReceptionStatus,
+  });
   final AdminReceptionStatus adminReceptionStatus;
 
   @override
   List<Object?> get props => [adminReceptionStatus];
 }
 
+final class AdminHomeOrderShowChangeDeliveryTimeEvent extends AdminHomeEvent {
+  const AdminHomeOrderShowChangeDeliveryTimeEvent({
+    required this.showDeliveryTimeBottomSheet,
+  });
+  final bool showDeliveryTimeBottomSheet;
 
+  @override
+  List<Object> get props => [showDeliveryTimeBottomSheet];
+}
 
+final class AdminHomeOrderUpdateDeliveryTimeEvent extends AdminHomeEvent {
+  const AdminHomeOrderUpdateDeliveryTimeEvent({required this.deliveryTime});
+  final DateTime deliveryTime;
+
+  @override
+  List<Object> get props => [deliveryTime];
+}
+
+final class AdminHomeUpdateChangedeliveryPendingOrderTimeStatusEvent
+    extends AdminHomeEvent {
+  const AdminHomeUpdateChangedeliveryPendingOrderTimeStatusEvent({
+    required this.changedeliveryPendingOrderTimeStatus,
+  });
+  final ChangeDeliveryPendingOrderTimeStatus
+  changedeliveryPendingOrderTimeStatus;
+
+  @override
+  List<Object?> get props => [changedeliveryPendingOrderTimeStatus];
+}
+
+final class AdminHomeUpdateChangedeliveryAcceptedOrderTimeStatusEvent
+    extends AdminHomeEvent {
+  const AdminHomeUpdateChangedeliveryAcceptedOrderTimeStatusEvent({
+    required this.changedeliveryAcceptedOrderTimeStatus,
+  });
+  final ChangeDeliveryAcceptedOrderTimeStatus
+  changedeliveryAcceptedOrderTimeStatus;
+
+  @override
+  List<Object?> get props => [changedeliveryAcceptedOrderTimeStatus];
+}
+
+final class AdminHomeUpdateArchivingAcceptedOrderAfterBeingaCanceledByTheUserStatusEvent
+    extends AdminHomeEvent {
+  const AdminHomeUpdateArchivingAcceptedOrderAfterBeingaCanceledByTheUserStatusEvent({
+    required this.archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus,
+  });
+  final ArchivingAcceptedOrderAfterBeingCanceledByTheUserStatus
+  archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus;
+
+  @override
+  List<Object?> get props => [
+    archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus,
+  ];
+}
+
+final class AdminHomeArchiveAcceptedOrderAfterBeingCanceledByTheUserEvent
+    extends AdminHomeEvent {
+  const AdminHomeArchiveAcceptedOrderAfterBeingCanceledByTheUserEvent();
+  @override
+  List<Object?> get props => [];
+}
+
+final class AdminHomeUserAcceptedArchivingEvent extends AdminHomeEvent {
+  const AdminHomeUserAcceptedArchivingEvent();
+  @override
+  List<Object?> get props => [];
+}
+
+final class AdminHomeAcceptChangeDeliveryTimeEvent extends AdminHomeEvent {
+  const AdminHomeAcceptChangeDeliveryTimeEvent({
+    required this.adminHomeActions,
+  });
+  final AdminHomeActions adminHomeActions;
+  @override
+  List<Object?> get props => [adminHomeActions];
+}
+
+final class AdminHomeShowMessageArchiveCanceledOrderByUserEvent
+    extends AdminHomeEvent {
+  const AdminHomeShowMessageArchiveCanceledOrderByUserEvent({
+    required this.showMessageArchiveCanceledOrderByUser,
+  });
+  final bool showMessageArchiveCanceledOrderByUser;
+  @override
+  List<Object?> get props => [showMessageArchiveCanceledOrderByUser];
+}
+
+final class AdminHomeUpdateEnteredPinEvent extends AdminHomeEvent {
+  const AdminHomeUpdateEnteredPinEvent({required this.enteredPin});
+  final String enteredPin;
+  @override
+  List<Object?> get props => [enteredPin];
+}
+
+final class AdminHomeUpdateCodeValidationStatusEvent extends AdminHomeEvent {
+  const AdminHomeUpdateCodeValidationStatusEvent({
+    required this.codeValidationStatus,
+  });
+  final CodeValidationStatus codeValidationStatus;
+  @override
+  List<Object?> get props => [codeValidationStatus];
+}
+
+final class AdminHomeConfirmCodeValidationStatusEvent extends AdminHomeEvent {
+  const AdminHomeConfirmCodeValidationStatusEvent();
+  @override
+  List<Object?> get props => [];
+}
+
+final class AdminHomeCheckProgressTimerEvent extends AdminHomeEvent {
+  const AdminHomeCheckProgressTimerEvent();
+
+  @override
+  List<Object?> get props => [];
+}
+
+/// Evento para forzar actualización del progreso
+final class AdminHomeForceProgressUpdateEvent extends AdminHomeEvent {
+  const AdminHomeForceProgressUpdateEvent();
+
+  @override
+  List<Object?> get props => [];
+}
+
+final class AdminHomeUpdateHasActiveOrdersEvent extends AdminHomeEvent {
+  const AdminHomeUpdateHasActiveOrdersEvent({
+    required this.hasActiveOrders,
+  });
+  final bool hasActiveOrders;
+  @override
+  List<Object?> get props => [hasActiveOrders];
+}

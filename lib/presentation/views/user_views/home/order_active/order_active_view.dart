@@ -17,10 +17,20 @@ class MyActiveOrderView extends StatelessWidget {
 
     final cloudStoragePdfViewBloc = context.read<CloudStoragePdfBloc>();
 
-    return BlocBuilder<HomeBloc, HomeState>(
+    return BlocConsumer<HomeBloc, HomeState>(
+      listenWhen: (prev, curr) => prev.homeOrderStatus != curr.homeOrderStatus,
+      listener: (context, state) {
+        if (state.homeOrderStatus == HomeOrderStatus.orderCompleted &&
+            state.activeOrder?.hasItBeenCompleted == true &&
+            !state.isLoadingTheOrderBeingArchivedAndCompleted) {
+          context.go(Routes.home);
+        }
+      },
       builder: (context, state) {
         void viewThePdf() {
-          cloudStoragePdfViewBloc.fileFromCloudStorage(state.activeOrder == null ? "" : state.activeOrder!.url);
+          cloudStoragePdfViewBloc.fileFromCloudStorage(
+            state.activeOrder == null ? "" : state.activeOrder!.url,
+          );
           context.push(Routes.cloudStoragePdfView);
         }
 
@@ -59,11 +69,11 @@ class MyActiveOrderView extends StatelessWidget {
   Widget _topCard(BuildContext context, double width, HomeState homeState) {
     final colorScheme = Theme.of(context).colorScheme;
 
-
     final isActive = homeState.activeOrder!.hasItBeenAccepted == null
-            ? false
-            : true;
-    final hasItBeenCanceledByUser = homeState.activeOrder!.hasItBeenCanceledByUser;
+        ? false
+        : true;
+    final hasItBeenCanceledByUser =
+        homeState.activeOrder!.hasItBeenCanceledByUser;
 
     return Container(
       width: width * 0.95,
@@ -115,7 +125,7 @@ class MyActiveOrderView extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              _statusChip(isActive, hasItBeenCanceledByUser ),
+              _statusChip(isActive, hasItBeenCanceledByUser),
               const SizedBox(height: 8),
               Text(
                 '\$${homeState.activeOrder!.price.toStringAsFixed(2)}',
@@ -164,8 +174,8 @@ class MyActiveOrderView extends StatelessWidget {
 
   // ---------- Card de fechas y detalles ----------
   Widget _datesCard(BuildContext context, double width, HomeState homeState) {
-    // final colorScheme = Theme.of(context).colorScheme;
-
+    final isReady = homeState.activeOrderProgress == 1.0;
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: width * 0.95,
       padding: const EdgeInsets.all(16),
@@ -210,21 +220,71 @@ class MyActiveOrderView extends StatelessWidget {
           const SizedBox(height: 6),
           // Entrega estimada con color primary
           Row(
-            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _dateItemPrimary(
-                context,
-                Icons.calendar_month_rounded,
-                formatDateToYMD(homeState.activeOrder!.estimatedDeliveryTime!),
+              Row(
+                children: [
+                  _dateItemPrimary(
+                    context,
+                    // homeState.activeOrderProgress == 1.0 ? Colors.green.shade500 : colorScheme.primary,
+                    colorScheme.primary,
+                    Icons.calendar_month_rounded,
+                    formatDateToYMD(
+                      homeState.activeOrder!.estimatedDeliveryTime!,
+                    ),
+                  ),
+                  const SizedBox(width: 7),
+                  _dateItemPrimary(
+                    context,
+                    // homeState.activeOrderProgress == 1.0 ? Colors.green.shade500 : colorScheme.primary,
+                    colorScheme.primary,
+                    Icons.access_time_rounded,
+                    formatTimeToAmPm(
+                      homeState.activeOrder!.estimatedDeliveryTime!,
+                      uppercaseSuffix: false,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 7),
-              _dateItemPrimary(
-                context,
-                Icons.access_time_rounded,
-                formatTimeToAmPm(
-                  homeState.activeOrder!.estimatedDeliveryTime!,
-                  uppercaseSuffix: false,
-                ),
+
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 275),
+                switchInCurve: Curves.easeOutQuart,
+                switchOutCurve: Curves.easeInSine,
+                transitionBuilder: (child, animation) {
+                  return SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(-0.3, 0), // Entra desde arriba
+                      end: Offset.zero,
+                    ).animate(animation),
+                    child: FadeTransition(opacity: animation, child: child),
+                  );
+                },
+                child: isReady
+                    ? Padding(
+                        key: const ValueKey('ready_status'),
+                        padding: const EdgeInsets.only(right: 3.5),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.check_circle_rounded,
+                              size: 16,
+                              color: Colors.green,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '¡Listo!',
+                              style: TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      )
+                    : const SizedBox.shrink(key: ValueKey('empty_status')),
               ),
             ],
           ),
@@ -252,7 +312,12 @@ class MyActiveOrderView extends StatelessWidget {
                 ),
               ),
               // Chip de método de pago a la derecha
-              _paymentMethodChip(context, isCardPayment: !homeState.activeOrder!.paymentMethod.contains("cash")),
+              _paymentMethodChip(
+                context,
+                isCardPayment: !homeState.activeOrder!.paymentMethod.contains(
+                  "cash",
+                ),
+              ),
             ],
           ),
         ],
@@ -285,17 +350,20 @@ class MyActiveOrderView extends StatelessWidget {
   }
 
   // Widget para fecha/hora con color primary
-  Widget _dateItemPrimary(BuildContext context, IconData icon, String text) {
-    final colorScheme = Theme.of(context).colorScheme;
-
+  Widget _dateItemPrimary(
+    BuildContext context,
+    Color color,
+    IconData icon,
+    String text,
+  ) {
     return Row(
       children: [
-        Icon(icon, color: colorScheme.primary, size: 16),
+        Icon(icon, color: color, size: 16),
         const SizedBox(width: 6),
         Text(
           text,
           style: TextStyle(
-            color: colorScheme.primary,
+            color: color,
             fontWeight: FontWeight.w600,
             fontSize: 13,
           ),
@@ -330,7 +398,7 @@ class MyActiveOrderView extends StatelessWidget {
       ),
       child: Column(
         children: [
-         Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -399,7 +467,7 @@ class MyActiveOrderView extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   SingleChildScrollView(
-                     scrollDirection: Axis.horizontal,
+                    scrollDirection: Axis.horizontal,
                     child: Text(
                       homeState.activeOrder!.pdfName,
                       textAlign: TextAlign.center,
@@ -444,36 +512,73 @@ class MyActiveOrderView extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          _actionButtonsRow(context, showCodeButton),
+          _actionButtonsRow(context, showCodeButton, homeState),
         ],
       ),
     );
   }
 
   // ---------- Fila de botones de acción ----------
-  Widget _actionButtonsRow(BuildContext context, bool showCodeButton) {
-    return Row(
+  Widget _actionButtonsRow(
+    BuildContext context,
+    bool showCodeButton,
+    HomeState homeState,
+  ) {
+    final isReady = homeState.activeOrderProgress == 1.0;
+    final isOrderPendingOrRejected =
+        homeState.activeOrder?.hasItBeenAccepted == null ||
+        homeState.activeOrder?.hasItBeenAccepted == false;
+
+    return Column(
       children: [
-        // Botón de seguimiento (expandido para ocupar espacio disponible)
-        Expanded(
-          flex: 1, // Proporción 2:1
-          child: _liveTrackingButton(context),
-        ),
-
-        const SizedBox(width: 12),
-
-        // Botón de ver código
-        Expanded(
-          flex: 1, // Proporción 2:1
-          child: _viewCodeButton(context),
+        if (!isOrderPendingOrRejected) const SizedBox(height: 16),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 275),
+          curve: Curves.easeOutQuart,
+          alignment: Alignment.topCenter,
+          child: isOrderPendingOrRejected
+              ? const SizedBox.shrink() // Desaparece completamente
+              : AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 275),
+                  switchInCurve: Curves.easeOutQuart,
+                  switchOutCurve: Curves.easeInSine,
+                  transitionBuilder: (child, animation) {
+                    return SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0.5, 0.0),
+                        end: Offset.zero,
+                      ).animate(animation),
+                      child: FadeTransition(opacity: animation, child: child),
+                    );
+                  },
+                  child: isReady
+                      ? Row(
+                          key: const ValueKey('with_code'),
+                          children: [
+                            Expanded(
+                              flex: 1,
+                              child: _liveTrackingButton(context, isReady),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(flex: 1, child: _viewCodeButton(context)),
+                          ],
+                        )
+                      : Row(
+                          key: const ValueKey('without_code'),
+                          children: [
+                            Expanded(
+                              child: _liveTrackingButton(context, isReady),
+                            ),
+                          ],
+                        ),
+                ),
         ),
       ],
     );
   }
 
   // ---------- Botón de seguimiento en vivo ----------
-  Widget _liveTrackingButton(BuildContext context) {
+  Widget _liveTrackingButton(BuildContext context, bool isReady) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return ElevatedButton.icon(
@@ -486,8 +591,8 @@ class MyActiveOrderView extends StatelessWidget {
         elevation: 2,
       ),
       icon: const Icon(Icons.directions_rounded, size: 18),
-      label: const Text(
-        'Ver Seg.', //Ver Seguimiento
+      label: Text(
+        isReady ? 'Ver Seg.' : "Ver seguimiento", //Ver Seguimiento
         style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
       ),
     );
@@ -546,158 +651,152 @@ class MyActiveOrderView extends StatelessWidget {
     );
   }
 
-    Widget _paymentMethodChip(
-  BuildContext context, {
-  required bool isCardPayment,
-}) {
-  final paymentMethod = isCardPayment ? 'Tarjeta' : 'Efectivo';
-  final icon = isCardPayment
-      ? Icons.credit_card_rounded
-      : Icons.money_rounded;
-  final backgroundColor = isCardPayment ? Colors.blue : Colors.orange;
+  Widget _paymentMethodChip(
+    BuildContext context, {
+    required bool isCardPayment,
+  }) {
+    final paymentMethod = isCardPayment ? 'Tarjeta' : 'Efectivo';
+    final icon = isCardPayment
+        ? Icons.credit_card_rounded
+        : Icons.money_rounded;
+    final backgroundColor = isCardPayment ? Colors.blue : Colors.orange;
 
-  return GestureDetector(
-    onTap: () => context.push(Routes.changePaymentMethod),
-    child: Container(
+    return GestureDetector(
+      onTap: () => context.push(Routes.changePaymentMethod),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: backgroundColor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: backgroundColor.withOpacity(0.3)),
+        ),
+        child: AnimatedSize(
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+          alignment: Alignment.centerLeft,
+          child: Row(
+            mainAxisSize:
+                MainAxisSize.min, // Importante para que se ajuste al contenido
+            children: [
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 350),
+                transitionBuilder: (child, animation) {
+                  return ScaleTransition(
+                    scale: CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeInOut,
+                    ),
+                    child: child,
+                  );
+                },
+                child: Icon(
+                  icon,
+                  key: ValueKey<bool>(isCardPayment),
+                  size: 12,
+                  color: backgroundColor,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                paymentMethod,
+                style: TextStyle(
+                  color: backgroundColor,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
+  Widget _statusChip(bool accepted, bool hasItBeenCanceledByUser) {
+    final bg = hasItBeenCanceledByUser
+        ? Colors.red
+        : accepted
+        ? Colors.green
+        : Colors.orange;
+
+    final statusName = hasItBeenCanceledByUser
+        ? 'Cancelada'
+        : accepted
+        ? 'Aceptada'
+        : 'En revisión';
+
+    final statusIcon = hasItBeenCanceledByUser
+        ? Icons.cancel_rounded
+        : accepted
+        ? Icons.check_circle_rounded
+        : Icons.access_time_rounded;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 450),
+      curve: Curves.easeInOut,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: backgroundColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: backgroundColor.withOpacity(0.3)),
+        color: bg,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: bg.withOpacity(0.3),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: AnimatedSize(
-        duration: const Duration(milliseconds: 400),
+        duration: const Duration(milliseconds: 450),
         curve: Curves.easeInOut,
         alignment: Alignment.centerLeft,
         child: Row(
-          mainAxisSize: MainAxisSize.min, // Importante para que se ajuste al contenido
+          mainAxisSize: MainAxisSize.min,
           children: [
             AnimatedSwitcher(
-              duration: const Duration(milliseconds: 350),
+              duration: const Duration(milliseconds: 400),
               transitionBuilder: (child, animation) {
                 return ScaleTransition(
                   scale: CurvedAnimation(
                     parent: animation,
                     curve: Curves.easeInOut,
                   ),
-                  child: child,
+                  child: FadeTransition(opacity: animation, child: child),
                 );
               },
               child: Icon(
-                icon,
-                key: ValueKey<bool>(isCardPayment),
+                statusIcon,
+                key: ValueKey<String>(statusName),
                 size: 12,
-                color: backgroundColor,
+                color: Colors.white,
               ),
             ),
             const SizedBox(width: 4),
-            Text(
-              paymentMethod,
-              style: TextStyle(
-                color: backgroundColor,
-                fontWeight: FontWeight.w600,
-                fontSize: 11,
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 350),
+              transitionBuilder: (child, animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: SizeTransition(
+                    sizeFactor: animation,
+                    axis: Axis.horizontal,
+                    child: child,
+                  ),
+                );
+              },
+              child: Text(
+                statusName,
+                key: ValueKey<String>(statusName),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 11,
+                ),
               ),
             ),
           ],
         ),
       ),
-    ),
-  );
-}
-
-
- Widget _statusChip(bool accepted, bool hasItBeenCanceledByUser) {
-  final bg = hasItBeenCanceledByUser
-      ? Colors.red
-      : accepted
-          ? Colors.green
-          : Colors.orange;
-
-  final statusName = hasItBeenCanceledByUser
-      ? 'Cancelada'
-      : accepted
-          ? 'Aceptada'
-          : 'En revisión';
-
-  final statusIcon = hasItBeenCanceledByUser
-      ? Icons.cancel_rounded 
-      : accepted
-          ? Icons.check_circle_rounded 
-          : Icons.access_time_rounded;
-
-  return AnimatedContainer(
-    duration: const Duration(milliseconds: 450),
-    curve: Curves.easeInOut,
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-    decoration: BoxDecoration(
-      color: bg,
-      borderRadius: BorderRadius.circular(14),
-      boxShadow: [
-        BoxShadow(
-          color: bg.withOpacity(0.3),
-          blurRadius: 4,
-          offset: const Offset(0, 1),
-        ),
-      ],
-    ),
-    child: AnimatedSize(
-      duration: const Duration(milliseconds: 450),
-      curve: Curves.easeInOut,
-      alignment: Alignment.centerLeft,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 400),
-            transitionBuilder: (child, animation) {
-              return ScaleTransition(
-                scale: CurvedAnimation(
-                  parent: animation,
-                  curve: Curves.easeInOut,
-                ),
-                child: FadeTransition(
-                  opacity: animation,
-                  child: child,
-                ),
-              );
-            },
-            child: Icon(
-              statusIcon,
-              key: ValueKey<String>(statusName),
-              size: 12,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(width: 4),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 350),
-            transitionBuilder: (child, animation) {
-              return FadeTransition(
-                opacity: animation,
-                child: SizeTransition(
-                  sizeFactor: animation,
-                  axis: Axis.horizontal,
-                  child: child,
-                ),
-              );
-            },
-            child: Text(
-              statusName,
-              key: ValueKey<String>(statusName),
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                fontSize: 11,
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-
+    );
+  }
 }

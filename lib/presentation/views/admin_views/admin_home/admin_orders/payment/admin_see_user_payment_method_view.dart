@@ -21,50 +21,61 @@ class MyAdminSeeUserPaymentMethodView extends StatelessWidget {
     final registration = adminHomeState.selectedOrder.userRegistration;
     final paymentMethodId = adminHomeState.selectedOrder.paymentMethod;
 
-    return BlocProvider(
-      create: (context) => AdminSeeUserPaymentMethodBloc(
-        adminRepository: getIt<AdminRepository>(),
-        registration: registration,
-        paymentMethodId: paymentMethodId,
-      )..add(const LoadUserPaymentMethod()),
-      child: Scaffold(
-        backgroundColor: colorScheme.primary,
-        appBar: _myAppBar(context),
-        body: Center(
-          child: Padding(
-            padding: EdgeInsets.only(bottom: width * 0.025),
-            child: Container(
-              width: width * 0.95,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _headerSection(colorScheme),
-                        const SizedBox(height: 20),
-                        _paymentMethodDisplay(context),
-                        const SizedBox(height: 20),
-                        _infoSection(context),
-                      ],
+    return BlocListener<AdminHomeBloc, AdminHomeState>(
+      listenWhen: (prev, curr) => prev.archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus !=
+              curr.archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus ||
+          prev.selectedOrder.hasItBeenCanceledByUser !=
+              curr.selectedOrder.hasItBeenCanceledByUser,
+      listener: (context, state) {
+        if (state.selectedOrder.hasItBeenCanceledByUser == true && state .archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus == ArchivingAcceptedOrderAfterBeingCanceledByTheUserStatus.idle) {
+          context.pop();
+        }
+      },
+      child: BlocProvider(
+        create: (context) => AdminSeeUserPaymentMethodBloc(
+          adminRepository: getIt<AdminRepository>(),
+          registration: registration,
+          paymentMethodId: paymentMethodId,
+        )..add(const LoadUserPaymentMethod()),
+        child: Scaffold(
+          backgroundColor: colorScheme.primary,
+          appBar: _myAppBar(context),
+          body: Center(
+            child: Padding(
+              padding: EdgeInsets.only(bottom: width * 0.025),
+              child: Container(
+                width: width * 0.95,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
                     ),
-                    // Botón de cerrar en la parte inferior
-                    _closeButton(context, colorScheme),
                   ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _headerSection(colorScheme),
+                          const SizedBox(height: 20),
+                          _paymentMethodDisplay(context),
+                          const SizedBox(height: 20),
+                          _infoSection(context),
+                        ],
+                      ),
+                      // Botón de cerrar en la parte inferior
+                      _closeButton(context, colorScheme),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -241,7 +252,7 @@ class MyAdminSeeUserPaymentMethodView extends StatelessWidget {
             // Botón reintentar que dispara evento al bloc
             ElevatedButton(
               onPressed: () {
-                 context.read<AdminSeeUserPaymentMethodBloc>().add(
+                context.read<AdminSeeUserPaymentMethodBloc>().add(
                   const LoadUserPaymentMethod(),
                 );
               },

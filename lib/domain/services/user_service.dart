@@ -22,4 +22,6 @@ abstract class UserService {
   Future<void> changeOrderPaymentMethod( String userRegistration, String copyShopEmail, String orderCode, String paymentMethod,);
   Future<double> getOutstandingCharges(String registration);
   Future<void> payOutstandingCharges(String registration);
+  Future<void> resetEstimatedDeliveryTimeChangedFlag( String userRegistration, String copyShopEmail, String orderCode, );
+  Future<void> archiveUserOrderForUserOffline( AorderEntity aorder, String userRegistration,);
 }

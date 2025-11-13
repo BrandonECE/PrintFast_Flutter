@@ -9,17 +9,11 @@ abstract class UserRepository {
   Stream<int> unseenNotificationsCount(String registration);
   Stream<AorderEntity?> getAorderStream(String registration);
   Future<List<CopyShopEntity>> getCopyShopsWithAorders();
-  Future<String> generateUniqueOrderCode(
-    String copyShopEmail, {
-    int length = 4,
-  });
+  Future<String> generateUniqueOrderCode( String copyShopEmail, { int length = 4, });
   Future<void> placeAOrder(AorderEntity aorder, {bool uploadPdf = false});
   Future<void> refreshCopyshopQueue(String copyshopEmail);
   Future<bool> isCopyshopPaused(String copyshopEmail);
-  Future<void> addCardPaymentMethod(
-    String registration,
-    CardPaymentMethodEntity card,
-  );
+  Future<void> addCardPaymentMethod( String registration, CardPaymentMethodEntity card, );
   Future<List<CardPaymentMethodEntity>> getCards(String registration);
   Future<void> removeCards(String registration, List<String> tokens);
   Future<void> setDefaultCard(String registration, String token);
@@ -28,4 +22,6 @@ abstract class UserRepository {
   Future<void> changeOrderPaymentMethod( String userRegistration, String copyShopEmail, String orderCode, String paymentMethod,);
   Future<double> getOutstandingCharges(String registration);
   Future<void> payOutstandingCharges(String registration);
+  Future<void> resetEstimatedDeliveryTimeChangedFlag( String userRegistration, String copyShopEmail, String orderCode, );
+  Future<void> archiveUserOrderForUserOffline( AorderEntity aorder, String userRegistration,);
 }

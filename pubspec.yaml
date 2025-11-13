@@ -58,6 +58,34 @@ dependencies:
   toastification: ^3.0.3
   connectivity_plus: ^7.0.0
   pie_chart: ^5.4.0
+  custom_quick_alert: ^2.1.1
+  flutter_native_splash: ^2.4.7
+  flutter_launcher_icons: ^0.14.4
+
+
+# CONFIGURACIÓN DEL ÍCONO DE LA APP 
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/printfast_splash_screen.png"
+  adaptive_background_image: "assets/icon/background.png"
+  adaptive_icon_background: "#AB47BC"
+  min_sdk_android: 23 # android min sdk min:16, default 21
+  # adaptive_foreground_image: "assets/icon/foreground.png"
+# CONFIGURACIÓN DEL SPLASH SCREEN DE LA APP
+
+flutter_native_splash:
+  fullscreen: true
+  color: "#AB47BC"  # Color morado de fondo
+  image: "assets/images/printfast_splash_screen.png"  # Ruta de tu icono
+  android: true
+  ios: true
+  # Configuración para Android 12+ (Material You)
+  android_12:
+    color: "#AB47BC"
+    image: "assets/images/printfast_splash_screen.png"
+
+
 
 dev_dependencies:
   flutter_test:
@@ -84,6 +112,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/
+    - assets/icon/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

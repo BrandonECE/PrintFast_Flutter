@@ -21,13 +21,19 @@ class ReportEntity {
     required this.endDate,
   });
 
-  factory ReportEntity.fromHorders(List<HorderEntity> orders, DateTime startDate, DateTime endDate) {
+  factory ReportEntity.fromHorders(
+    List<HorderEntity> orders,
+    DateTime startDate,
+    DateTime endDate,
+  ) {
     double earnings = 0;
     int totalOrders = orders.length;
     int completedOrders = 0;
     int canceledOrders = 0;
     int pagesUsed = 0;
     double totalTime = 0;
+
+    print(totalOrders);
 
     for (final order in orders) {
       earnings += order.price;
@@ -76,8 +82,10 @@ class ReportEntity {
 
   // Para formatear el rango de fechas
   String get formattedDateRange {
-    final start = '${startDate.day.toString().padLeft(2, '0')}/${startDate.month.toString().padLeft(2, '0')}';
-    final end = '${endDate.day.toString().padLeft(2, '0')}/${endDate.month.toString().padLeft(2, '0')}';
+    final start =
+        '${startDate.day.toString().padLeft(2, '0')}/${startDate.month.toString().padLeft(2, '0')}';
+    final end =
+        '${endDate.day.toString().padLeft(2, '0')}/${endDate.month.toString().padLeft(2, '0')}';
     return '$start - $end';
   }
 
@@ -85,8 +93,8 @@ class ReportEntity {
   String get dateRangeText {
     final now = DateTime.now();
     final oneWeekAgo = now.subtract(const Duration(days: 7));
-    
-    if (startDate.day == oneWeekAgo.day && 
+
+    if (startDate.day == oneWeekAgo.day &&
         startDate.month == oneWeekAgo.month &&
         endDate.day == now.day &&
         endDate.month == now.month) {

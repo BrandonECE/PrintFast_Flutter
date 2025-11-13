@@ -47,24 +47,55 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
     // --- Active order update (from stream)
     on<HomeUpdateActiveOrderEvent>((event, emit) async {
+      final AorderEntity? aorder = event.activeOrder;
 
-      final aorder = event.activeOrder;
-      
       if (aorder == null) {
-        add( HomeUpdateIsCanceledByCopyShopLoadingEvent( isCanceledByCopyShopLoading: false, ), );
+        add(
+          HomeUpdateIsRejectedByCopyShopLoadingEvent(
+            isRejectedByCopyShopLoading: false,
+          ),
+        );
+        add(
+          HomeUpdateIsLoadingTheOrderBeingArchivedAndCompletedEvent(
+            isLoadingTheOrderBeingArchivedAndCompleted: false,//
+          ),
+        );
         add(HomeSetOrderWatchStatusEvent(status: HomeOrderStatus.idle));
+     
+      } else {
+        if (!aorder.hasTheEstimatedDeliveryTimeChanged) {
+          add(
+            HomeUpdateIsTheEstimatedDeliveryTimeLoadingEvent(
+              isTheEstimatedDeliveryTimeLoading: false,
+            ),
+          );
+        }
       }
 
-      add(HomeUpdateIsTheShoppingButtonBlockedEvent( isTheShoppingButtonBlocked: aorder != null, ), );
-
-      if (aorder != null && aorder.hasItBeenAccepted == false && state.homeOrderStatus != HomeOrderStatus.canceledByCopyShop) {
-        add( HomeSetOrderWatchStatusEvent( status: HomeOrderStatus.canceledByCopyShop, ), );
+      add(
+        HomeUpdateIsTheShoppingButtonBlockedEvent(
+          isTheShoppingButtonBlocked: aorder != null,
+        ),
+      );
+      if (aorder != null &&
+          aorder.hasItBeenAccepted == false &&
+          state.homeOrderStatus != HomeOrderStatus.rejectedByCopyShop) {
+        add(
+          HomeSetOrderWatchStatusEvent(
+            status: HomeOrderStatus.rejectedByCopyShop,
+          ),
+        );
       }
+
+      final orderActiveCompletedCondition =
+          aorder?.hasItBeenCompleted == true &&
+          state.homeOrderStatus != HomeOrderStatus.orderCompleted;
 
       final targetStatus = aorder == null
           ? HomeOrderStatus.idle
+          : orderActiveCompletedCondition
+          ? HomeOrderStatus.orderCompleted
           : HomeOrderStatus.orderActive;
-
       // Transition animation: show loading -> wait -> set final
       emit(state.copyWith(homeOrderStatus: HomeOrderStatus.loading));
       await Future.delayed(const Duration(milliseconds: 600));
@@ -226,10 +257,10 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
     on<HomeCancelOrderEvent>(_homeCancelOrderEvent);
 
-    on<HomeUpdateIsCanceledByCopyShopLoadingEvent>((event, emit) async {
+    on<HomeUpdateIsRejectedByCopyShopLoadingEvent>((event, emit) async {
       emit(
         state.copyWith(
-          isCanceledByCopyShopLoading: event.isCanceledByCopyShopLoading,
+          isRejectedByCopyShopLoading: event.isRejectedByCopyShopLoading,
         ),
       );
     });
@@ -244,13 +275,76 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
     on<HomeUpdateHomeCanceledOrderStatusEvent>((event, emit) async {
       emit(
+        state.copyWith(homeCanceledOrderStatus: event.homeCanceledOrderStatus),
+      );
+    });
+
+    on<HomeUpdateIsTheEstimatedDeliveryTimeLoadingEvent>((event, emit) async {
+      emit(
         state.copyWith(
-          homeCanceledOrderStatus: event.homeCanceledOrderStatus,
+          isTheEstimatedDeliveryTimeLoading:
+              event.isTheEstimatedDeliveryTimeLoading,
         ),
       );
     });
 
+    on<HomeUpdateDBHasTheEstimatedDeliveryTimeChangedValueEvent>(
+      _homeUpdateDBHasTheEstimatedDeliveryTimeChangedValueEvent,
+    );
 
+    on<HomeUpdateIsLoadingTheOrderBeingArchivedAndCompletedEvent>((
+      event,
+      emit,
+    ) {
+      emit(
+        state.copyWith(
+          isLoadingTheOrderBeingArchivedAndCompleted:
+              event.isLoadingTheOrderBeingArchivedAndCompleted,
+        ),
+      );
+    });
+
+    on<HomeArchiveAndCompleteActiveOrderEvent>(
+      _homeArchiveAndCompleteActiveOrderEvent,
+    );
+  }
+
+  Future<void> _homeArchiveAndCompleteActiveOrderEvent(event, emit) async {
+    final reg = state.userEntity.registration;
+    try {
+      emit(state.copyWith(homeOrderStatus: HomeOrderStatus.loading));
+      await userRepository.archiveUserOrderForUserOffline(
+        state.activeOrder!,
+        reg,
+      );
+        print("BIEEEEN");
+    } catch (e) {
+      print("ERRORRRRRRRRRRR");
+      print(e);
+      emit(state.copyWith(homeOrderStatus: HomeOrderStatus.failure));
+    }
+    print("aorder - reiniciandOOOOOOOOOOOOOOOOOOOOOOOOO");
+    _startAorderListener(reg);
+  }
+
+  Future<void> _homeUpdateDBHasTheEstimatedDeliveryTimeChangedValueEvent(
+    HomeUpdateDBHasTheEstimatedDeliveryTimeChangedValueEvent event,
+    Emitter<HomeState> emit,
+  ) async {
+    try {
+      final copyShopEmail = state.activeOrder!.copyShopEmail;
+      final registration = state.userEntity.registration;
+      final aorderCode = state.activeOrder!.orderCode;
+      await userRepository.resetEstimatedDeliveryTimeChangedFlag(
+        registration,
+        copyShopEmail,
+        aorderCode,
+      );
+      print("SUESFULLLLLLLLLLL");
+    } catch (e) {
+      print("ERRORRRRRRRR: $e");
+      print(e);
+    }
   }
 
   Future<void> _homeCancelOrderEvent(
@@ -258,18 +352,36 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     Emitter<HomeState> emit,
   ) async {
     try {
-      
-      emit(state.copyWith(homeOrderStatus: HomeOrderStatus.loading, homeCanceledOrderStatus: HomeCanceledOrderStatus.loading));
+      emit(
+        state.copyWith(
+          homeOrderStatus: HomeOrderStatus.loading,
+          homeCanceledOrderStatus: HomeCanceledOrderStatus.loading,
+        ),
+      );
       final copyShopEmail = state.activeOrder!.copyShopEmail;
       final registration = state.userEntity.registration;
-      final aorder = state.isCanceledByCopyShopLoading
+      final aorder = state.isRejectedByCopyShopLoading
           ? state.activeOrder!.copyWith(hasItBeenAccepted: false)
           : state.activeOrder;
 
-      await userRepository.deleteUserOrder( copyShopEmail, registration, aorder!, );
-      emit(state.copyWith(homeCanceledOrderStatus: HomeCanceledOrderStatus.sucessul));
+      await userRepository.deleteUserOrder(
+        copyShopEmail,
+        registration,
+        aorder!,
+      );
+      emit(
+        state.copyWith(
+          homeCanceledOrderStatus: HomeCanceledOrderStatus.sucessul,
+        ),
+      );
     } catch (e) {
-      emit(state.copyWith(homeActions: HomeActions.cancelOrder, homeCanceledOrderStatus: HomeCanceledOrderStatus.failure, messageError: e.toString()));
+      emit(
+        state.copyWith(
+          homeActions: HomeActions.cancelOrder,
+          homeCanceledOrderStatus: HomeCanceledOrderStatus.failure,
+          messageError: e.toString(),
+        ),
+      );
     }
     final reg = state.userEntity.registration;
     print("aorder - reiniciando");
@@ -301,7 +413,6 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
       _aorderSubscription = stream.listen(
         (aorder) {
-  
           add(HomeUpdateActiveOrderEvent(activeOrder: aorder));
         },
         onError: (error, stack) {
@@ -481,6 +592,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
     final changedProgress =
         (computed.progress - state.activeOrderProgress).abs() > 0.001;
+    print(computed.progress);
     final changedLabel = computed.label != state.activeOrderTimeLabel;
 
     if (changedProgress || changedLabel) {
@@ -542,8 +654,9 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   // Helper: calcula progreso (0..1) y label ("12 min" o "1.5 h")
   // ------------------------------------------------------------
   _ProgressLabel _computeProgressAndLabel(AorderEntity? order) {
-    if (order == null)
+    if (order == null) {
       return _ProgressLabel(progress: 0.0, label: '', remainingMinutes: 0.0);
+    }
 
     final DateTime? init = order.initDate;
     final DateTime? estimated = order.estimatedDeliveryTime;
@@ -582,10 +695,10 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     }
 
     String label;
-    if (remainingMinutes <= 0) {
+    if (remainingMinutes.ceil() <= 0) {
       label = '0 min';
     } else if (remainingMinutes < 60) {
-      label = '${remainingMinutes.round()} min';
+      label = '${remainingMinutes.ceil()} min';
     } else {
       final double hours = remainingMinutes / 60.0;
       final double rounded = (hours * 10).roundToDouble() / 10.0;

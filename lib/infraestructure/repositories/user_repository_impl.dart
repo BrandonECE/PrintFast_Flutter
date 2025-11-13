@@ -200,4 +200,28 @@ class UserRepositoryImpl extends UserRepository {
     }
   }
 
+@override
+  Future<void> resetEstimatedDeliveryTimeChangedFlag(
+    String userRegistration,
+    String copyShopEmail,
+    String orderCode,
+  ) async {
+    try {
+      return await userService.resetEstimatedDeliveryTimeChangedFlag(userRegistration, copyShopEmail, orderCode);
+    } catch (e) {
+      return Future.error(e);
+    }    
+  }
+  
+  @override
+  Future<void> archiveUserOrderForUserOffline(AorderEntity aorder, String userRegistration) async {
+    try {
+      return await userService.archiveUserOrderForUserOffline(aorder, userRegistration);
+    } catch (e) {
+      return Future.error(e);
+    }  
+  }
+
+  
+
 }

@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:printfast_rebuild/domain/entities/entities.dart';
 
 class HorderEntity {
-
   final String copyShopName;
   final String userRegistration;
   final String userName;
@@ -18,6 +17,7 @@ class HorderEntity {
   final String orderCode;
   final Object? paymentMethod;
   final bool hasItBeenCanceled;
+  final String copyShopEmail;
 
   HorderEntity({
     required this.copyShopName,
@@ -35,6 +35,7 @@ class HorderEntity {
     required this.paymentMethod,
     required this.orderCode,
     required this.hasItBeenCanceled,
+    required this.copyShopEmail
   });
 
   factory HorderEntity.fromMap(Map<String, dynamic> map) {
@@ -75,7 +76,8 @@ class HorderEntity {
 
     Object? toPaymentMethodObject(Object? o) {
       if (o is String) return o as Object?;
-      return CardPaymentMethodEntity.fromMap(o as Map<String, dynamic>) as Object?;
+      return CardPaymentMethodEntity.fromMap(o as Map<String, dynamic>)
+          as Object?;
     }
 
     return HorderEntity(
@@ -94,6 +96,7 @@ class HorderEntity {
       paymentMethod: toPaymentMethodObject(map['paymentMethod']),
       orderCode: map['orderCode']?.toString() ?? '',
       hasItBeenCanceled: map['hasItBeenCanceledByUser'] ?? false,
+      copyShopEmail: map['copyShopEmail'] ?? ''
     );
   }
 
@@ -111,6 +114,7 @@ class HorderEntity {
     'copyShopName': copyShopName,
     'orderCode': orderCode,
     'hasItBeenCanceledByUser': hasItBeenCanceled,
+    'copyShopEmail': copyShopEmail
   };
 
   static final List<HorderEntity> examples = [
@@ -131,6 +135,7 @@ class HorderEntity {
       copyShopName: "FIME",
       orderCode: "F345",
       hasItBeenCanceled: false,
+      copyShopEmail: '8123423455'
     ),
     HorderEntity(
       userName: "Brandon Cantu",
@@ -148,6 +153,8 @@ class HorderEntity {
       copyShopName: "FARQ",
       orderCode: "G7IH",
       hasItBeenCanceled: true,
+      copyShopEmail: '8183323411'
+
     ),
     HorderEntity(
       userName: "Brandon Cantu",
@@ -166,6 +173,8 @@ class HorderEntity {
       copyShopName: "24/7",
       orderCode: "G764",
       hasItBeenCanceled: false,
+      copyShopEmail: '8126723425'
+
     ),
   ];
 
@@ -185,6 +194,7 @@ class HorderEntity {
     copyShopName: "",
     orderCode: "",
     hasItBeenCanceled: false,
+    copyShopEmail: ''
   );
 
   static get now => DateTime.now();

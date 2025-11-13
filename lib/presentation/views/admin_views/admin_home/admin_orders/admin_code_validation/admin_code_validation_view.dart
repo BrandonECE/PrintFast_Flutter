@@ -1,92 +1,190 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_pin_code_fields/flutter_pin_code_fields.dart';
 import 'package:flutter/services.dart';
+import 'package:printfast_rebuild/presentation/blocs/admin_blocs/admin_home_bloc/admin_home_bloc.dart';
+import 'package:printfast_rebuild/presentation/blocs/shared_blocs/message_error_warning_bloc/message_error_warning_bloc.dart';
 import 'package:printfast_rebuild/presentation/widgets/widgets.dart';
 
-class MyAdminCodeValidationView extends StatefulWidget {
+class MyAdminCodeValidationView extends StatelessWidget {
   const MyAdminCodeValidationView({super.key});
-
-  @override
-  State<MyAdminCodeValidationView> createState() =>
-      _MyAdminCodeValidationViewState();
-}
-
-class _MyAdminCodeValidationViewState extends State<MyAdminCodeValidationView> {
-
-  String _enteredPin = '';
-
-
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final width = MediaQuery.of(context).size.width;
     final height = MediaQuery.of(context).size.height;
+    final adminHomeBloc = context.read<AdminHomeBloc>();
+    final messageErrorWarningBloc = context.read<MessageErrorWarningBloc>();
 
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          adminHomeBloc.add(AdminHomeUpdateEnteredPinEvent(enteredPin: ''));
+        }
+      },
+      child: BlocConsumer<AdminHomeBloc, AdminHomeState>(
+        listenWhen: (prev, curr) => prev.archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus != curr.archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus || prev.selectedOrder.hasItBeenCanceledByUser != curr.selectedOrder.hasItBeenCanceledByUser || prev.codeValidationStatus != curr.codeValidationStatus,
+        listener: (context, state) {
+
+           final codeValidationStatus = state.codeValidationStatus;
+
+          if(codeValidationStatus == CodeValidationStatus.validating){
+            if(context.canPop()){
+                context.pop();
+            }
+          }
+          
+          
+          if (state.selectedOrder.hasItBeenCanceledByUser == true &&
+              state.archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus ==
+                  ArchivingAcceptedOrderAfterBeingCanceledByTheUserStatus
+                      .idle) {
+            FocusScope.of(context).unfocus();
+            if(context.canPop()){
+              context.pop();
+            }
+          }
+
+          
+        },
+        builder: (context, state) {
+          
+          return Stack(
+            children: [
+              Align(
+                alignment: Alignment.center,
+                child: _myAdminCodeValidationViewScreen(colorScheme, context, height, width, state)),
+              BlocBuilder<AdminHomeBloc, AdminHomeState>(
+                builder: (context, adminHomeState) {
+                  return MyMessageErrorWarning(
+              
+                    voidCallbackByPopScope: () {
+                      if ((state.codeValidationStatus == CodeValidationStatus.failure || state.codeValidationStatus == CodeValidationStatus.invalid) && state.adminHomeActions == AdminHomeActions.validateCode) {
+                        adminHomeBloc.add(
+                          AdminHomeUpdateCodeValidationStatusEvent(
+                            codeValidationStatus: CodeValidationStatus.idle
+                          ),
+                        );
+                      }
+
+                      messageErrorWarningBloc.add(
+                        ShowMessageErrorWarningEvent(
+                          showMessageErrorWarning: false,
+                        ),
+                      );            
+                    },
+              
+                    voidCallbackByCloseIcon: () {
+                      if ((state.codeValidationStatus == CodeValidationStatus.failure || state.codeValidationStatus == CodeValidationStatus.invalid) && state.adminHomeActions == AdminHomeActions.validateCode) {
+                        adminHomeBloc.add(
+                          AdminHomeUpdateCodeValidationStatusEvent(
+                            codeValidationStatus: CodeValidationStatus.idle
+                          ),
+                        );
+                      }
+
+                      messageErrorWarningBloc.add(
+                        ShowMessageErrorWarningEvent(
+                          showMessageErrorWarning: false,
+                        ),
+                      );         
+                    },
+              
+                    voidCallback: () {
+                      if ((state.codeValidationStatus == CodeValidationStatus.failure || state.codeValidationStatus == CodeValidationStatus.invalid) && state.adminHomeActions == AdminHomeActions.validateCode) {
+                        adminHomeBloc.add(
+                          AdminHomeUpdateCodeValidationStatusEvent(
+                            codeValidationStatus: CodeValidationStatus.idle
+                          ),
+                        );
+                      }
+
+                      messageErrorWarningBloc.add(
+                        ShowMessageErrorWarningEvent(
+                          showMessageErrorWarning: false,
+                        ),
+                      );     
+                              
+                  },);
+                },
+              )
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Scaffold _myAdminCodeValidationViewScreen(ColorScheme colorScheme, BuildContext context, double height, double width, AdminHomeState state) {
     return Scaffold(
-      backgroundColor: colorScheme.primary,
-      appBar: _myAppBar(context),
-      body: SingleChildScrollView(
-        child: ConstrainedBox(
-          // Forzamos una altura mínima igual al viewport disponible
-          constraints: BoxConstraints(
-            minHeight:
-                height - MediaQuery.of(context).padding.top - kToolbarHeight,
-          ),
-          child: IntrinsicHeight(
-            child: Center( // <-- asegura centrado horizontal
-              child: Padding(
-                padding: EdgeInsets.only(bottom: width * 0.025),
-                child: Container(
-                  width: width * 0.95,
-                  // Importante: height infinity para que rellene el espacio mínimo
-                  height: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
+          backgroundColor: colorScheme.primary,
+          appBar: _myAppBar(context),
+          body: SingleChildScrollView(
+            child: ConstrainedBox(
+              // Forzamos una altura mínima igual al viewport disponible
+              constraints: BoxConstraints(
+                minHeight:
+                    height -
+                    MediaQuery.of(context).padding.top -
+                    kToolbarHeight,
+              ),
+              child: IntrinsicHeight(
+                child: Center(
+                  // <-- asegura centrado horizontal
                   child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      // Distribuye espacio entre la sección superior y el botón inferior
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.center, // centra horizontalmente
+                    padding: EdgeInsets.only(bottom: width * 0.025),
+                    child: Container(
+                      width: width * 0.95,
+                      // Importante: height infinity para que rellene el espacio mínimo
+                      height: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          // Distribuye espacio entre la sección superior y el botón inferior
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            _headerSection(colorScheme),
-                            const SizedBox(height: 28),
-                            _codeInputSection(context),
-                            const SizedBox(height: 28),
-                            _instructionsSection(colorScheme),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment
+                                  .center, // centra horizontalmente
+                              children: [
+                                _headerSection(colorScheme),
+                                const SizedBox(height: 28),
+                                _codeInputSection(context, state),
+                                const SizedBox(height: 28),
+                                _instructionsSection(colorScheme),
+                              ],
+                            ),
+                            Column(
+                              children: [
+                                const SizedBox(height: 28),
+                                _actionButton(context, state),
+                                const SizedBox(height: 10),
+                              ],
+                            ),
                           ],
                         ),
-                        Column(
-                          children: [
-                            const SizedBox(height: 28),
-                            _actionButton(context),
-                            const SizedBox(height: 10),
-                          ],
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      ),
-    );
+        );
   }
 
   MyAppBarWidget _myAppBar(BuildContext context) {
@@ -131,8 +229,9 @@ class _MyAdminCodeValidationViewState extends State<MyAdminCodeValidationView> {
     );
   }
 
-  Widget _codeInputSection(BuildContext context) {
+  Widget _codeInputSection(BuildContext context, AdminHomeState state) {
     final colorScheme = Theme.of(context).colorScheme;
+    final adminHomeBloc = context.read<AdminHomeBloc>();
 
     return Column(
       children: [
@@ -171,18 +270,16 @@ class _MyAdminCodeValidationViewState extends State<MyAdminCodeValidationView> {
 
             autofocus: false, // ya manejamos el requestFocus manualmente
             onComplete: (pin) {
-              // if (!mounted) return;
-              // setState(() {
-                _enteredPin = pin;
-              // });
+              adminHomeBloc.add(
+                AdminHomeUpdateEnteredPinEvent(enteredPin: pin),
+              );
               FocusScope.of(context).unfocus();
             },
             onChange: (pin) {
-              // if (!mounted) return;
-              // setState(() {
-                _enteredPin = pin;
-              // });
-                          },
+              adminHomeBloc.add(
+                AdminHomeUpdateEnteredPinEvent(enteredPin: pin),
+              );
+            },
             margin: const EdgeInsets.only(right: 6),
           ),
         ),
@@ -277,22 +374,24 @@ class _MyAdminCodeValidationViewState extends State<MyAdminCodeValidationView> {
     );
   }
 
-  Widget _actionButton(BuildContext context) {
+  Widget _actionButton(BuildContext context, AdminHomeState state) {
     // ignore: unused_local_variable
     final colorScheme = Theme.of(context).colorScheme;
-    final isEnabled = _enteredPin.length == 5;
+    final isEnabled = state.enteredPin.length == 5;
+    final adminHomeBloc = context.read<AdminHomeBloc>();
+    final isReadyButtonLoading = state.codeValidationStatus == CodeValidationStatus.loading || state.codeValidationStatus == CodeValidationStatus.validating;
 
     return SizedBox(
       width: double.infinity,
-      child: ElevatedButton.icon(
+      child: ElevatedButton(
         onPressed: isEnabled
-            ? () {
-                // Lógica para validar el código
-                _showValidationResult(context, true);
+            ? isReadyButtonLoading  ? () {} : () {
+                // adminHomeBloc.add(AdminHomeUpdateAdminHomeActionsEvent(adminHomeActions: AdminHomeActions.validateCode));
+                adminHomeBloc.add(AdminHomeConfirmCodeValidationStatusEvent());
               }
             : null,
         style: ElevatedButton.styleFrom(
-          backgroundColor: isEnabled ? Colors.green : Colors.grey.shade300,
+          backgroundColor: Colors.green,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 14),
           shape: RoundedRectangleBorder(
@@ -300,74 +399,15 @@ class _MyAdminCodeValidationViewState extends State<MyAdminCodeValidationView> {
           ),
           elevation: 3,
         ),
-        icon: Icon(
-          Icons.verified_rounded,
-          size: 18,
-          color: isEnabled ? Colors.white : Colors.grey.shade500,
-        ),
-        label: Text(
-          "Validar y entregar",
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: isEnabled ? Colors.white : Colors.grey.shade500,
-          ),
-        ),
-      ),
-    );
-  }
 
-  void _showValidationResult(BuildContext context, bool isSuccess) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Icon(
-              isSuccess ? Icons.check_circle_rounded : Icons.error_rounded,
-              color: isSuccess ? Colors.green : Colors.red,
-              size: 24,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              isSuccess ? "¡Entrega exitosa!" : "Error de validación",
-              style: TextStyle(
-                color: colorScheme.inverseSurface,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
+        child: MyAnimatedContentSwitcherButton(
+          showLoad: isReadyButtonLoading ,
+          text: "Validar y entregar",
+          textSize: 14,
+          icon: Icons.verified_rounded,
+          iconSize: 18,
+          loadingIndicatorSize: 26,
         ),
-        content: Text(
-          isSuccess
-              ? "El código ha sido validado correctamente y la orden ha sido entregada."
-              : "El código es inválido o ha expirado. Por favor verifica.",
-          style: TextStyle(
-            color: colorScheme.inverseSurface.withOpacity(0.8),
-            fontSize: 14,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(); // cerrar diálogo
-              if (isSuccess && context.canPop()) {
-                context.pop(); // cerrar la pantalla de validación si fue exitosa
-              }
-            },
-            child: Text(
-              "Aceptar",
-              style: TextStyle(
-                color: isSuccess ? Colors.green : colorScheme.primary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

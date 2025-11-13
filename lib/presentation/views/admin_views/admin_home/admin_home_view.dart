@@ -1,3 +1,4 @@
+import 'package:custom_quick_alert/custom_quick_alert.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -100,30 +101,52 @@ class _MyAdminHomeScreen extends StatelessWidget {
     ];
 
     void handleErrorToPrint() {
-      adminHomeBloc.add( AdminHomeUpdateAdminHomeActionsEvent( adminHomeActions: AdminHomeActions.none, ), );
-      showSnackBar( context: context, title: "¡Error de impresión!", text: "No se pudo cargar el documento", );
-      messageErrorWarningBloc.add( ShowMessageErrorWarningEvent(showMessageErrorWarning: true), );
-      cloudStoragePdfViewBloc.add( ChangeStatusPdfFileFromCloudStorageToPrintEvent( cloudStoragePrintPdfStatus: CloudStoragePrintPdfStatus.initial, ), );
+      // adminHomeBloc.add(
+      //   AdminHomeUpdateAdminHomeActionsEvent(
+      //     adminHomeActions: AdminHomeActions.none,
+      //   ),
+      // );
+      showSnackBar(
+        context: context,
+        title: "¡Error de impresión!",
+        text: "No se pudo cargar el documento",
+      );
+      messageErrorWarningBloc.add(
+        ShowMessageErrorWarningEvent(showMessageErrorWarning: true),
+      );
+      cloudStoragePdfViewBloc.add(
+        ChangeStatusPdfFileFromCloudStorageToPrintEvent(
+          cloudStoragePrintPdfStatus: CloudStoragePrintPdfStatus.initial,
+        ),
+      );
     }
-
 
     return BlocListener<CloudStoragePdfBloc, CloudStoragePdfState>(
       listenWhen: (prev, curr) =>
           prev.cloudStoragePrintPdfStatus != curr.cloudStoragePrintPdfStatus,
       listener: (context, state) {
-       if (state.cloudStoragePrintPdfStatus ==
+        if (state.cloudStoragePrintPdfStatus ==
             CloudStoragePrintPdfStatus.failure) {
-
           handleErrorToPrint();
         }
       },
       child: BlocListener<AdminHomeBloc, AdminHomeState>(
         listenWhen: (prev, curr) =>
+            prev.adminHomeActions != curr.adminHomeActions ||
             prev.pendingOrderStatus != curr.pendingOrderStatus ||
-            prev.receptionStatus != curr.receptionStatus,
+            prev.receptionStatus != curr.receptionStatus ||
+            prev.changeDeliveryPendingOrderTimeStatus !=
+                curr.changeDeliveryPendingOrderTimeStatus ||
+            prev.changeDeliveryAcceptedOrderTimeStatus !=
+                curr.changeDeliveryAcceptedOrderTimeStatus ||
+            prev.archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus !=
+                curr.archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus ||
+            prev.codeValidationStatus != curr.codeValidationStatus,
         listener: (context, state) {
           final adminReceptionStatus = state.receptionStatus;
-          if (adminReceptionStatus == AdminReceptionStatus.requestFailure) {
+          if (adminReceptionStatus == AdminReceptionStatus.requestFailure &&
+              state.adminHomeActions == AdminHomeActions.togglePauseReception) {
+            print("ERROR DE RECEPCION:");
             _thereWasAnError(
               context,
               "¡Error inesperado!",
@@ -131,18 +154,121 @@ class _MyAdminHomeScreen extends StatelessWidget {
             );
           }
 
+          final codeValidationStatus = state.codeValidationStatus;
+
+          if (codeValidationStatus != CodeValidationStatus.loading ||
+              codeValidationStatus != CodeValidationStatus.validating) {
+            if (codeValidationStatus == CodeValidationStatus.failure &&
+                state.adminHomeActions == AdminHomeActions.validateCode) {
+              _thereWasAnError( context, "¡Error inesperado!", state.messageError ?? "", );
+              context.push(Routes.adminCodeValidationView);
+            } else if (codeValidationStatus == CodeValidationStatus.success) {
+              adminHomeBloc.add(AdminHomeUpdateCodeValidationStatusEvent(codeValidationStatus: CodeValidationStatus.idle));
+              if(context.canPop()){
+                context.pop();
+              }
+
+              showHighlyCustomizableSuccessAlert(context);
+
+            } else if (codeValidationStatus == CodeValidationStatus.invalid) {
+              _thereWasAnError( context, "¡Codigo inválido!", state.messageError ?? "", );
+              context.push(Routes.adminCodeValidationView);
+            } 
+          }
+
+          final archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus =
+              state.archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus;
+
+          if (archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus !=
+              ArchivingAcceptedOrderAfterBeingCanceledByTheUserStatus.loading) {
+            if (archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus ==
+                    ArchivingAcceptedOrderAfterBeingCanceledByTheUserStatus
+                        .failure &&
+                state.adminHomeActions ==
+                    AdminHomeActions.acceptedOrderCanceledByUser) {
+              _thereWasAnError(
+                context,
+                "¡Error inesperado!",
+                state.messageError ?? "",
+              );
+              adminHomeBloc.add(
+                AdminHomeShowMessageArchiveCanceledOrderByUserEvent(
+                  showMessageArchiveCanceledOrderByUser: false,
+                ),
+              );
+            } else if (archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus ==
+                ArchivingAcceptedOrderAfterBeingCanceledByTheUserStatus
+                    .success) {
+              adminHomeBloc.add(
+                AdminHomeShowMessageArchiveCanceledOrderByUserEvent(
+                  showMessageArchiveCanceledOrderByUser: false,
+                ),
+              );
+            }
+          }
+
+          final changeDeliveryPendingOrderTimeStatus =
+              state.changeDeliveryPendingOrderTimeStatus;
+
+          if (changeDeliveryPendingOrderTimeStatus !=
+              ChangeDeliveryPendingOrderTimeStatus.loading) {
+            if (changeDeliveryPendingOrderTimeStatus ==
+                    ChangeDeliveryPendingOrderTimeStatus.failure &&
+                state.adminHomeActions ==
+                    AdminHomeActions.changeDeliveryPendingOrderTime) {
+              print("ERROR DE CAMBIAR EL TIEMPO DE ESPERA (ORDEN PENDIENTE):");
+              _thereWasAnError(
+                context,
+                "¡Error inesperado!",
+                state.messageError ?? "",
+              );
+            } else if (changeDeliveryPendingOrderTimeStatus ==
+                ChangeDeliveryPendingOrderTimeStatus.success) {
+              adminHomeBloc.add(
+                AdminHomeUpdateChangedeliveryPendingOrderTimeStatusEvent(
+                  changedeliveryPendingOrderTimeStatus:
+                      ChangeDeliveryPendingOrderTimeStatus.idle,
+                ),
+              );
+            }
+          }
+
+          final changeDeliveryAcceptedOrderTimeStatus =
+              state.changeDeliveryAcceptedOrderTimeStatus;
+
+          if (changeDeliveryAcceptedOrderTimeStatus !=
+              ChangeDeliveryAcceptedOrderTimeStatus.loading) {
+            if (changeDeliveryAcceptedOrderTimeStatus ==
+                    ChangeDeliveryAcceptedOrderTimeStatus.failure &&
+                state.adminHomeActions ==
+                    AdminHomeActions.changeDeliveryAcceptedOrderTime) {
+              print("ERROR DE CAMBIAR EL TIEMPO DE ESPERA (ORDEN PENDIENTE):");
+              _thereWasAnError(
+                context,
+                "¡Error inesperado!",
+                state.messageError ?? "",
+              );
+            } else if (changeDeliveryAcceptedOrderTimeStatus ==
+                ChangeDeliveryAcceptedOrderTimeStatus.success) {
+              adminHomeBloc.add(
+                AdminHomeUpdateChangedeliveryAcceptedOrderTimeStatusEvent(
+                  changedeliveryAcceptedOrderTimeStatus:
+                      ChangeDeliveryAcceptedOrderTimeStatus.idle,
+                ),
+              );
+            }
+          }
+
           final adminPendingOrderStatus = state.pendingOrderStatus;
           if (adminPendingOrderStatus != PendingOrderStatus.loading) {
-            if (adminPendingOrderStatus == PendingOrderStatus.failure) {
+            if (adminPendingOrderStatus == PendingOrderStatus.failure &&
+                state.adminHomeActions ==
+                    AdminHomeActions.makePendingOrderDecision) {
+              print("ERROR DE TOMAR DECICION PENDIENTE:");
               _thereWasAnError(
                 context,
                 "¡Error inesperado!",
                 state.pendingOrderErrorMessage ?? "",
-              );
-              adminHomeBloc.add(
-                AdminHomeUpdatePendingOrderStatusEvent(
-                  pendingOrderStatus: PendingOrderStatus.idle,
-                ),
               );
             } else if (adminPendingOrderStatus == PendingOrderStatus.success) {
               adminHomeBloc.add(
@@ -166,30 +292,147 @@ class _MyAdminHomeScreen extends StatelessWidget {
               ),
             ),
             const MyDateRangeBottomSheet(),
-            MyMessageErrorWarning(
-              voidCallback: () async {
-                if (adminHomeBloc.state.adminHomeActions ==
-                    AdminHomeActions.togglePauseReception) {
-                  _togglePauseReceptionFailureHandle(
-                    adminHomeBloc,
-                    onTapBottomNav,
-                  );
-                } else if (adminHomeBloc.state.adminHomeActions ==
-                        AdminHomeActions.makePendingOrderDecision &&
-                    adminHomeBloc.state.pendingOrderDecision !=
-                        PendingOrderDecision.none &&
-                    adminHomeBloc.state.pendingOrderStatus !=
-                        PendingOrderStatus.idle) {
-                  _makePendingOrderDecisionFailureHandle(adminHomeBloc);
-                }
+            BlocBuilder<AdminHomeBloc, AdminHomeState>(
+              buildWhen: (prev, curr) => prev.pendingOrderStatus != curr.pendingOrderStatus || prev.receptionStatus != curr.receptionStatus || prev.changeDeliveryPendingOrderTimeStatus != curr.changeDeliveryPendingOrderTimeStatus || prev.changeDeliveryAcceptedOrderTimeStatus != curr.changeDeliveryAcceptedOrderTimeStatus || prev.archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus != curr.archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus,
+              builder: (context, state) {
+                return MyMessageErrorWarning(
+                  
+                  voidCallbackByPopScope: () {
+                    if (adminHomeBloc.state.adminHomeActions == AdminHomeActions.makePendingOrderDecision && adminHomeBloc.state.pendingOrderDecision != PendingOrderDecision.none && adminHomeBloc.state.pendingOrderStatus == PendingOrderStatus.failure) {
+                      _makePendingOrderDecisionFailureHandle(adminHomeBloc);
+                    } 
+                    else if (adminHomeBloc.state.adminHomeActions == AdminHomeActions.changeDeliveryPendingOrderTime && adminHomeBloc .state .changeDeliveryPendingOrderTimeStatus == ChangeDeliveryPendingOrderTimeStatus.failure){
+                      _changeDeliveryPendingOrderTimeFailureHandle( adminHomeBloc, );
+                    } 
+                    else if (adminHomeBloc.state.adminHomeActions == AdminHomeActions.changeDeliveryAcceptedOrderTime && adminHomeBloc .state .changeDeliveryAcceptedOrderTimeStatus == ChangeDeliveryAcceptedOrderTimeStatus.failure) {
+                      _changeDeliveryAcceptedOrderTimeFailureHandle(
+                        adminHomeBloc,
+                      );
+                    } 
+                    else if (state .archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus == ArchivingAcceptedOrderAfterBeingCanceledByTheUserStatus .failure && state.adminHomeActions == AdminHomeActions.acceptedOrderCanceledByUser) {
+                      adminHomeBloc.add(
+                        AdminHomeUpdateArchivingAcceptedOrderAfterBeingaCanceledByTheUserStatusEvent(
+                          archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus:
+                              ArchivingAcceptedOrderAfterBeingCanceledByTheUserStatus
+                                  .idle,
+                        ),
+                      );
+                    }
+                    else if ((state.codeValidationStatus == CodeValidationStatus.failure || state.codeValidationStatus == CodeValidationStatus.invalid) && state.adminHomeActions == AdminHomeActions.validateCode) {
+                      adminHomeBloc.add(
+                        AdminHomeUpdateCodeValidationStatusEvent(
+                          codeValidationStatus: CodeValidationStatus.idle
+                        ),
+                      );
+                    }
 
-                messageErrorWarningBloc.add(
-                  ShowMessageErrorWarningEvent(showMessageErrorWarning: false),
+                    messageErrorWarningBloc.add(
+                      ShowMessageErrorWarningEvent(
+                        showMessageErrorWarning: false,
+                      ),
+                    );
+                  },
+
+                  voidCallbackByCloseIcon: () {
+                    if (adminHomeBloc.state.adminHomeActions == AdminHomeActions.makePendingOrderDecision && adminHomeBloc.state.pendingOrderDecision != PendingOrderDecision.none && adminHomeBloc.state.pendingOrderStatus == PendingOrderStatus.failure) { 
+                      _makePendingOrderDecisionFailureHandle(adminHomeBloc); 
+                      } else if (adminHomeBloc.state.adminHomeActions == AdminHomeActions.changeDeliveryPendingOrderTime && adminHomeBloc .state .changeDeliveryPendingOrderTimeStatus == ChangeDeliveryPendingOrderTimeStatus.failure) {
+                      _changeDeliveryPendingOrderTimeFailureHandle(
+                        adminHomeBloc,
+                      );
+                    } else if (adminHomeBloc.state.adminHomeActions == AdminHomeActions.changeDeliveryAcceptedOrderTime && adminHomeBloc .state .changeDeliveryAcceptedOrderTimeStatus == ChangeDeliveryAcceptedOrderTimeStatus.failure) {
+                      _changeDeliveryAcceptedOrderTimeFailureHandle(
+                        adminHomeBloc,
+                      );
+                    } else if (state .archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus == ArchivingAcceptedOrderAfterBeingCanceledByTheUserStatus .failure && state.adminHomeActions == AdminHomeActions.acceptedOrderCanceledByUser) {
+                      adminHomeBloc.add(
+                        AdminHomeUpdateArchivingAcceptedOrderAfterBeingaCanceledByTheUserStatusEvent(
+                          archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus:
+                              ArchivingAcceptedOrderAfterBeingCanceledByTheUserStatus
+                                  .idle,
+                        ),
+                      );
+                    }else if ((state.codeValidationStatus == CodeValidationStatus.failure || state.codeValidationStatus == CodeValidationStatus.invalid) && state.adminHomeActions == AdminHomeActions.validateCode) {
+                      adminHomeBloc.add(
+                        AdminHomeUpdateCodeValidationStatusEvent(
+                          codeValidationStatus: CodeValidationStatus.idle
+                        ),
+                      );
+                    }
+
+                    messageErrorWarningBloc.add(
+                      ShowMessageErrorWarningEvent(
+                        showMessageErrorWarning: false,
+                      ),
+                    );
+                  },
+
+                  voidCallback: () async {
+                    if (adminHomeBloc.state.adminHomeActions ==
+                        AdminHomeActions.togglePauseReception) {
+                      _togglePauseReceptionFailureHandle(
+                        adminHomeBloc,
+                        onTapBottomNav,
+                      );
+                    } else if (adminHomeBloc.state.adminHomeActions == AdminHomeActions.makePendingOrderDecision && adminHomeBloc.state.pendingOrderDecision != PendingOrderDecision.none && adminHomeBloc.state.pendingOrderStatus == PendingOrderStatus.failure) {
+                      _makePendingOrderDecisionFailureHandle(adminHomeBloc);
+                    } else if (adminHomeBloc.state.adminHomeActions == AdminHomeActions.changeDeliveryPendingOrderTime && adminHomeBloc .state .changeDeliveryPendingOrderTimeStatus == ChangeDeliveryPendingOrderTimeStatus.failure) {
+                      _changeDeliveryPendingOrderTimeFailureHandle(
+                        adminHomeBloc,
+                      );
+                    } else if (adminHomeBloc.state.adminHomeActions == AdminHomeActions.changeDeliveryAcceptedOrderTime && adminHomeBloc .state .changeDeliveryAcceptedOrderTimeStatus == ChangeDeliveryAcceptedOrderTimeStatus.failure) {
+                      _changeDeliveryAcceptedOrderTimeFailureHandle(
+                        adminHomeBloc,
+                      );
+                    } else if (state .archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus == ArchivingAcceptedOrderAfterBeingCanceledByTheUserStatus .failure && state.adminHomeActions == AdminHomeActions.acceptedOrderCanceledByUser) {
+                      adminHomeBloc.add(
+                        AdminHomeUpdateArchivingAcceptedOrderAfterBeingaCanceledByTheUserStatusEvent(
+                          archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus:
+                              ArchivingAcceptedOrderAfterBeingCanceledByTheUserStatus
+                                  .idle,
+                        ),
+                      );
+                    }else if ((state.codeValidationStatus == CodeValidationStatus.failure || state.codeValidationStatus == CodeValidationStatus.invalid) && state.adminHomeActions == AdminHomeActions.validateCode) {
+                      adminHomeBloc.add(
+                        AdminHomeUpdateCodeValidationStatusEvent(
+                          codeValidationStatus: CodeValidationStatus.idle
+                        ),
+                      );
+                    }
+
+                    messageErrorWarningBloc.add(
+                      ShowMessageErrorWarningEvent(
+                        showMessageErrorWarning: false,
+                      ),
+                    );
+                  },
                 );
               },
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _changeDeliveryAcceptedOrderTimeFailureHandle(
+    AdminHomeBloc adminHomeBloc,
+  ) {
+    adminHomeBloc.add(
+      AdminHomeUpdateChangedeliveryAcceptedOrderTimeStatusEvent(
+        changedeliveryAcceptedOrderTimeStatus:
+            ChangeDeliveryAcceptedOrderTimeStatus.idle,
+      ),
+    );
+  }
+
+  void _changeDeliveryPendingOrderTimeFailureHandle(
+    AdminHomeBloc adminHomeBloc,
+  ) {
+    adminHomeBloc.add(
+      AdminHomeUpdateChangedeliveryPendingOrderTimeStatusEvent(
+        changedeliveryPendingOrderTimeStatus:
+            ChangeDeliveryPendingOrderTimeStatus.idle,
       ),
     );
   }
@@ -200,11 +443,7 @@ class _MyAdminHomeScreen extends StatelessWidget {
         pendingOrderStatus: PendingOrderStatus.idle,
       ),
     );
-    adminHomeBloc.add(
-      AdminHomeUpdateAdminHomeActionsEvent(
-        adminHomeActions: AdminHomeActions.none,
-      ),
-    ); //
+
     adminHomeBloc.add(
       AdminHomeUpdatePendingOrderDecisionEvent(
         pendingOrderDecision: PendingOrderDecision.none,
@@ -226,11 +465,11 @@ class _MyAdminHomeScreen extends StatelessWidget {
       );
       onTapBottomNav(0);
     }
-    adminHomeBloc.add(
-      AdminHomeUpdateAdminHomeActionsEvent(
-        adminHomeActions: AdminHomeActions.none,
-      ),
-    );
+    // adminHomeBloc.add(
+    //   AdminHomeUpdateAdminHomeActionsEvent(
+    //     adminHomeActions: AdminHomeActions.none,
+    //   ),
+    // );
   }
 
   void _thereWasAnError(

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pdf_render_plus/pdf_render_widgets.dart';
+import 'package:printfast_rebuild/presentation/blocs/admin_blocs/admin_home_bloc/admin_home_bloc.dart';
 import 'package:printfast_rebuild/presentation/blocs/shared_blocs/cloud_storage_pdf_bloc.dart/cloud_storage_pdf_bloc.dart';
 import 'package:printfast_rebuild/presentation/widgets/widgets.dart';
 
@@ -14,10 +15,21 @@ class MyCloudStoragePdfView extends StatelessWidget {
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
     final width = MediaQuery.of(context).size.width;
-    return Scaffold(
-      backgroundColor: primary,
-      appBar: _myAppBar(context),
-      body: _myBody(width, context),
+    return BlocListener<AdminHomeBloc, AdminHomeState>(
+    listenWhen: (prev, curr) => prev.archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus !=
+              curr.archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus ||
+          prev.selectedOrder.hasItBeenCanceledByUser !=
+              curr.selectedOrder.hasItBeenCanceledByUser,
+      listener: (context, state) {
+        if (state.selectedOrder.hasItBeenCanceledByUser == true && state .archivingAcceptedOrderAfterBeingaCancelledByTheUserStatus == ArchivingAcceptedOrderAfterBeingCanceledByTheUserStatus.idle) {
+          context.pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: primary,
+        appBar: _myAppBar(context),
+        body: _myBody(width, context),
+      ),
     );
   }
 
